@@ -1,0 +1,52 @@
+{
+    "name": "nyoncode/laravel-package-builder",
+    "description": "Tools for easy creating Laravel packages",
+    "keywords": [
+        "laravel",
+        "package",
+        "builder",
+        "nyoncode",
+        "laravel-package-tool"
+    ],
+    "homepage": "https://github.com/NyonCode/laravel-package-builder",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ondřej Nyklíček",
+            "email": "ondrej@nyoncode.cz",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "illuminate/contracts": "^9.28|^10.0|^11.0",
+        "illuminate/support": "^9.28|^10.0|^11.0",
+        "ext-readline": "*"
+    },
+    "require-dev": {
+        "laravel/framework": "11.x-dev",
+        "mockery/mockery": "^1.5",
+        "orchestra/testbench": "9.x-dev",
+        "pestphp/pest": "3.x-dev",
+        "phpstan/phpstan": "^1.12"
+    },
+    "autoload": {
+        "psr-4": {
+            "NyonCode\\LaravelPackageBuilder\\": "src",
+            "NyonCode\\LaravelPackageBuilder\\Console\\": "bin/console"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NyonCode\\LaravelPackageBuilder\\Tests\\": "tests"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": false,
+    "scripts": {
+
+    }
+}
