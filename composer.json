@@ -1,52 +1,71 @@
 {
-    "name": "nyoncode/laravel-package-builder",
-    "description": "Tools for easy creating Laravel packages",
-    "keywords": [
-        "laravel",
-        "package",
-        "builder",
-        "nyoncode",
-        "laravel-package-tool"
-    ],
-    "homepage": "https://github.com/NyonCode/laravel-package-builder",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Ondřej Nyklíček",
-            "email": "ondrej@nyoncode.cz",
-            "role": "Developer"
-        }
-    ],
-    "require": {
-        "php": "^8.1",
-        "illuminate/contracts": "^9.28|^10.0|^11.0",
-        "illuminate/support": "^9.28|^10.0|^11.0",
-        "ext-readline": "*"
-    },
-    "require-dev": {
-        "laravel/framework": "11.x-dev",
-        "mockery/mockery": "^1.5",
-        "orchestra/testbench": "9.x-dev",
-        "pestphp/pest": "3.x-dev",
-        "phpstan/phpstan": "^1.12"
-    },
-    "autoload": {
-        "psr-4": {
-            "NyonCode\\LaravelPackageBuilder\\": "src",
-            "NyonCode\\LaravelPackageBuilder\\Console\\": "bin/console"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "NyonCode\\LaravelPackageBuilder\\Tests\\": "tests"
-        }
-    },
-    "config": {
-        "sort-packages": true
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": false,
-    "scripts": {
-
+  "name": "nyoncode/laravel-package-builder",
+  "description": "Tools for easy creating Laravel packages",
+  "keywords": [
+    "laravel",
+    "package",
+    "builder",
+    "nyoncode",
+    "laravel-package-tool"
+  ],
+  "homepage": "https://github.com/NyonCode/laravel-package-builder",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Ondřej Nyklíček",
+      "email": "ondrej@nyoncode.cz",
+      "role": "Developer"
     }
+  ],
+  "require": {
+    "php": "^8.1",
+    "illuminate/contracts": "^9.28|^10.0|^11.0",
+    "illuminate/support": "^9.28|^10.0|^11.0",
+    "ext-readline": "*"
+  },
+  "require-dev": {
+    "mockery/mockery": "^1.5",
+    "orchestra/testbench": "^7.7|^8.0|^9.0",
+    "pestphp/pest": "^1.22|^2.0|^3.0",
+    "pestphp/pest-plugin-laravel": "^1.2|^2.0|^3.0",
+    "phpstan/phpstan": "^1.12"
+  },
+  "autoload": {
+    "psr-4": {
+      "NyonCode\\LaravelPackageBuilder\\": "src",
+      "NyonCode\\LaravelPackageBuilder\\Console\\": "bin/console"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "NyonCode\\LaravelPackageBuilder\\Tests\\": "tests"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": false,
+  "scripts": {
+    "post-autoload-dump": [
+      "@clear",
+      "@prepare"
+    ],
+    "prepare": "@php vendor/bin/testbench package:discover --ansi",
+    "build": "@php vendor/bin/testbench workbench:build --ansi",
+    "serve": [
+      "Composer\\Config::disableProcessTimeout",
+      "@build",
+      "@php vendor/bin/testbench serve --ansi"
+    ],
+    "lint": [
+      "@php vendor/bin/phpstan analyse --verbose --ansi"
+    ],
+    "test": [
+      "@php vendor/bin/pest"
+    ]
+  }
 }

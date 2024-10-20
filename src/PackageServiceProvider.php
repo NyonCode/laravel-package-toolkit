@@ -3,6 +3,7 @@
 namespace NyonCode\LaravelPackageBuilder;
 
 use Exception;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use NyonCode\LaravelPackageBuilder\Exceptions\PackagerException;
 use ReflectionClass;
@@ -44,8 +45,8 @@ abstract class PackageServiceProvider extends ServiceProvider
     /**
      * Register the service provider.
      *
-     * @throws Exception
      * @return void
+     * @throws Exception
      */
     public function register(): void
     {
@@ -111,6 +112,17 @@ abstract class PackageServiceProvider extends ServiceProvider
             if ($this->packager->loadJsonTranslate) {
                 $this->loadJsonTranslations();
             }
+
+            $this->publishTranslations();
+        }
+
+        if ($this->packager->isView) {
+            $this->loadViews();
+            $this->publishViews();
+        }
+
+        if ($this->packager->isViewComponent) {
+            $this->loadViewComponents();
         }
 
         $this->bootedPackage();
@@ -203,7 +215,7 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     protected function loadTranslations(): void
     {
-        $this->loadTranslationsFrom($this->packager->translationPath(), lang_path('lang'));
+        $this->loadTranslationsFrom($this->packager->translationPath(), $this->packager->shortName());
     }
 
     /**
@@ -213,7 +225,19 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     protected function loadJsonTranslations(): void
     {
-        $this->loadJsonTranslationsFrom($this->packager->translationPath());
+        $this->loadJsonTranslationsFrom(path: $this->packager->translationPath());
+    }
+
+    protected function loadViews(): void
+    {
+        $this->loadViewsFrom(path: $this->packager->views(), namespace: $this->packager->shortName());
+    }
+
+    protected function loadViewComponents(): void
+    {
+        collect($this->packager->viewComponents())->each(function ($component, $name) {
+            Blade::component(class: $name, alias: $component);
+        });
     }
 
     /**
@@ -241,6 +265,22 @@ abstract class PackageServiceProvider extends ServiceProvider
         $this->publishesMigrations(
             paths: [(collect($this->packager->migrationFiles())->first())->dirname => database_path('migrations')],
             groups: $this->publishTagFormat('migrations')
+        );
+    }
+
+    protected function publishTranslations(): void
+    {
+        $this->publishes(
+            paths: [$this->packager->translationPath() => lang_path("vendor/{$this->packager->shortName()}")],
+            groups: $this->publishTagFormat('translations')
+        );
+    }
+
+    protected function publishViews(): void
+    {
+        $this->publishes(
+            paths: [$this->packager->views() => resource_path("views/vendor/{$this->packager->shortName()}")],
+            groups: $this->publishTagFormat("views")
         );
     }
 

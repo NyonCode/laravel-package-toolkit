@@ -59,7 +59,9 @@ class PackagerException extends Exception
      */
     public static function fileNotExist(string $routeFile, string|null $type = null): self
     {
-        return new static($type ? Str::title($type) . " file [$routeFile] does not exist." : "File [$routeFile] does not exist.");
+        return new static(
+            $type ? Str::title($type) . " file [$routeFile] does not exist." : "File [$routeFile] does not exist."
+        );
     }
 
     /**
@@ -70,6 +72,18 @@ class PackagerException extends Exception
      */
     public static function invalidNameLanguageDirectory(string $langDirectory): self
     {
-        return new static("Invalid language directory [$langDirectory]. Directory name must be one of the supported languages.");
+        return new static(
+            "Invalid language directory [$langDirectory]. Directory name must be one of the supported languages."
+        );
+    }
+
+    public static function invalidComponentName(mixed $name): self
+    {
+        return new static("Invalid name [$name]. The name must be a string.");
+    }
+
+    public static function invalidComponentClass(mixed $name, mixed $component): self
+    {
+        return new static("Invalid component class [$component] for [$name]. The value must be a valid class name.");
     }
 }

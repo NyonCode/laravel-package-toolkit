@@ -85,6 +85,11 @@ class Packager
      */
     protected string|null $translationPath = null;
 
+    public bool $isView = false;
+    protected string|null $viewsPath = null;
+    public bool $isViewComponent = false;
+    protected array $viewComponents = [];
+
     /**
      * Set the name of the package.
      *
@@ -116,7 +121,7 @@ class Packager
      */
     public function hasShortName(string $shortName): static
     {
-        if($shortName !== Str::kebab($shortName)){
+        if ($shortName !== Str::kebab($shortName)) {
             throw new InvalidArgumentException("The given namespace [$shortName] does not match the expected format.");
         }
 
@@ -151,7 +156,7 @@ class Packager
             }
 
             foreach ($configFiles as $configFile) {
-                if(!is_file($this->path($configFile))) {
+                if (!is_file($this->path($configFile))) {
                     throw PackagerException::fileNotExist($configFile, 'config');
                 }
 
@@ -160,7 +165,6 @@ class Packager
 
             /** @var array<string|stdClass> $configFilesInfo */
             $this->configFiles = $configFilesInfo;
-
         } else {
             $this->configFiles = $this->autoloadFiles($dirName);
         }
@@ -191,12 +195,12 @@ class Packager
     public function hasRoutes(array|string|null $routeFiles = null, string $dirName = 'routes'): static
     {
         if (!empty($routeFiles)) {
-            if(!is_array($routeFiles)) {
+            if (!is_array($routeFiles)) {
                 $routeFiles = [$routeFiles];
             }
 
             foreach ($routeFiles as $routeFile) {
-                if(!is_file($this->path($routeFile))) {
+                if (!is_file($this->path($routeFile))) {
                     throw PackagerException::fileNotExist($routeFile, 'route');
                 }
 
@@ -205,7 +209,6 @@ class Packager
 
             /** @var array<string|stdClass> $routeFilesInfo */
             $this->routeFiles = $routeFilesInfo;
-
         } else {
             $this->routeFiles = $this->autoloadFiles($dirName);
         }
@@ -237,12 +240,12 @@ class Packager
     public function hasMigrations(array|null $migrationFiles = null, string $dirName = 'database/migrations'): static
     {
         if (!empty($this->migrationFiles)) {
-            if(!is_array($migrationFiles)) {
+            if (!is_array($migrationFiles)) {
                 $migrationFiles = [$migrationFiles];
             }
 
             foreach ($migrationFiles as $migrationFile) {
-                if(!file_exists($migrationFile)) {
+                if (!file_exists($migrationFile)) {
                     throw PackagerException::fileNotExist($migrationFile, 'migration');
                 }
 
@@ -251,7 +254,6 @@ class Packager
 
             /** @var array<string|stdClass> $migrationFilesInfo */
             $this->migrationFiles = $migrationFilesInfo;
-
         } else {
             $this->migrationFiles = $this->autoloadFiles($dirName);
         }
@@ -285,7 +287,7 @@ class Packager
             throw PackagerException::folderNotExist($path);
         }
 
-        if(File::isEmptyDirectory($path)) {
+        if (File::isEmptyDirectory($path)) {
             throw PackagerException::folderIsEmpty($path);
         }
 
@@ -303,6 +305,57 @@ class Packager
 
         $this->translationPath = $path;
         $this->isTranslatable = true;
+
+        return $this;
+    }
+
+    public function views(): string
+    {
+        return $this->viewsPath;
+    }
+
+    /**
+     * Set or variable views folder
+     *
+     * @param string|null $viewsPath The path to the views files
+     * @param string $directory The directory name where the views files are located
+     * @throws PackagerException
+     */
+    public function hasViews(string|null $viewsPath = null, string $directory = '../resources/views'): static
+    {
+        if (!empty($viewsPath)) {
+            if (File::isDirectory($this->path($viewsPath))) {
+                $this->viewsPath = $this->path($viewsPath);
+            } else {
+                throw PackagerException::folderNotExist($this->viewsPath);
+            }
+        } else {
+            $this->viewsPath = $this->path($directory);
+        }
+
+        $this->isView = true;
+        return $this;
+    }
+
+    /**
+     * @return array<string, object>
+     */
+    public function viewComponents(): array
+    {
+        return $this->viewComponents;
+    }
+
+    /**
+     * @throws PackagerException
+     */
+    public function hasComponents(array $components): static
+    {
+        if (!empty($components)) {
+            if ($this->validateComponents($components)) {
+                $this->viewComponents = $components;
+                $this->isViewComponent = true;
+            }
+        }
 
         return $this;
     }
@@ -325,8 +378,8 @@ class Packager
      */
     public function hasBasePath(string $basePath): string
     {
-        if (Str::contains($basePath, "src/Providers")) {
-            return $this->basePath = Str::before($basePath, "/Providers");
+        if (Str::contains($basePath, 'src/Providers')) {
+            return $this->basePath = Str::before($basePath, '/Providers');
         }
 
         return $this->basePath = $basePath;
@@ -392,7 +445,7 @@ class Packager
     {
         $realPath = realpath($path);
 
-        if ($realPath === false OR ! is_dir($realPath)) {
+        if ($realPath === false or !is_dir($realPath)) {
             throw PackagerException::folderNotExist($path);
         }
     }
@@ -408,5 +461,23 @@ class Packager
     {
         $this->validFolder($this->path("../$path"));
         return $this->getFiles("../$path");
+    }
+
+    /**
+     * @throws PackagerException
+     */
+    public function validateComponents(array $components): bool
+    {
+        foreach ($components as $name => $component) {
+            if (!is_string($name)) {
+                throw PackagerException::invalidComponentName($name);
+            }
+
+            if (!is_object($component)) {
+                throw PackagerException::invalidComponentClass($name, $component);
+            }
+        }
+
+        return true;
     }
 }
