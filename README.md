@@ -50,7 +50,7 @@ class MyAwesomePackageServiceProvider extends PackageServiceProvider
     public function configure(Packager $packager): void
     {
         $packager
-            ->name('my-awesome-package')
+            ->name('My awesome package')
             ->hasConfig()
             ->hasRoutes()
             ->hasMigrations()
@@ -73,7 +73,7 @@ class AdvancedPackageServiceProvider extends PackageServiceProvider
     public function configure(Packager $packager): void
     {
         $packager
-            ->name('advanced-package')
+            ->name('Advanced Package')
             ->hasShortName('adv-pkg')
             ->hasConfig('custom-config.php')
             ->hasRoutes(['api.php', 'web.php'])
