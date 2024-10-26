@@ -200,11 +200,14 @@ class Packager
             }
 
             foreach ($routeFiles as $routeFile) {
-                if (!is_file($this->path($routeFile))) {
+
+                if (is_file($this->path(DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . $dirName . DIRECTORY_SEPARATOR . $routeFile))) {
+                    $routeFilesInfo[] = $this->getFileInfo($this->path(DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . $dirName . DIRECTORY_SEPARATOR . $routeFile));
+                } elseif (is_file($this->path($routeFile))) {
+                    $routeFilesInfo[] = $this->getFileInfo($this->path($routeFile));
+                } else {
                     throw PackagerException::fileNotExist($routeFile, 'route');
                 }
-
-                $routeFilesInfo[] = $this->getFileInfo($this->path($routeFile));
             }
 
             /** @var array<string|stdClass> $routeFilesInfo */
