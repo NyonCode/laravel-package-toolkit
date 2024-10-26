@@ -19,9 +19,10 @@
   ],
   "require": {
     "php": "^8.1",
+    "ext-readline": "*",
     "illuminate/contracts": "^9.28|^10.0|^11.0",
     "illuminate/support": "^9.28|^10.0|^11.0",
-    "ext-readline": "*"
+    "symfony/console": "7.2.x-dev"
   },
   "require-dev": {
     "mockery/mockery": "^1.5",
@@ -32,8 +33,7 @@
   },
   "autoload": {
     "psr-4": {
-      "NyonCode\\LaravelPackageBuilder\\": "src",
-      "NyonCode\\LaravelPackageBuilder\\Console\\": "bin/console"
+      "NyonCode\\LaravelPackageBuilder\\": "src"
     }
   },
   "autoload-dev": {
@@ -51,7 +51,6 @@
   "prefer-stable": false,
   "scripts": {
     "post-autoload-dump": [
-      "@clear",
       "@prepare"
     ],
     "prepare": "@php vendor/bin/testbench package:discover --ansi",
