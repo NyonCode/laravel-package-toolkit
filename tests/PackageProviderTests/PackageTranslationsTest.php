@@ -2,10 +2,14 @@
 
 namespace NyonCode\LaravelPackageBuilder\Tests\PackageProviderTests;
 
+use NyonCode\LaravelPackageBuilder\Exceptions\PackagerException;
 use NyonCode\LaravelPackageBuilder\Packager;
 
 trait PackageTranslationsTest
 {
+    /**
+     * @throws PackagerException
+     */
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package')->hasTranslations();

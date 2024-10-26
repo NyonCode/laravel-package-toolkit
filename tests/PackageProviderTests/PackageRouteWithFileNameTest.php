@@ -1,0 +1,32 @@
+<?php
+
+namespace NyonCode\LaravelPackageBuilder\Tests\PackageProviderTests;
+
+use Exception;
+use NyonCode\LaravelPackageBuilder\Packager;
+
+trait PackageRouteWithFileNameTest
+{
+    /**
+     * @throws Exception
+     */
+    public function configure(Packager $packager): void
+    {
+        $packager->name('Test Package')->hasRoutes('foo.php');
+    }
+}
+
+uses(PackageRouteWithFileNameTest::class);
+
+test('route with filename test', function () {
+    $response = $this->get('foo');
+    $response->assertStatus(200);
+});
+
+
+test('undefined route not accessible', function () {
+    $response = $this->get('first-route');
+    $response->assertStatus(404);
+});
+
+

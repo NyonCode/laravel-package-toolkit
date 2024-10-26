@@ -18,6 +18,9 @@ developers to focus on building features rather than boilerplate code.
 - [Usage](#usage)
     - [Basic Configuration](#basic-configuration)
     - [Advanced Configuration](#advanced-configuration)
+- [Lifecycle Hooks](#lifecycle-hooks)
+- [Name](#name)
+- [Short name](#short-name)
 - [Routing](#routing)
 - [Migrations](#migrations)
 - [Translations](#translations)
@@ -50,7 +53,7 @@ class MyAwesomePackageServiceProvider extends PackageServiceProvider
     public function configure(Packager $packager): void
     {
         $packager
-            ->name('My awesome package')
+            ->name('My Awesome Package')
             ->hasConfig()
             ->hasRoutes()
             ->hasMigrations()
@@ -73,7 +76,7 @@ class AdvancedPackageServiceProvider extends PackageServiceProvider
     public function configure(Packager $packager): void
     {
         $packager
-            ->name('Advanced Package')
+            ->name('Advanced package')
             ->hasShortName('adv-pkg')
             ->hasConfig('custom-config.php')
             ->hasRoutes(['api.php', 'web.php'])
@@ -98,6 +101,37 @@ class AdvancedPackageServiceProvider extends PackageServiceProvider
 }
 ```
 
+## Lifecycle Hooks
+
+Here is a list of all available life cycle hooks:
+
+| **Hook Method**        | **Description**                      |
+|------------------------|--------------------------------------|
+| `registeringPackage()` | Called before `register()` is called |
+| `registeredPackage()`  | Called after `register()` is called  |
+| `bootingPackage()`     | Called before `boot()` is called     |
+| `bootedPackage()`      | Called after `boot()` is called      |
+
+___
+
+## Name
+
+Define a name for the package:
+
+```php
+$packager->name('Package name')
+```
+
+## Short name
+
+Define a custom short name for the package.
+The hasShortName method is used to modify the name defined by `name()` if you prefer not to use the short version from
+`$packager->name('Package name')`:
+
+```php
+$packager->hasShortName('custom-short-name')
+```
+
 ## Routing
 
 To enable routing in your package:
@@ -110,6 +144,15 @@ By default, this will load routes from the `routes` directory. For custom route 
 
 ```php
 $packager->hasRoutes(['api.php', 'web.php']);
+```
+
+Or for specific file paths:
+
+```php
+$packager->hasRoute([
+        '../www/routes/web.php',
+        '../api/routes/api.php'
+    ])
 ```
 
 ## Migrations
