@@ -22,15 +22,15 @@ uses(PackageConfigTest::class);
 test(
     'can register the config files',
     fn() => expect(config('test-config.key1'))
-        ->not()
+        ->not
         ->toBeEmpty()
         ->toBe('value1')
         ->and(fn() => expect(config('test-config.key2'))
-            ->not()
+            ->not
             ->toBeEmpty()
             ->toBe('value2'))
         ->and(fn() => expect(config('alternative-config.alternative-key'))
-            ->not()
+            ->not
             ->toBeEmpty()
             ->toBe('alternative-value'))
 );
@@ -41,5 +41,6 @@ test('can publish the specific config file', function () {
 
     foreach (File::files(__DIR__ . '/../TestPackageData/config') as $file) {
         expect(config_path($file->getFilename()))->toBeFile();
+        unlink(config_path($file->getFilename()));
     }
 });

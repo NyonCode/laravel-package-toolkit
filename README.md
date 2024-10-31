@@ -155,6 +155,12 @@ $packager->hasRoute([
     ])
 ```
 
+To use an alternative directory for route files.
+
+```php
+$package->hasRoute(['web.php'], 'webRouter')
+```
+
 ## Migrations
 
 To enable migrations:

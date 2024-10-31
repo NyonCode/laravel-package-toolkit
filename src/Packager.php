@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 use InvalidArgumentException;
 use NyonCode\LaravelPackageBuilder\Exceptions\PackagerException;
 use NyonCode\LaravelPackageBuilder\Support\Enums\Language;
-use stdClass;
+use NyonCode\LaravelPackageBuilder\Support\SplFileInfo;
 
 class Packager
 {
@@ -32,7 +32,7 @@ class Packager
     /**
      * The configuration files for the package.
      *
-     * @var string[]|stdClass[]|null
+     * @var string[]|SplFileInfo[]|null
      */
     protected array|null $configFiles = null;
 
@@ -46,7 +46,7 @@ class Packager
     /**
      * The route files for the package.
      *
-     * @var string[]|stdClass[]|null
+     * @var string[]|SplFileInfo[]|null
      */
     protected array|null $routeFiles = null;
 
@@ -60,7 +60,7 @@ class Packager
     /**
      * The migration files for the package.
      *
-     * @var string[]|stdClass[]|null
+     * @var string[]|SplFileInfo[]|null
      */
     protected array|null $migrationFiles = null;
 
@@ -88,6 +88,9 @@ class Packager
     public bool $isView = false;
     protected string|null $viewsPath = null;
     public bool $isViewComponent = false;
+    /**
+     * @var array<string, object>
+     */
     protected array $viewComponents = [];
 
     /**
@@ -122,7 +125,9 @@ class Packager
     public function hasShortName(string $shortName): static
     {
         if ($shortName !== Str::kebab($shortName)) {
-            throw new InvalidArgumentException("The given namespace [$shortName] does not match the expected format.");
+            throw new InvalidArgumentException(
+                "The given namespace [$shortName] does not match the expected format."
+            );
         }
 
         $this->shortName = $shortName;
@@ -133,7 +138,7 @@ class Packager
     /**
      * Get the configuration files.
      *
-     * @return string[]|stdClass[]|null
+     * @return string[]|SplFileInfo[]|null
      */
     public function configFiles(): array|null
     {
@@ -144,29 +149,42 @@ class Packager
      * Set or validate configuration files.
      *
      * @param string[]|string|null $configFiles The configuration files to validate
-     * @param string $dirName The directory name where the configuration files are located
+     * @param string $directory The directory name where the configuration files are located
      * @return static
      * @throws Exception If the directory does not exist
      */
-    public function hasConfig(string|array|null $configFiles = null, string $dirName = 'config'): static
+    public function hasConfig(
+        string|array|null $configFiles = null,
+        string            $directory = 'config'
+    ): static
     {
+        /** @var array<string|SplFileInfo> $configFilesInfo */
+        $configFilesInfo = [];
+
         if (!empty($configFiles)) {
             if (!is_array($configFiles)) {
                 $configFiles = [$configFiles];
             }
 
             foreach ($configFiles as $configFile) {
-                if (!is_file($this->path($configFile))) {
-                    throw PackagerException::fileNotExist($configFile, 'config');
+                $filePath = $this->resolveFilePath($configFile, $directory);
+
+                if (empty($filePath) && !is_file($filePath)) {
+                    throw PackagerException::fileNotExist(
+                        $configFile,
+                        'config'
+                    );
                 }
 
-                $configFilesInfo[] = $this->getFileInfo($this->path($configFile));
+                $configFilesInfo[] = $this->getFileInfo(
+                    $this->path($configFile)
+                );
             }
 
-            /** @var array<string|stdClass> $configFilesInfo */
+            /** @var array<string|SplFileInfo> $configFilesInfo */
             $this->configFiles = $configFilesInfo;
         } else {
-            $this->configFiles = $this->autoloadFiles($dirName);
+            $this->configFiles = $this->autoloadFiles($directory);
         }
 
         $this->isConfigurable = true;
@@ -177,7 +195,7 @@ class Packager
     /**
      * Get the route files.
      *
-     * @return string[]|stdClass[]|null
+     * @return string[]|SplFileInfo[]|null
      */
     public function routeFiles(): array|null
     {
@@ -188,32 +206,37 @@ class Packager
      * Set or validate route files.
      *
      * @param string[]|null $routeFiles The route files to validate
-     * @param string $dirName The directory name where the route files are located
+     * @param string $directory The directory name where the route files are located
      * @return static
      * @throws Exception If the directory does not exist
      */
-    public function hasRoutes(array|string|null $routeFiles = null, string $dirName = 'routes'): static
+    public function hasRoutes(
+        array|string|null $routeFiles = null,
+        string            $directory = 'routes'
+    ): static
     {
+        /** @var array<string|SplFileInfo> $routeFilesInfo */
+        $routeFilesInfo = [];
+
         if (!empty($routeFiles)) {
             if (!is_array($routeFiles)) {
                 $routeFiles = [$routeFiles];
             }
 
             foreach ($routeFiles as $routeFile) {
+                $filePath = $this->resolveFilePath($routeFile, $directory);
 
-                if (is_file($this->path(DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . $dirName . DIRECTORY_SEPARATOR . $routeFile))) {
-                    $routeFilesInfo[] = $this->getFileInfo($this->path(DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . $dirName . DIRECTORY_SEPARATOR . $routeFile));
-                } elseif (is_file($this->path($routeFile))) {
-                    $routeFilesInfo[] = $this->getFileInfo($this->path($routeFile));
-                } else {
+                if (empty($filePath) && !is_file($filePath)) {
                     throw PackagerException::fileNotExist($routeFile, 'route');
                 }
+
+                $routeFilesInfo[] = $this->getFileInfo($filePath);
             }
 
-            /** @var array<string|stdClass> $routeFilesInfo */
+            /** @var array<string|SplFileInfo> $routeFilesInfo */
             $this->routeFiles = $routeFilesInfo;
         } else {
-            $this->routeFiles = $this->autoloadFiles($dirName);
+            $this->routeFiles = $this->autoloadFiles($directory);
         }
 
         $this->isRoutable = true;
@@ -224,7 +247,7 @@ class Packager
     /**
      * Get the migration files.
      *
-     * @return string[]|stdClass[]|null
+     * @return string[]|SplFileInfo[]|null
      */
     public function migrationFiles(): array|null
     {
@@ -234,14 +257,20 @@ class Packager
     /**
      * Set or validate migration files.
      *
-     * @param array|null $migrationFiles The migration files to validate
-     * @param string $dirName The directory name where the migration files are located
+     * @param array<string>|null $migrationFiles The migration files to validate
+     * @param string $directory The directory name where the migration files are located
      * @return static
      * @throws PackagerException If the migration file does not exist
      * @throws Exception If any other error occurs
      */
-    public function hasMigrations(array|null $migrationFiles = null, string $dirName = 'database/migrations'): static
+    public function hasMigrations(
+        array|null $migrationFiles = null,
+        string     $directory = 'database/migrations'
+    ): static
     {
+        /** @var array<string|SplFileInfo> $migrationFilesInfo */
+        $migrationFilesInfo = [];
+
         if (!empty($this->migrationFiles)) {
             if (!is_array($migrationFiles)) {
                 $migrationFiles = [$migrationFiles];
@@ -249,16 +278,21 @@ class Packager
 
             foreach ($migrationFiles as $migrationFile) {
                 if (!file_exists($migrationFile)) {
-                    throw PackagerException::fileNotExist($migrationFile, 'migration');
+                    throw PackagerException::fileNotExist(
+                        file: $migrationFile,
+                        type: 'migration'
+                    );
                 }
 
-                $migrationFilesInfo[] = $this->getFileInfo($this->path($migrationFile));
+                $migrationFilesInfo[] = $this->getFileInfo(
+                    $this->path($migrationFile)
+                );
             }
 
-            /** @var array<string|stdClass> $migrationFilesInfo */
+            /** @var array<string|SplFileInfo> $migrationFilesInfo */
             $this->migrationFiles = $migrationFilesInfo;
         } else {
-            $this->migrationFiles = $this->autoloadFiles($dirName);
+            $this->migrationFiles = $this->autoloadFiles($directory);
         }
 
         $this->isMigratable = true;
@@ -287,11 +321,11 @@ class Packager
     {
         $path = $this->path($translationPath);
         if (!File::isDirectory($path)) {
-            throw PackagerException::folderNotExist($path);
+            throw PackagerException::directoryNotFound($path);
         }
 
         if (File::isEmptyDirectory($path)) {
-            throw PackagerException::folderIsEmpty($path);
+            throw PackagerException::directoryIsEmpty($path);
         }
 
         foreach (File::allFiles($path) as $file) {
@@ -302,7 +336,9 @@ class Packager
 
         foreach (File::directories($path) as $directory) {
             if (!Language::codes()->search(Str::afterLast($directory, '/'))) {
-                throw PackagerException::invalidNameLanguageDirectory($directory);
+                throw PackagerException::invalidNameLanguageDirectory(
+                    $directory
+                );
             }
         }
 
@@ -324,13 +360,16 @@ class Packager
      * @param string $directory The directory name where the views files are located
      * @throws PackagerException
      */
-    public function hasViews(string|null $viewsPath = null, string $directory = '../resources/views'): static
+    public function hasViews(
+        string|null $viewsPath = null,
+        string      $directory = '../resources/views'
+    ): static
     {
         if (!empty($viewsPath)) {
             if (File::isDirectory($this->path($viewsPath))) {
                 $this->viewsPath = $this->path($viewsPath);
             } else {
-                throw PackagerException::folderNotExist($this->viewsPath);
+                throw PackagerException::directoryNotFound($this->viewsPath);
             }
         } else {
             $this->viewsPath = $this->path($directory);
@@ -341,7 +380,9 @@ class Packager
     }
 
     /**
-     * @return array<string, object>
+     * Get the view components registered in the package.
+     *
+     * @return array<string, object> Array of view components.
      */
     public function viewComponents(): array
     {
@@ -349,7 +390,14 @@ class Packager
     }
 
     /**
-     * @throws PackagerException
+     * Set view components for the package.
+     *
+     * Validates and registers the given view components.
+     *
+     * @param array<string, object> $components Array of view components with names as keys and component objects as
+     *     values.
+     * @return static
+     * @throws PackagerException If validation fails for any component.
      */
     public function hasComponents(array $components): static
     {
@@ -396,14 +444,16 @@ class Packager
      */
     public function path(string $path): string
     {
-        return $this->basePath . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR);
+        return $this->basePath .
+            DIRECTORY_SEPARATOR .
+            ltrim($path, DIRECTORY_SEPARATOR);
     }
 
     /**
      * Get files from a given path.
      *
      * @param string $path The path to search for files
-     * @return stdClass[]|string[]
+     * @return SplFileInfo[]|string[]
      */
     private function getFiles(string $path): array
     {
@@ -421,20 +471,14 @@ class Packager
     }
 
     /**
-     * Get file information as stdClass object.
+     * Get file information as SplFileInfo object.
      *
      * @param string $filePath The path to the file
-     * @return stdClass
+     * @return SplFileInfo
      */
-    private function getFileInfo(string $filePath): stdClass
+    private function getFileInfo(string $filePath): SplFileInfo
     {
-        $file = new stdClass();
-
-        foreach (pathinfo($filePath) as $key => $value) {
-            $file->$key = $value;
-        }
-
-        return $file;
+        return new SplFileInfo($filePath);
     }
 
     /**
@@ -449,7 +493,7 @@ class Packager
         $realPath = realpath($path);
 
         if ($realPath === false or !is_dir($realPath)) {
-            throw PackagerException::folderNotExist($path);
+            throw PackagerException::directoryNotFound($path);
         }
     }
 
@@ -457,7 +501,7 @@ class Packager
      * Autoload files from the specified path.
      *
      * @param string $path The path to autoload files from
-     * @return stdClass[]|String[]
+     * @return SplFileInfo[]|String[]
      * @throws Exception If the folder does not exist
      */
     private function autoloadFiles(string $path): array
@@ -467,7 +511,52 @@ class Packager
     }
 
     /**
-     * @throws PackagerException
+     * Resolves the path to a file in the specified directory.
+     *
+     * @param string $file The name of the file to resolve
+     * @param string $directory Directory name where files are located
+     * @return string Full path if the file exists, or null if not found
+     */
+    private function resolveFilePath(string $file, string $directory): string
+    {
+        if (Str::startsWith($file, '..')) {
+            $relativePath = $this->path($file);
+
+            if (is_file($relativePath)) {
+                return $relativePath;
+            }
+        }
+
+        $directPath = $this->path(
+            '..' .
+            DIRECTORY_SEPARATOR .
+            $directory .
+            DIRECTORY_SEPARATOR .
+            $file
+        );
+        if (is_file($directPath)) {
+            return $directPath;
+        }
+
+        return '';
+    }
+
+    /**
+     * Validates an array of components by checking their names and classes.
+     *
+     * This method iterates through each component in the provided array, ensuring that:
+     *  - Each key (component name) is a string.
+     *  - Each component value is an object.
+     *
+     * If any component fails these validations, a `PackagerException` is thrown with a
+     * detailed error message.
+     *
+     * @param array $components Associative array of components where the key is the component
+     *     name and the value is the component class object.
+     *
+     * @return bool Returns true if all components pass validation.
+     *
+     * @throws PackagerException If a component name is not a string or if the component value is not an object.
      */
     public function validateComponents(array $components): bool
     {
@@ -477,7 +566,10 @@ class Packager
             }
 
             if (!is_object($component)) {
-                throw PackagerException::invalidComponentClass($name, $component);
+                throw PackagerException::invalidComponentClass(
+                    $name,
+                    $component
+                );
             }
         }
 
