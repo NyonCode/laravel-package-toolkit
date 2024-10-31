@@ -280,7 +280,7 @@ abstract class PackageServiceProvider extends ServiceProvider
 
         $this->publishesMigrations(
             paths: [
-                $migrationPath->getPath()
+                $migrationPath?->getPathname()
 
                 => database_path('migrations'),
             ],
