@@ -13,9 +13,8 @@
 
 use NyonCode\LaravelPackageBuilder\Tests\PackageProviderTests\PackageServiceProviderTestCase;
 
-//uses(Orchestra::class)->in(__DIR__);
-
 uses(PackageServiceProviderTestCase::class)->in('PackageProviderTests');
+
 
 /*
 |--------------------------------------------------------------------------

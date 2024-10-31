@@ -36,9 +36,9 @@ abstract class PackageServiceProviderTestCase extends TestCase
 
     protected function clear(): void
     {
-        foreach (File::files(__DIR__ . '/../TestPackageData/config') as $file) {
-            if (file_exists(config_path($file->getFilename()))) {
-                unlink(config_path($file->getFilename()));
+        foreach (File::allFiles(__DIR__ . '/../TestPackageData/') as $file) {
+            if (file_exists(config_path($file->getPathname()))) {
+                unlink(config_path($file->getPathname()));
             }
         }
     }
