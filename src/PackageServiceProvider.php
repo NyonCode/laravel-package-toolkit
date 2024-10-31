@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace NyonCode\LaravelPackageBuilder;
 
@@ -57,7 +59,7 @@ abstract class PackageServiceProvider extends ServiceProvider
         $this->configure($this->packager);
 
         if (empty($this->packager->name)) {
-            throw PackagerException::invalidName();
+            throw PackagerException::missingName();
         }
 
         $this->registerConfig();
@@ -93,9 +95,8 @@ abstract class PackageServiceProvider extends ServiceProvider
     {
         $this->bootingPackage();
 
-        if ($this->packager->isConfigurable) {
-            $this->publishConfig();
-        }
+        $this->registerPackageCommands();
+        $this->registerPublishing();
 
         if ($this->packager->isRoutable) {
             $this->loadRoutes();
@@ -103,7 +104,6 @@ abstract class PackageServiceProvider extends ServiceProvider
 
         if ($this->packager->isMigratable) {
             $this->loadMigrations();
-            $this->publishMigrations();
         }
 
         if ($this->packager->isTranslatable) {
@@ -113,12 +113,10 @@ abstract class PackageServiceProvider extends ServiceProvider
                 $this->loadJsonTranslations();
             }
 
-            $this->publishTranslations();
         }
 
         if ($this->packager->isView) {
             $this->loadViews();
-            $this->publishViews();
         }
 
         if ($this->packager->isViewComponent) {
@@ -170,13 +168,19 @@ abstract class PackageServiceProvider extends ServiceProvider
     {
         if (!empty($this->packager->configFiles())) {
             foreach ($this->packager->configFiles() as $configFile) {
-                if (!is_array(value: require $configFile->dirname . DIRECTORY_SEPARATOR . $configFile->basename)) {
-                    throw PackagerException::configMustReturnArray($configFile->basename);
+                if (
+                    !is_array(
+                        require $configFile->getPathname()
+                    )
+                ) {
+                    throw PackagerException::configMustReturnArray(
+                        $configFile->getBaseFilename()
+                    );
                 }
 
                 $this->mergeConfigFrom(
-                    path: $configFile->dirname . DIRECTORY_SEPARATOR . $configFile->basename,
-                    key: $configFile->filename
+                    path: $configFile->getPathname(),
+                    key: $configFile->getBaseFilename()
                 );
             }
         }
@@ -191,7 +195,7 @@ abstract class PackageServiceProvider extends ServiceProvider
     {
         foreach ($this->packager->routeFiles() as $routeFile) {
             $this->loadRoutesFrom(
-                path: $routeFile->dirname . DIRECTORY_SEPARATOR . $routeFile->basename
+                path: $routeFile->getPathname()
             );
         }
     }
@@ -204,7 +208,9 @@ abstract class PackageServiceProvider extends ServiceProvider
     protected function loadMigrations(): void
     {
         foreach ($this->packager->migrationFiles() as $migrationFile) {
-            $this->loadMigrationsFrom($migrationFile->dirname . DIRECTORY_SEPARATOR . $migrationFile->basename);
+            $this->loadMigrationsFrom(
+                $migrationFile->getPathname()
+            );
         }
     }
 
@@ -215,7 +221,10 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     protected function loadTranslations(): void
     {
-        $this->loadTranslationsFrom($this->packager->translationPath(), $this->packager->shortName());
+        $this->loadTranslationsFrom(
+            $this->packager->translationPath(),
+            $this->packager->shortName()
+        );
     }
 
     /**
@@ -225,17 +234,25 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     protected function loadJsonTranslations(): void
     {
-        $this->loadJsonTranslationsFrom(path: $this->packager->translationPath());
+        $this->loadJsonTranslationsFrom(
+            path: $this->packager->translationPath()
+        );
     }
 
     protected function loadViews(): void
     {
-        $this->loadViewsFrom(path: $this->packager->views(), namespace: $this->packager->shortName());
+        $this->loadViewsFrom(
+            path: $this->packager->views(),
+            namespace: $this->packager->shortName()
+        );
     }
 
     protected function loadViewComponents(): void
     {
-        collect($this->packager->viewComponents())->each(function ($component, $name) {
+        collect($this->packager->viewComponents())->each(function (
+            $component,
+            $name
+        ) {
             Blade::component(class: $name, alias: $component);
         });
     }
@@ -249,7 +266,9 @@ abstract class PackageServiceProvider extends ServiceProvider
     {
         foreach ($this->packager->configFiles() as $configFile) {
             $this->publishes(
-                paths: [$configFile->dirname . DIRECTORY_SEPARATOR . $configFile->basename => config_path($configFile->basename)],
+                paths: [
+                    $configFile->getPathname() => config_path($configFile->getBasename()),
+                ],
                 groups: "{$this->packager->shortName()}::config"
             );
         }
@@ -263,7 +282,10 @@ abstract class PackageServiceProvider extends ServiceProvider
     protected function publishMigrations(): void
     {
         $this->publishesMigrations(
-            paths: [(collect($this->packager->migrationFiles())->first())->dirname => database_path('migrations')],
+            paths: [
+                collect($this->packager->migrationFiles())->first()
+                    ->dirname => database_path('migrations'),
+            ],
             groups: $this->publishTagFormat('migrations')
         );
     }
@@ -271,7 +293,11 @@ abstract class PackageServiceProvider extends ServiceProvider
     protected function publishTranslations(): void
     {
         $this->publishes(
-            paths: [$this->packager->translationPath() => lang_path("vendor/{$this->packager->shortName()}")],
+            paths: [
+                $this->packager->translationPath() => lang_path(
+                    "vendor/{$this->packager->shortName()}"
+                ),
+            ],
             groups: $this->publishTagFormat('translations')
         );
     }
@@ -279,8 +305,12 @@ abstract class PackageServiceProvider extends ServiceProvider
     protected function publishViews(): void
     {
         $this->publishes(
-            paths: [$this->packager->views() => resource_path("views/vendor/{$this->packager->shortName()}")],
-            groups: $this->publishTagFormat("views")
+            paths: [
+                $this->packager->views() => resource_path(
+                    "views/vendor/{$this->packager->shortName()}"
+                ),
+            ],
+            groups: $this->publishTagFormat('views')
         );
     }
 
@@ -302,6 +332,62 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     public function publishTagFormat(string $groupName): string
     {
-        return $this->packager->shortName() . $this->tagSeparator() . $groupName;
+        return $this->packager->shortName() .
+            $this->tagSeparator() .
+            $groupName;
+    }
+
+    /**
+     * Register the package's publishable resources.
+     *
+     * @return void
+     */
+    protected function registerPublishing(): void
+    {
+        if ($this->app->runningInConsole()) {
+            if ($this->packager->isConfigurable) {
+                $this->publishConfig();
+            }
+
+            if ($this->packager->isMigratable) {
+                $this->publishMigrations();
+            }
+
+            if ($this->packager->isTranslatable) {
+                $this->publishTranslations();
+            }
+
+            if ($this->packager->isView) {
+                $this->publishViews();
+            }
+        }
+    }
+
+    /**
+     * Register package-specific console commands.
+     *
+     * This method checks if the application is running in the console
+     * and, if so, registers the package commands.
+     *
+     * @return void
+     */
+    public function registerPackageCommands(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands($this->packageCommands());
+        }
+    }
+
+    /**
+     * Get the list of package commands.
+     *
+     * Override this method to return an array of console commands
+     * specific to the package.
+     *
+     * @return array<string|object> List of command classes.
+     */
+    public function packageCommands(): array
+    {
+        return [];
     }
 }
