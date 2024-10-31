@@ -112,7 +112,6 @@ abstract class PackageServiceProvider extends ServiceProvider
             if ($this->packager->loadJsonTranslate) {
                 $this->loadJsonTranslations();
             }
-
         }
 
         if ($this->packager->isView) {
@@ -168,11 +167,7 @@ abstract class PackageServiceProvider extends ServiceProvider
     {
         if (!empty($this->packager->configFiles())) {
             foreach ($this->packager->configFiles() as $configFile) {
-                if (
-                    !is_array(
-                        require $configFile->getPathname()
-                    )
-                ) {
+                if (!is_array(require $configFile->getPathname())) {
                     throw PackagerException::configMustReturnArray(
                         $configFile->getBaseFilename()
                     );
@@ -194,9 +189,7 @@ abstract class PackageServiceProvider extends ServiceProvider
     protected function loadRoutes(): void
     {
         foreach ($this->packager->routeFiles() as $routeFile) {
-            $this->loadRoutesFrom(
-                path: $routeFile->getPathname()
-            );
+            $this->loadRoutesFrom(path: $routeFile->getPathname());
         }
     }
 
@@ -208,9 +201,7 @@ abstract class PackageServiceProvider extends ServiceProvider
     protected function loadMigrations(): void
     {
         foreach ($this->packager->migrationFiles() as $migrationFile) {
-            $this->loadMigrationsFrom(
-                $migrationFile->getPathname()
-            );
+            $this->loadMigrationsFrom($migrationFile->getPathname());
         }
     }
 
@@ -267,7 +258,9 @@ abstract class PackageServiceProvider extends ServiceProvider
         foreach ($this->packager->configFiles() as $configFile) {
             $this->publishes(
                 paths: [
-                    $configFile->getPathname() => config_path($configFile->getBasename()),
+                    $configFile->getPathname() => config_path(
+                        $configFile->getBasename()
+                    ),
                 ],
                 groups: "{$this->packager->shortName()}::config"
             );
@@ -283,8 +276,9 @@ abstract class PackageServiceProvider extends ServiceProvider
     {
         $this->publishesMigrations(
             paths: [
-                collect($this->packager->migrationFiles())->first()
-                    ->dirname => database_path('migrations'),
+                collect($this->packager->migrationFiles())
+                    ->first()
+                    ->getPath() => database_path('migrations'),
             ],
             groups: $this->publishTagFormat('migrations')
         );
