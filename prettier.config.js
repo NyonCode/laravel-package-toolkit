@@ -4,10 +4,8 @@ module.exports = {
     tabWidth: 4,
     useTabs: false,
     semi: true,
-    printWidth: 120,
+    printWidth: 80,
     arrowParens: 'avoid',
     endOfLine: 'lf',
-    plugins: [
-        "@prettier/plugin-php"
-    ],
+    plugins: ['@prettier/plugin-php'],
 };
