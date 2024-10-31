@@ -8,6 +8,7 @@ use Exception;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use NyonCode\LaravelPackageBuilder\Exceptions\PackagerException;
+use NyonCode\LaravelPackageBuilder\Support\SplFileInfo;
 use ReflectionClass;
 
 abstract class PackageServiceProvider extends ServiceProvider
@@ -274,11 +275,14 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     protected function publishMigrations(): void
     {
+        /** @var SplFileInfo $migrationPath */
+        $migrationPath = collect($this->packager->migrationFiles())->first();
+
         $this->publishesMigrations(
             paths: [
-                collect($this->packager->migrationFiles())
-                    ->first()
-                    ->getPath() => database_path('migrations'),
+                $migrationPath->getPath()
+
+                => database_path('migrations'),
             ],
             groups: $this->publishTagFormat('migrations')
         );
