@@ -274,7 +274,9 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     protected function publishMigrations(): void
     {
-        $this->publishesMigrations(
+
+
+        $this->publishes(
             paths: [
                 collect($this->packager->migrationFiles())
                     ->first()?->getPath()
