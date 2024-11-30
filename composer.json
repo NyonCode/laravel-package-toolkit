@@ -47,7 +47,7 @@
     }
   },
   "minimum-stability": "dev",
-  "prefer-stable": false,
+  "prefer-stable": true,
   "scripts": {
     "post-autoload-dump": [
       "@prepare"

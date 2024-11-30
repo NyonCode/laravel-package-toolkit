@@ -1,0 +1,14 @@
+<?php
+
+//namespace {{namespace }}
+
+use NyonCode\LaravelPackageBuilder\Packager;
+use NyonCode\LaravelPackageBuilder\PackageServiceProvider;
+
+class {{ class }} extends PackageServiceProvider
+{
+    public function configure(Packager $packager): void
+    {
+        // $packager->name('Your package name')
+    }
+}
