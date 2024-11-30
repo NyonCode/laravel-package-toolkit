@@ -123,6 +123,8 @@ abstract class PackageServiceProvider extends ServiceProvider
             $this->loadViewComponents();
         }
 
+        $this->bootAboutCommand();
+
         $this->bootedPackage();
     }
 
@@ -144,6 +146,16 @@ abstract class PackageServiceProvider extends ServiceProvider
     public function bootPackager(): Packager
     {
         return new Packager();
+    }
+
+    /**
+     * Get about command
+     *
+     * @return void
+     */
+    public function bootAboutCommand(): void
+    {
+        $this->packager->bootAboutCommand();
     }
 
     /**

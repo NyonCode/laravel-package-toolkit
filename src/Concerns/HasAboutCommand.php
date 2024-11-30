@@ -65,7 +65,7 @@ trait HasAboutCommand
      *
      * @return void
      */
-    protected function bootAboutCommand(): void
+    public function bootAboutCommand(): void
     {
         if (!empty($this->packager)) {
             AboutCommand::add(
