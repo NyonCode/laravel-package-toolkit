@@ -6,12 +6,16 @@ use Exception;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use NyonCode\LaravelPackageBuilder\Concerns\HasAboutCommand;
 use NyonCode\LaravelPackageBuilder\Exceptions\PackagerException;
 use NyonCode\LaravelPackageBuilder\Support\Enums\Language;
 use NyonCode\LaravelPackageBuilder\Support\SplFileInfo;
 
 class Packager
 {
+
+    use HasAboutCommand;
+
     public string $basePath;
     public string $name;
 

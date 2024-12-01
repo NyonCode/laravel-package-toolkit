@@ -26,6 +26,7 @@ developers to focus on building features rather than boilerplate code.
 - [Translations](#translations)
 - [Views](#views)
 - [View Components](#view-components)
+- [About Command](#about-command)
 - [Testing](#testing)
 - [License](#license)
 
@@ -218,6 +219,48 @@ You can then use these components in your Blade templates:
     <!-- Modal content -->
 </x-modal>
 ```
+
+## About Command
+
+Laravel Package Builder provides methods to add package information to Laravel's php artisan about command.
+
+### hasAbout()
+
+The hasAbout() method allows you to include your package's information in the Laravel About command. By default, it will
+include the package's version.
+
+```php
+  $packager->hasAbout();
+```
+
+### hasVersion()
+
+The hasVersion() method lets you manually set the version of your package:
+
+```php
+  $packager->hasVersion('1.0.0'); 
+```
+
+If no version is manually set, the package will automatically retrieve the version from your composer.json file.
+
+### Customizing About Command Data
+
+You can extend the about command information by implementing the `aboutData()` method in your service provider:
+
+```php
+  public function aboutData(): array
+  {
+      return [
+          'Repository' => 'https://github.com/your/package',
+          'Author' => 'Your Name',
+      ];
+  }
+```
+
+This method allows you to add custom key-value pairs to the About command output for your package.
+When you run `php artisan about`, your package's information will be displayed in a dedicated section.
+
+This implementation allows for flexible and easy inclusion of package metadata in Laravel's system information command.
 
 ## Testing
 
