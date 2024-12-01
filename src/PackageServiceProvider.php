@@ -123,7 +123,9 @@ abstract class PackageServiceProvider extends ServiceProvider
             $this->loadViewComponents();
         }
 
-        $this->bootAboutCommand();
+        if ($this->packager->isAboutable()) {
+            $this->bootAboutCommand();
+        }
 
         $this->bootedPackage();
     }

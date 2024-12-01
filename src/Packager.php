@@ -579,9 +579,4 @@ class Packager
 
         return true;
     }
-
-    public function isVersion(): string
-    {
-        return '';
-    }
 }
