@@ -20,6 +20,7 @@
   "require": {
     "php": "^8.1",
     "ext-readline": "*",
+    "composer/composer": "^2.8",
     "illuminate/contracts": "^9.28|^10.0|^11.0",
     "illuminate/support": "^9.28|^10.0|^11.0"
   },
@@ -46,7 +47,7 @@
       "pestphp/pest-plugin": true
     }
   },
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "prefer-stable": true,
   "scripts": {
     "post-autoload-dump": [
