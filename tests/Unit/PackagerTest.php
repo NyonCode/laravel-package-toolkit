@@ -27,10 +27,9 @@ test(
         ->toBe('test-package')
 );
 
-test(description: 'can get custom short name',
-    closure: fn() => expect($this->packager->hasShortName('tp-pg')
-        ->shortName()
-    )
+test(
+    description: 'can get custom short name',
+    closure: fn() => expect($this->packager->hasShortName('tp-pg')->shortName())
         ->not->toBeEmpty()
         ->toBe('tp-pg')
 );
@@ -52,13 +51,33 @@ test(
         ->toThrow(PackagerException::class)
         ->and(
             fn() => $this->packager->validateComponents([
-                'component1' => 'not an object'
+                'component1' => 'not an object',
             ])
-        )->toThrow(PackagerException::class)
+        )
+        ->toThrow(PackagerException::class)
         ->and(
             fn() => $this->packager->validateComponents([
                 'component1' => new stdClass(),
                 1 => new stdClass(),
             ])
-        )->toThrow(PackagerException::class)
+        )
+        ->toThrow(PackagerException::class)
+);
+
+test(
+    description: 'can set AboutCommand ',
+    closure: fn() => expect($this->packager->hasAbout()->isAboutable())
+        ->toBeTrue()
+        ->and(
+            fn() => expect(
+                $this->packager->hasAbout(false)->isAboutable()
+            )->toBeFalse()
+        )
+);
+
+test(
+    description: 'can set AboutCommand version',
+    closure: fn() => expect(
+        $this->packager->hasVersion('1.0.1')->getVersion()
+    )->not->toBeEmpty()->toBe('1.0.1')
 );
