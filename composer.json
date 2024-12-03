@@ -1,14 +1,14 @@
 {
-  "name": "nyoncode/laravel-package-builder",
+  "name": "nyoncode/laravel-package-toolkit",
   "description": "Tools for easy creating Laravel packages",
   "keywords": [
     "laravel",
     "package",
-    "builder",
+    "toolkit",
     "nyoncode",
     "laravel-package-tool"
   ],
-  "homepage": "https://github.com/NyonCode/laravel-package-builder",
+  "homepage": "https://github.com/NyonCode/laravel-package-toolkit",
   "license": "MIT",
   "authors": [
     {
@@ -33,12 +33,12 @@
   },
   "autoload": {
     "psr-4": {
-      "NyonCode\\LaravelPackageBuilder\\": "src"
+      "NyonCode\\LaravelPackageToolkit\\": "src"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "NyonCode\\LaravelPackageBuilder\\Tests\\": "tests"
+      "NyonCode\\LaravelPackageToolkit\\Tests\\": "tests"
     }
   },
   "config": {

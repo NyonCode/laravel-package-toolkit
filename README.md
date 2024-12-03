@@ -1,6 +1,6 @@
-# 📦 Laravel package builder
+# 📦 Laravel package toolkit
 
-Laravel Package Builder is a powerful tool designed to streamline the process of creating and managing packages for
+Laravel Package toolkit is a powerful tool designed to streamline the process of creating and managing packages for
 Laravel. It provides a set of intuitive abstractions and helper methods for common package development tasks, enabling
 developers to focus on building features rather than boilerplate code.
 
@@ -35,7 +35,7 @@ developers to focus on building features rather than boilerplate code.
 You can install the package via composer:
 
 ```bash
-composer require nyoncode/laravel-package-builder
+composer require nyoncode/laravel-package-toolkit
 ```
 
 ## Usage
@@ -43,11 +43,11 @@ composer require nyoncode/laravel-package-builder
 ### Basic Configuration
 
 To use Laravel Package Builder, create a ServiceProvider for your package that extends
-`NyonCode\LaravelPackageBuilder\PackageServiceProvider`:
+`NyonCode\LaravelPackageToolkit\PackageServiceProvider`:
 
 ```php
-use NyonCode\LaravelPackageBuilder\PackageServiceProvider;
-use NyonCode\LaravelPackageBuilder\Packager;
+use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
+use NyonCode\LaravelPackageToolkit\Packager;
 
 class MyAwesomePackageServiceProvider extends PackageServiceProvider
 {
@@ -69,8 +69,8 @@ class MyAwesomePackageServiceProvider extends PackageServiceProvider
 For more control over your package configuration, you can use additional methods and specify custom paths:
 
 ```php
-use NyonCode\LaravelPackageBuilder\PackageServiceProvider;
-use NyonCode\LaravelPackageBuilder\Packager;
+use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
+use NyonCode\LaravelPackageToolkit\Packager;
 
 class AdvancedPackageServiceProvider extends PackageServiceProvider
 {

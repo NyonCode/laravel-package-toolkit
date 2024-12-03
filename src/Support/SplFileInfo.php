@@ -1,6 +1,6 @@
 <?php
 
-namespace NyonCode\LaravelPackageBuilder\Support;
+namespace NyonCode\LaravelPackageToolkit\Support;
 
 class SplFileInfo extends \SplFileInfo
 {

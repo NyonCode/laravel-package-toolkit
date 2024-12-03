@@ -1,10 +1,10 @@
 <?php
 
-namespace NyonCode\LaravelPackageBuilder\Tests\TestPackageData\src;
+namespace NyonCode\LaravelPackageToolkit\Tests\TestPackageData\src;
 
 use Closure;
-use NyonCode\LaravelPackageBuilder\Packager;
-use NyonCode\LaravelPackageBuilder\PackageServiceProvider;
+use NyonCode\LaravelPackageToolkit\Packager;
+use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
 
 class TestServiceProvider extends PackageServiceProvider
 {

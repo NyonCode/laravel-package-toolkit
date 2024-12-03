@@ -1,6 +1,6 @@
 <?php
 
-namespace NyonCode\LaravelPackageBuilder\Concerns;
+namespace NyonCode\LaravelPackageToolkit\Concerns;
 
 use Closure;
 use Composer\InstalledVersions;

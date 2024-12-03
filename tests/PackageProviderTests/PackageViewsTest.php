@@ -1,9 +1,9 @@
 <?php
 
-namespace NyonCode\LaravelPackageBuilder\Tests\PackageProviderTests;
+namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
-use NyonCode\LaravelPackageBuilder\Exceptions\PackagerException;
-use NyonCode\LaravelPackageBuilder\Packager;
+use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
+use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageViewsTest
 {

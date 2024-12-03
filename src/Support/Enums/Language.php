@@ -1,6 +1,6 @@
 <?php
 
-namespace NyonCode\LaravelPackageBuilder\Support\Enums;
+namespace NyonCode\LaravelPackageToolkit\Support\Enums;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
