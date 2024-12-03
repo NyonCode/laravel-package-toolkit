@@ -1,11 +1,11 @@
 <?php
 
-namespace NyonCode\LaravelPackageBuilder\Tests\PackageProviderTests;
+namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
 use Illuminate\Support\Facades\File;
-use NyonCode\LaravelPackageBuilder\Packager;
-use NyonCode\LaravelPackageBuilder\Tests\TestCase;
-use NyonCode\LaravelPackageBuilder\Tests\TestPackageData\src\TestServiceProvider;
+use NyonCode\LaravelPackageToolkit\Packager;
+use NyonCode\LaravelPackageToolkit\Tests\TestCase;
+use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\src\TestServiceProvider;
 
 abstract class PackageServiceProviderTestCase extends TestCase
 {

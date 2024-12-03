@@ -1,9 +1,9 @@
 <?php
 
-namespace NyonCode\LaravelPackageBuilder\Tests\PackageProviderTests;
+namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
 use Exception;
-use NyonCode\LaravelPackageBuilder\Packager;
+use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageRouteWithRelativeFilePathsTest
 {

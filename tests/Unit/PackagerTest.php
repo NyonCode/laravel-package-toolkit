@@ -1,9 +1,9 @@
 <?php
 
-namespace NyonCode\LaravelPackageBuilder\Tests;
+namespace NyonCode\LaravelPackageToolkit\Tests;
 
-use NyonCode\LaravelPackageBuilder\Exceptions\PackagerException;
-use NyonCode\LaravelPackageBuilder\Packager;
+use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
+use NyonCode\LaravelPackageToolkit\Packager;
 use stdClass;
 
 beforeEach(function () {

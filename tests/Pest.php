@@ -11,7 +11,7 @@
 |
 */
 
-use NyonCode\LaravelPackageBuilder\Tests\PackageProviderTests\PackageServiceProviderTestCase;
+use NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests\PackageServiceProviderTestCase;
 
 uses(PackageServiceProviderTestCase::class)->in('PackageProviderTests');
 

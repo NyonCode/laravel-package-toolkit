@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace NyonCode\LaravelPackageBuilder;
+namespace NyonCode\LaravelPackageToolkit;
 
 use Exception;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
-use NyonCode\LaravelPackageBuilder\Exceptions\PackagerException;
-use NyonCode\LaravelPackageBuilder\Support\SplFileInfo;
+use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
+use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use ReflectionClass;
 
 abstract class PackageServiceProvider extends ServiceProvider

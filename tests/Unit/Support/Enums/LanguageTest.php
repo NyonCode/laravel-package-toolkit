@@ -1,8 +1,8 @@
 <?php
 
-namespace NyonCode\LaravelPackageBuilder\Tests\Support\Enums;
+namespace NyonCode\LaravelPackageToolkit\Tests\Support\Enums;
 
-use NyonCode\LaravelPackageBuilder\Support\Enums\Language;
+use NyonCode\LaravelPackageToolkit\Support\Enums\Language;
 
 test('can get language names', function () {
     $names = Language::names();

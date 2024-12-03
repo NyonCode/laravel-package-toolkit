@@ -1,15 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace NyonCode\LaravelPackageBuilder;
+namespace NyonCode\LaravelPackageToolkit;
 
 use Exception;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use NyonCode\LaravelPackageBuilder\Concerns\HasAboutCommand;
-use NyonCode\LaravelPackageBuilder\Exceptions\PackagerException;
-use NyonCode\LaravelPackageBuilder\Support\Enums\Language;
-use NyonCode\LaravelPackageBuilder\Support\SplFileInfo;
+use NyonCode\LaravelPackageToolkit\Concerns\HasAboutCommand;
+use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
+use NyonCode\LaravelPackageToolkit\Support\Enums\Language;
+use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 
 class Packager
 {

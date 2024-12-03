@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace NyonCode\LaravelPackageBuilder\Exceptions;
+namespace NyonCode\LaravelPackageToolkit\Exceptions;
 
 use Exception;
 use Illuminate\Support\Str;

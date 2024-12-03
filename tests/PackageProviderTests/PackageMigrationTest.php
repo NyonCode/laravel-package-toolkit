@@ -1,8 +1,8 @@
 <?php
 
-namespace NyonCode\LaravelPackageBuilder\Tests\PackageProviderTests;
+namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
-use NyonCode\LaravelPackageBuilder\Packager;
+use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageMigrationTest
 {
