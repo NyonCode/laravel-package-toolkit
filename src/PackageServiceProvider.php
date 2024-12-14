@@ -102,7 +102,7 @@ abstract class PackageServiceProvider extends ServiceProvider
         $this->registerPublishing();
 
         AboutCommand::add('Laravel Package Toolkit', [
-            'Version' => InstalledVersions::getPrettyVersion('laravel-package-toolkit'),
+            'Version' => fn() => InstalledVersions::getPrettyVersion('laravel-package-toolkit'),
         ]);
 
 
