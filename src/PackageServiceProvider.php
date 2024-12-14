@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace NyonCode\LaravelPackageToolkit;
 
+use Composer\InstalledVersions;
 use Exception;
+use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
@@ -98,6 +100,11 @@ abstract class PackageServiceProvider extends ServiceProvider
 
         $this->registerPackageCommands();
         $this->registerPublishing();
+
+        AboutCommand::add('Laravel Package Toolkit', [
+            'Version' => InstalledVersions::getPrettyVersion('laravel-package-toolkit'),
+        ]);
+
 
         if ($this->packager->isRoutable) {
             $this->loadRoutes();
