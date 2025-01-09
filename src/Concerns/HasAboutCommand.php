@@ -17,13 +17,14 @@ trait HasAboutCommand
     public string $version = '';
     private bool $isAboutable = false;
 
-
     /**
      * Retrieves a specific value from the composer.json file by key name.
      *
      * @param string $keyName The key to retrieve from composer.json.
-     * @return string The value associated with the given key, or an empty string if not found.
-     * @throws ParsingException
+     *
+     * @throws ParsingException If the composer.json file cannot be parsed.
+     *
+     * @return string
      */
     private function getComposerValue(string $keyName): string
     {
@@ -38,16 +39,19 @@ trait HasAboutCommand
     /**
      * Retrieves the version of the package.
      *
-     * @return string The version of the package.
-     * @throws ParsingException
+     * @throws ParsingException If the composer.json file cannot be parsed.
+     *
+     * @return string
      */
     public function getVersion(): string
     {
-        return empty($this->version)
-            ? InstalledVersions::getPrettyVersion(
-                $this->getComposerValue('name')
-            )
-            : $this->version;
+        if (!empty($this->version)) {
+            return $this->version;
+        }
+
+        return InstalledVersions::getPrettyVersion(
+            $this->getComposerValue('name')
+        );
     }
 
     /**
@@ -75,6 +79,8 @@ trait HasAboutCommand
     /**
      * Merges version data and additional information for AboutCommand.
      *
+     * @throws ParsingException
+     *
      * @return array<string|Closure>
      */
     private function data(): array
@@ -89,6 +95,8 @@ trait HasAboutCommand
     /**
      * Adds data to the AboutCommand.
      *
+     * @throws ParsingException
+     *
      * @return void
      */
     public function bootAboutCommand(): void
@@ -102,6 +110,7 @@ trait HasAboutCommand
      * Sets whether the package should include information in the AboutCommand.
      *
      * @param bool $value Whether the package should be "aboutable."
+     *
      * @return static
      */
     public function hasAbout(bool $value = true): static
@@ -114,6 +123,7 @@ trait HasAboutCommand
      * Sets the version of the package.
      *
      * @param string $version The version of the package.
+     *
      * @return static
      */
     public function hasVersion(string $version): static
