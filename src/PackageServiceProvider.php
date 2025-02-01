@@ -9,11 +9,13 @@ use Exception;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use NyonCode\LaravelPackageToolkit\Contracts\ProvidesPackageServices;
 use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
 use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use ReflectionClass;
+use Seld\JsonLint\ParsingException;
 
-abstract class PackageServiceProvider extends ServiceProvider
+abstract class PackageServiceProvider extends ServiceProvider implements ProvidesPackageServices
 {
     /**
      * The separator used for tagging resources.
@@ -21,6 +23,13 @@ abstract class PackageServiceProvider extends ServiceProvider
      * @var string
      */
     public string $tagSeparator = '::';
+
+    /**
+     * Whether the about command has been registered.
+     *
+     * @var bool
+     */
+    private static bool $isPackageAboutRegistered = false;
 
     /**
      * Instance of the Packager class.
@@ -44,7 +53,7 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     public function registeringPackage(): void
     {
-        // Define any actions to be performed before registering the package.
+        // #Define any actions to be performed before registering the package.
     }
 
     /**
@@ -76,7 +85,7 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     public function registeredPackage(): void
     {
-        // Define any actions to be performed after registering the package.
+        // #Define any actions to be performed after registering the package.
     }
 
     /**
@@ -86,7 +95,7 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     public function bootingPackage(): void
     {
-        // Define any actions to be performed before booting the package.
+        // #Define any actions to be performed before booting the package.
     }
 
     /**
@@ -98,19 +107,30 @@ abstract class PackageServiceProvider extends ServiceProvider
     {
         $this->bootingPackage();
 
-        $this->registerPackageCommands();
         $this->registerPublishing();
 
-        AboutCommand::add('Laravel Package Toolkit', [
-            'Version' => fn() => InstalledVersions::getPrettyVersion('laravel-package-toolkit'),
-        ]);
+        if ($this->app->runningInConsole() and $this->packager->isCommandable) {
+            $this->commands($this->packager->commands);
+        }
 
+        if (!self::$isPackageAboutRegistered) {
+            AboutCommand::add(
+                section: 'Laravel Package Toolkit',
+                data: [
+                    'Version' => fn() => InstalledVersions::getPrettyVersion(
+                        'nyoncode/laravel-package-toolkit'
+                    ),
+                ]
+            );
+
+            self::$isPackageAboutRegistered = true;
+        }
 
         if ($this->packager->isRoutable) {
             $this->loadRoutes();
         }
 
-        if ($this->packager->isMigratable) {
+        if ($this->packager->isMigratable and $this->packager->hasMigrationsOnRun) {
             $this->loadMigrations();
         }
 
@@ -144,7 +164,7 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     public function bootedPackage(): void
     {
-        // Define any actions to be performed after booting the package.
+        // #Define any actions to be performed after booting the package.
     }
 
     /**
@@ -161,6 +181,7 @@ abstract class PackageServiceProvider extends ServiceProvider
      * Get about command
      *
      * @return void
+     * @throws ParsingException
      */
     public function bootAboutCommand(): void
     {
@@ -301,8 +322,7 @@ abstract class PackageServiceProvider extends ServiceProvider
 
         $this->publishes(
             paths: [
-                $migrationPath?->getPath()
-                => database_path('migrations'),
+                $migrationPath?->getPath() => database_path('migrations'),
             ],
             groups: $this->publishTagFormat('migrations')
         );

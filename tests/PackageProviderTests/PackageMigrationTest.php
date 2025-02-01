@@ -2,7 +2,9 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
+use File;
 use NyonCode\LaravelPackageToolkit\Packager;
+use function Orchestra\Testbench\default_migration_path;
 
 trait PackageMigrationTest
 {
@@ -14,7 +16,24 @@ trait PackageMigrationTest
 
 uses(PackageMigrationTest::class);
 
-test('Package test', function () {
-    $this->artisan('vendor:publish --tag=package-test::migrations')
-        ->assertExitCode(0);
-});
+test(
+    'Package test migrations are published',
+    function () {
+
+        $filesExist = false;
+
+        $this->artisan('vendor:publish', ['--tag' => 'package-test::migrations'])
+            ->assertExitCode(0);
+
+        $packageMigrationFiles = File::allFiles(__DIR__ . '/../TestPackageData/database/migrations');
+
+        foreach ($packageMigrationFiles as $file) {
+            if(file_exists(database_path('migrations/' . $file->getFilename()))) {
+                $filesExist = true;
+            }
+        }
+
+        expect($filesExist)->toBeTrue();
+    }
+);
+

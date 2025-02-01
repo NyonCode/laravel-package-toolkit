@@ -176,6 +176,31 @@ This loads migrations from the `database/migrations` directory. For a custom dir
 $packager->hasMigrations('custom-migrations');
 ```
 
+Or for specific file paths:
+
+```php
+$packager->hasMigrations([
+    '../www/database/migrations/2023_01_01_000000_create_users_table.php',
+    '../api/database/migrations/2023_01_01_000001_create_roles_table.php'
+])
+```
+
+To use an alternative directory for migration files.
+
+```php
+$package->hasMigrations(['2023_01_01_000000_create_users_table.php'], 'userMigrations')
+```
+
+For more information about migrations, see [Laravel migrations](https://laravel.com/docs/9.x/migrations).
+
+
+### Use migration without publishing
+
+You can also enable the registration of migrations without having to publish them:
+```php
+$packager->canLoadMigrations();
+```
+
 ## Translations
 
 To enable translations:

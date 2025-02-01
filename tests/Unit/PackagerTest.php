@@ -4,6 +4,7 @@ namespace NyonCode\LaravelPackageToolkit\Tests;
 
 use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
 use NyonCode\LaravelPackageToolkit\Packager;
+use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\TestCommand;
 use stdClass;
 
 beforeEach(function () {
@@ -80,4 +81,19 @@ test(
     closure: fn() => expect(
         $this->packager->hasVersion('1.0.1')->getVersion()
     )->not->toBeEmpty()->toBe('1.0.1')
+);
+
+test(
+    description: 'can set migrations on run',
+    closure: fn() => expect(
+        $this->packager->canLoadMigrations()->hasMigrationsOnRun
+    )->toBeTrue()
+);
+
+test(
+    description: 'can set command',
+    closure: fn() => expect(
+        $this->packager->hasCommands(TestCommand::class)->isCommandable
+    )->toBeTrue()
+
 );
