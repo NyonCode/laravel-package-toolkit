@@ -4,8 +4,9 @@ namespace NyonCode\LaravelPackageToolkit\Concerns;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
+use NyonCode\LaravelPackageToolkit\Exceptions\InvalidLanguageDirectoryException;
 use NyonCode\LaravelPackageToolkit\Support\Enums\Language;
+use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 
 trait HasTranslate
 {
@@ -46,18 +47,22 @@ trait HasTranslate
      * Set or validate translation files.
      *
      * @param string $translationPath The path to the translation files
+     *
+     * @throws InvalidLanguageDirectoryException
+     *
      * @return static
-     * @throws PackagerException If the translation folder does not exist or is invalid
      */
     public function hasTranslations(string $translationPath = '../lang'): static
     {
         $path = $this->path($translationPath);
         if (!File::isDirectory($path)) {
-            throw PackagerException::directoryNotFound($path);
+            throw new DirectoryNotFoundException(
+                "Directory [$path] does not exist"
+            );
         }
 
         if (File::isEmptyDirectory($path)) {
-            throw PackagerException::directoryIsEmpty($path);
+            return $this;
         }
 
         foreach (File::allFiles($path) as $file) {
@@ -68,8 +73,8 @@ trait HasTranslate
 
         foreach (File::directories($path) as $directory) {
             if (!Language::codes()->search(Str::afterLast($directory, '/'))) {
-                throw PackagerException::invalidNameLanguageDirectory(
-                    $directory
+                throw new InvalidLanguageDirectoryException(
+                    "Invalid language directory [$directory]. Directory name must be one of the supported languages."
                 );
             }
         }

@@ -4,7 +4,9 @@ namespace NyonCode\LaravelPackageToolkit\Concerns;
 
 
 use Illuminate\Support\Facades\File;
-use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
+use NyonCode\LaravelPackageToolkit\Exceptions\InvalidComponentClass;
+use NyonCode\LaravelPackageToolkit\Exceptions\InvalidComponentName;
+use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 
 trait HasViews
 {
@@ -41,9 +43,9 @@ trait HasViews
     /**
      * Get the path to the views directory.
      *
-     * @return string The path to the views directory.
+     * @return string|null The path to the views directory.
      */
-    public function views(): string
+    public function views(): string|null
     {
         return $this->viewsPath;
     }
@@ -52,8 +54,12 @@ trait HasViews
      * Set or variable views folder
      *
      * @param string|null $viewsPath The path to the views files
-     * @param string $directory The directory name where the views files are located
-     * @throws PackagerException
+     * @param string      $directory The directory name where the views files are located
+     *
+     *
+     * @throw DirectoryNotFoundException
+     *
+     * @return static
      */
     public function hasViews(
         string|null $viewsPath = null,
@@ -63,7 +69,7 @@ trait HasViews
             if (File::isDirectory($this->path($viewsPath))) {
                 $this->viewsPath = $this->path($viewsPath);
             } else {
-                throw PackagerException::directoryNotFound($this->viewsPath);
+                throw new DirectoryNotFoundException("Directory [$viewsPath] does not exist");
             }
         } else {
             $this->viewsPath = $this->path($directory);
@@ -88,10 +94,13 @@ trait HasViews
      *
      * Validates and registers the given view components.
      *
-     * @param array<string, object> $components Array of view components with names as keys and component objects as
-     *     values.
+     * @param array<string> $components Array of view components with names as keys and component objects as
+     *                                          values.
+     *
+     * @throws InvalidComponentClass
+     * @throws InvalidComponentName
+     *
      * @return static
-     * @throws PackagerException If validation fails for any component.
      */
     public function hasComponents(array $components): static
     {
@@ -115,25 +124,27 @@ trait HasViews
      * If any component fails these validations, a `PackagerException` is thrown with a
      * detailed error message.
      *
-     * @param array $components Associative array of components where the key is the component
-     *     name and the value is the component class object.
+     * @param array<string|object> $components Associative array of components where the key is the component
+     *                          name and the value is the component class object.
      *
+
+     * @throws InvalidComponentName
+     * @throws InvalidComponentClass
      * @return bool Returns true if all components pass validation.
      *
-     * @throws PackagerException If a component name is not a string or if the component value is not an object.
      */
     public function validateComponents(array $components): bool
     {
+        // #TODO Verify component is object
+
         foreach ($components as $name => $component) {
             if (!is_string($name)) {
-                throw PackagerException::invalidComponentName($name);
+                throw new InvalidComponentName("Invalid name [$name]. The name must be a string.");
             }
 
             if (!is_object($component)) {
-                throw PackagerException::invalidComponentClass(
-                    $name,
-                    $component
-                );
+                throw new InvalidComponentClass("Invalid name [$name]. The name must be a string.");
+
             }
         }
 

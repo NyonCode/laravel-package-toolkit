@@ -2,7 +2,8 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests;
 
-use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
+use NyonCode\LaravelPackageToolkit\Exceptions\InvalidComponentClass;
+use NyonCode\LaravelPackageToolkit\Exceptions\InvalidComponentName;
 use NyonCode\LaravelPackageToolkit\Packager;
 use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\TestCommand;
 use stdClass;
@@ -49,20 +50,20 @@ test(
                 123 => new stdClass(),
             ])
         )
-        ->toThrow(PackagerException::class)
+        ->toThrow(InvalidComponentName::class)
         ->and(
             fn() => $this->packager->validateComponents([
                 'component1' => 'not an object',
             ])
         )
-        ->toThrow(PackagerException::class)
+        ->toThrow(InvalidComponentClass::class)
         ->and(
             fn() => $this->packager->validateComponents([
                 'component1' => new stdClass(),
                 1 => new stdClass(),
             ])
         )
-        ->toThrow(PackagerException::class)
+        ->toThrow(InvalidComponentName::class)
 );
 
 test(

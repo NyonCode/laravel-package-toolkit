@@ -2,7 +2,6 @@
 
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
-use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
 use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use Exception;
 
@@ -35,41 +34,48 @@ trait HasMigrations
      *
      * @param array<string>|null $migrationFiles The migration files to validate
      * @param string $directory The directory name where the migration files are located
-     * @return static
-     * @throws PackagerException If the migration file does not exist
+     *
      * @throws Exception If any other error occurs
+     *
+     * @return static
      */
     public function hasMigrations(
         array|null $migrationFiles = null,
         string $directory = 'database/migrations'
     ): static {
 
-        /** @var array<string|SplFileInfo> $migrationFilesInfo */
-        $migrationFilesInfo = [];
+//        /** @var array<string|SplFileInfo> $migrationFilesInfo */
+//        $migrationFilesInfo = [];
+//
+//        if (!empty($migrationFiles)) {
+//            if (!is_array($migrationFiles)) {
+//                $migrationFiles = [$migrationFiles];
+//            }
+//
+//            foreach ($migrationFiles as $migrationFile) {
+//                if (!file_exists($migrationFile)) {
+//                    throw PackagerException::fileNotExist(
+//                        file: $migrationFile,
+//                        type: 'migration'
+//                    );
+//                }
+//
+//                $migrationFilesInfo[] = $this->getFileInfo(
+//                    $this->path($migrationFile)
+//                );
+//            }
+//
+//            /** @var array<string|SplFileInfo> $migrationFilesInfo */
+//            $this->migrationFiles = $migrationFilesInfo;
+//        } else {
+//            $this->migrationFiles = $this->autoloadFiles($directory);
+//        }
 
-        if (!empty($migrationFiles)) {
-            if (!is_array($migrationFiles)) {
-                $migrationFiles = [$migrationFiles];
-            }
-
-            foreach ($migrationFiles as $migrationFile) {
-                if (!file_exists($migrationFile)) {
-                    throw PackagerException::fileNotExist(
-                        file: $migrationFile,
-                        type: 'migration'
-                    );
-                }
-
-                $migrationFilesInfo[] = $this->getFileInfo(
-                    $this->path($migrationFile)
-                );
-            }
-
-            /** @var array<string|SplFileInfo> $migrationFilesInfo */
-            $this->migrationFiles = $migrationFilesInfo;
-        } else {
-            $this->migrationFiles = $this->autoloadFiles($directory);
-        }
+        $this->migrationFiles = $this->resolveFiles(
+            files: $migrationFiles,
+            directory: $directory,
+            type: 'migration'
+        );
 
         $this->isMigratable = true;
 

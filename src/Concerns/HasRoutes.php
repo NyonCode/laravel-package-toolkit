@@ -2,7 +2,6 @@
 
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
-use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
 use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use Exception;
 
@@ -42,35 +41,20 @@ trait HasRoutes
      * @return static
      * @throws Exception If the directory does not exist
      */
-    public function hasRoutes(array|string|null $routeFiles = null, string $directory = 'routes'): static {
+    public function hasRoutes(
+        array|string|null $routeFiles = null,
+        string $directory = 'routes'
+    ): static {
+        $this->routeFiles = $this->resolveFiles(
+            files: $routeFiles,
+            directory: $directory,
+            type: 'route'
+        );
 
-        /** @var array<string|SplFileInfo> $routeFilesInfo */
-        $routeFilesInfo = [];
-
-        if (!empty($routeFiles)) {
-            if (!is_array($routeFiles)) {
-                $routeFiles = [$routeFiles];
-            }
-
-            foreach ($routeFiles as $routeFile) {
-                $filePath = $this->resolveFilePath($routeFile, $directory);
-
-                if (empty($filePath) && !is_file($filePath)) {
-                    throw PackagerException::fileNotExist($routeFile, 'route');
-                }
-
-                $routeFilesInfo[] = $this->getFileInfo($filePath);
-            }
-
-            /** @var array<string|SplFileInfo> $routeFilesInfo */
-            $this->routeFiles = $routeFilesInfo;
-        } else {
-            $this->routeFiles = $this->autoloadFiles($directory);
+        if( !empty( $this->routeFiles )) {
+            $this->isRoutable = true;
         }
-
-        $this->isRoutable = true;
 
         return $this;
     }
-
 }

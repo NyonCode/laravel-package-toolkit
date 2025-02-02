@@ -10,7 +10,8 @@ use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use NyonCode\LaravelPackageToolkit\Contracts\ProvidesPackageServices;
-use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
+use NyonCode\LaravelPackageToolkit\Exceptions\InvalidReturnTypeException;
+use NyonCode\LaravelPackageToolkit\Exceptions\MissingNameException;
 use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use ReflectionClass;
 use Seld\JsonLint\ParsingException;
@@ -56,11 +57,18 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         // #Define any actions to be performed before registering the package.
     }
 
+
     /**
-     * Register the service provider.
+     * Register the package services.
+     *
+     * This method initializes the package by booting the packager, setting the base path,
+     * and configuring it. It ensures that the package has a valid name and registers the
+     * configuration files. It also calls custom actions before and after registering the
+     * package.
+     *
+     * @throws MissingNameException if the package does not have a name.
      *
      * @return void
-     * @throws Exception
      */
     public function register(): void
     {
@@ -71,7 +79,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         $this->configure($this->packager);
 
         if (empty($this->packager->name)) {
-            throw PackagerException::missingName();
+            throw new MissingNameException('This package does not have a name. You can set one with `$package->name("")');
         }
 
         $this->registerConfig();
@@ -211,8 +219,8 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         if (!empty($this->packager->configFiles())) {
             foreach ($this->packager->configFiles() as $configFile) {
                 if (!is_array(require $configFile->getPathname())) {
-                    throw PackagerException::configMustReturnArray(
-                        $configFile->getBaseFilename()
+                    throw new InvalidReturnTypeException(
+                        "Configuration file [$configFile->getBaseFilename()] must return an array."
                     );
                 }
 
@@ -322,7 +330,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
 
         $this->publishes(
             paths: [
-                $migrationPath?->getPath() => database_path('migrations'),
+                $migrationPath->getPath() => database_path('migrations'),
             ],
             groups: $this->publishTagFormat('migrations')
         );

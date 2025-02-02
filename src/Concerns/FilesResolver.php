@@ -5,7 +5,6 @@ namespace NyonCode\LaravelPackageToolkit\Concerns;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
 use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use Exception;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
@@ -13,7 +12,6 @@ use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 trait FilesResolver
 {
     public string $basePath;
-
 
     /**
      * Get the base path of the package.
@@ -29,6 +27,7 @@ trait FilesResolver
      * Set the base path of the package.
      *
      * @param string $basePath The base path to set
+     *
      * @return string
      */
     public function hasBasePath(string $basePath): string
@@ -44,6 +43,7 @@ trait FilesResolver
      * Get the full path of a given directory or file.
      *
      * @param string $path The relative path
+     *
      * @return string
      */
     public function path(string $path): string
@@ -57,6 +57,7 @@ trait FilesResolver
      * Get files from a given path.
      *
      * @param string $path The path to search for files
+     *
      * @return SplFileInfo[]|string[]
      */
     private function getFiles(string $path): array
@@ -78,6 +79,7 @@ trait FilesResolver
      * Get file information as SplFileInfo object.
      *
      * @param string $filePath The path to the file
+     *
      * @return SplFileInfo
      */
     private function getFileInfo(string $filePath): SplFileInfo
@@ -89,8 +91,10 @@ trait FilesResolver
      * Validate if the given folder exists.
      *
      * @param string $path The path of the folder to validate
-     * @return void
+     *
      * @throws Exception If the folder does not exist
+     *
+     * @return void
      */
     private function validFolder(string $path): void
     {
@@ -107,8 +111,10 @@ trait FilesResolver
      * Autoload files from the specified path.
      *
      * @param string $path The path to autoload files from
-     * @return SplFileInfo[]|String[]
+     *
      * @throws Exception If the folder does not exist
+     *
+     * @return SplFileInfo[]|String[]
      */
     private function autoloadFiles(string $path): array
     {
@@ -135,11 +141,12 @@ trait FilesResolver
 
         $directPath = $this->path(
             '..' .
-            DIRECTORY_SEPARATOR .
-            $directory .
-            DIRECTORY_SEPARATOR .
-            $file
+                DIRECTORY_SEPARATOR .
+                $directory .
+                DIRECTORY_SEPARATOR .
+                $file
         );
+
         if (is_file($directPath)) {
             return $directPath;
         }
@@ -147,38 +154,44 @@ trait FilesResolver
         return '';
     }
 
-
     /**
      * Resolve files from the specified directory.
      *
-     * @param string|array|null $files The files to resolve. If null, autoloads all files from the specified directory.
-     * @param string $directory The directory where the files are located
-     * @param string $type The type of files to resolve (e.g. "route", "config", etc.)
+     * @param string|array<string>|null $files     The files to resolve. If null, autoloads all files from the specified directory.
+     * @param string            $directory The directory where the files are located
+     * @param string            $type      The type of files to resolve (e.g. "route", "config", etc.)
+     *
      * @throws FileNotFoundException If any file does not exist*@throws Exception
      * @throws Exception
+     *
      * @return string[]|SplFileInfo[] The resolved files
      */
-    public function resolveFiles(string|array|null $files, string $directory, string $type = ''): array
-    {
+    public function resolveFiles(
+        string|array|null $files, string $directory = '', string $type = ''
+    ): array {
+        /** @var string[]|SplFileInfo[] $filesInfo */
+        $filesInfo = [];
+
         if (!empty($files)) {
             if (!is_array($files)) {
                 $files = [$files];
             }
 
             foreach ($files as $file) {
-                if (!file_exists($file)) {
+                $filePath = $this->resolveFilePath($file, $directory);
+
+                if ( empty($filePath) && !is_file($filePath) ) {
                     throw new FileNotFoundException(
-                        $type ? Str::title($type) . " file [$file] does not exist." : "File [$file] does not exist."
+                        $type
+                            ? Str::title($type) .
+                                " file [$file] does not exist."
+                            : "File [$file] does not exist."
                     );
                 }
 
-
-                $filesInfo[] = $this->getFileInfo(
-                    $this->path($file)
-                );
+                $filesInfo[] = $this->getFileInfo($filePath);
             }
 
-            /** @var string[]|SplFileInfo[] $filesInfo */
             return $filesInfo;
         }
 

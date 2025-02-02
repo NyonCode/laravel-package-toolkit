@@ -27,6 +27,7 @@ trait HasCommands
      * the `Illuminate\Console\Command` interface.
      *
      * @param string|array<string> $commandsClass The commands to register.
+     *
      * @return static
      */
     public function hasCommands(string|array $commandsClass): static
@@ -44,6 +45,13 @@ trait HasCommands
         return $this;
     }
 
+    /**
+     * Registers a single package command.
+     *
+     * @param string $commandClass The command to register.
+     *
+     * @return static
+     */
     public function hasCommand(string $commandClass): static
     {
         return $this->hasCommands($commandClass);
