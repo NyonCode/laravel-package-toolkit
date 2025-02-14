@@ -6,5 +6,7 @@ use Exception;
 
 class MissingNameException extends Exception
 {
+
     //
+
 }

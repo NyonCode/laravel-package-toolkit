@@ -8,6 +8,7 @@ use Symfony\Component\Console\Exception\CommandNotFoundException;
 
 trait PackageCommandTest
 {
+
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package')->hasCommand(TestCommand::class);
@@ -16,9 +17,12 @@ trait PackageCommandTest
 
 uses(PackageCommandTest::class);
 
-test(description: 'can call command', closure: function () {
-    $this->artisan('app:test')->assertSuccessful();
-});
+test(
+    description: 'can call command',
+    closure: function () {
+        $this->artisan('app:test')->assertSuccessful();
+    }
+);
 
 test("can't call second command", function () {
     $this->expectException(CommandNotFoundException::class);

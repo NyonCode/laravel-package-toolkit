@@ -84,5 +84,4 @@ trait HasTranslate
 
         return $this;
     }
-
 }

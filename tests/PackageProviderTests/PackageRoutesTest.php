@@ -7,9 +7,7 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageRoutesTest
 {
-    /**
-     * @throws Exception
-     */
+
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package Route')->hasRoutes();

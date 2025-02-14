@@ -10,6 +10,6 @@ class TestTwo extends Component
     {
         return <<<'blade'
             {{ $slot }}
-    blade;
+        blade;
     }
 }

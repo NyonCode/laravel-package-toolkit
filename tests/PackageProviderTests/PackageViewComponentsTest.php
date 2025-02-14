@@ -10,6 +10,7 @@ use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\app\View\Components2\Th
 
 trait PackageViewComponentsTest
 {
+
     public function configure(Packager $packager): void
     {
         $packager

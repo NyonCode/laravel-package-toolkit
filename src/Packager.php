@@ -61,8 +61,10 @@ class Packager
      * Set a custom short name for the package.
      *
      * @param string $shortName The short name to set
-     * @return static
+     *
      * @throws InvalidArgumentException If the provided short name is not in the expected format
+     *
+     * @return static
      */
     public function hasShortName(string $shortName): static
     {

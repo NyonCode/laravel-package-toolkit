@@ -134,7 +134,10 @@ trait HasAboutCommand
         return $this;
     }
 
+
     /**
+     * Whether the package is aboutable.
+     *
      * @return bool
      */
     public function isAboutable(): bool

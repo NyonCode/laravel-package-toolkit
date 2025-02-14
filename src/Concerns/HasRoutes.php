@@ -2,6 +2,7 @@
 
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use Exception;
 
@@ -33,13 +34,16 @@ trait HasRoutes
         return $this->routeFiles;
     }
 
+
     /**
      * Set or validate route files.
      *
-     * @param string[]|null $routeFiles The route files to validate
+     * @param array<string>|string|null $routeFiles The route files to validate
      * @param string $directory The directory name where the route files are located
+     *
+     * @throws FileNotFoundException
+     *
      * @return static
-     * @throws Exception If the directory does not exist
      */
     public function hasRoutes(
         array|string|null $routeFiles = null,

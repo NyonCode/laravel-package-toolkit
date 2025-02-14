@@ -7,6 +7,7 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageViewComponentNamespacesTest
 {
+
     public function configure(Packager $packager): void
     {
         $packager->name('Test package')

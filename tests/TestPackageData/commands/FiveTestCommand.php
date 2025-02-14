@@ -8,7 +8,6 @@ class FiveTestCommand extends Command
 {
     protected $signature = 'app:five-test';
 
-
     public function handle(): void
     {
         $this->info('Successful test');

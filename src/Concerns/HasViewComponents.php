@@ -10,6 +10,12 @@ trait HasViewComponents
      * @var bool
      */
     public bool $isViewComponents = false;
+
+    /**
+     * Whether the package has view component namespaces
+     *
+     * @var bool
+     */
     public bool $isViewComponentNamespaces = false;
 
     /**
@@ -56,6 +62,7 @@ trait HasViewComponents
      * @param string $prefix The namespace prefix for the component.
      * @param string $componentClass The component class to register.
      * @param string $alias The alias for the component.
+     *
      * @return static
      */
     public function hasComponent(string $prefix, string $componentClass, string $alias = ''): static

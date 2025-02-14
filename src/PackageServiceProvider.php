@@ -7,7 +7,6 @@ namespace NyonCode\LaravelPackageToolkit;
 use Composer\InstalledVersions;
 use Exception;
 use Illuminate\Foundation\Console\AboutCommand;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Compilers\BladeCompiler;
 use NyonCode\LaravelPackageToolkit\Contracts\ProvidesPackageServices;
@@ -44,6 +43,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      * Configure the packager instance.
      *
      * @param Packager $packager
+     *
      * @return void
      */
     abstract public function configure(Packager $packager): void;
@@ -115,6 +115,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      * Boot the service provider.
      *
      * @throws ParsingException
+     *
      * @return void
      */
     public function boot(): void
@@ -198,8 +199,9 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     /**
      * Get about command
      *
-     * @return void
      * @throws ParsingException
+     *
+     * @return void
      */
     public function bootAboutCommand(): void
     {
@@ -220,8 +222,9 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     /**
      * Register the package configuration files.
      *
-     * @return void
      * @throws Exception
+     *
+     * @return void
      */
     protected function registerConfig(): void
     {
@@ -313,6 +316,8 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      * This method uses the components registered in the packager and registers them
      * with Blade.
      *
+     * @param array<mixed> $components
+     *
      * @return void
      */
     protected function loadViewComponents(array $components): void
@@ -341,7 +346,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     protected function loadViewComponentNamespaces(array $namespaces): void
     {
         $this->callAfterResolving(BladeCompiler::class, function ($blade) use ($namespaces) {
-
 
             foreach ($namespaces as $prefix => $namespace) {
                 $blade->componentNamespace($namespace, $prefix);
@@ -386,6 +390,11 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         );
     }
 
+    /**
+     * Publish the translation files for the package.
+     *
+     * @return void
+     */
     protected function publishTranslations(): void
     {
         $this->publishes(
@@ -398,6 +407,11 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         );
     }
 
+    /**
+     * Publish the view files for the package.
+     *
+     * @return void
+     */
     protected function publishViews(): void
     {
         $this->publishes(
@@ -424,6 +438,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      * Format the publishing tag for a given group.
      *
      * @param string $groupName
+     *
      * @return string
      */
     public function publishTagFormat(string $groupName): string

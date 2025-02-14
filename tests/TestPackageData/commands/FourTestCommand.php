@@ -8,7 +8,6 @@ class FourTestCommand extends Command
 {
     protected $signature = 'app:four-test';
 
-
     public function handle(): void
     {
         $this->info('Successful test');

@@ -11,6 +11,7 @@ use Symfony\Component\Console\Exception\CommandNotFoundException;
 
 trait PackageCommandsTest
 {
+
     public function configure(Packager $package): void
     {
         $package

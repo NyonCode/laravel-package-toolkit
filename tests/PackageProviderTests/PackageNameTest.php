@@ -7,6 +7,7 @@ use function PHPUnit\Framework\assertTrue;
 
 trait PackageNameTest
 {
+
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package');

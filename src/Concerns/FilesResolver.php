@@ -127,6 +127,7 @@ trait FilesResolver
      *
      * @param string $file The name of the file to resolve
      * @param string $directory Directory name where files are located
+     *
      * @return string Full path if the file exists, or null if not found
      */
     private function resolveFilePath(string $file, string $directory): string

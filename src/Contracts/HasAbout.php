@@ -4,9 +4,12 @@ namespace NyonCode\LaravelPackageToolkit\Contracts;
 
 interface HasAbout
 {
-    /**
-     * @return array<string, string>
-     */
-    public function aboutData(): array;
 
+    /**
+     * Returns additional data for AboutCommand.
+     *
+     * @return array<string>
+     */
+
+    public function aboutData(): array;
 }

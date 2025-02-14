@@ -6,5 +6,7 @@ use Exception;
 
 class InvalidLanguageDirectoryException extends Exception
 {
+
     //
+
 }

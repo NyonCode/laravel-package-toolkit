@@ -9,9 +9,7 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageMigrationOnRunTest
 {
-    /**
-     * @throws Exception
-     */
+
     public function configure(Packager $package): void
     {
         $package->name('Package test')->hasMigrations()->canLoadMigrations();

@@ -72,7 +72,8 @@ trait HasMigrations
      * Set to `false` to prevent migrations from being loaded when the package is registered.
      * Set to `true` to enable loading of migrations when the package is registered.
      *
-     * @param bool $value Whether to load migrations when the package is registered
+     * @param bool $value Whether to load migrations when the package is
+     *
      * @return static
      */
     public function canLoadMigrations(bool $value = true): static

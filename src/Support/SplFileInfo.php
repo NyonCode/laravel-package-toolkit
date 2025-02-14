@@ -15,7 +15,6 @@ class SplFileInfo extends BaseSplFileInfo
         $this->baseFileName = $this->getBasename('.' . $this->getExtension());
     }
 
-
     /**
      * Get the base filename (without extension).
      *

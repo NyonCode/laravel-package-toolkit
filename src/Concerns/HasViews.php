@@ -64,5 +64,4 @@ trait HasViews
 
         return $this;
     }
-
 }

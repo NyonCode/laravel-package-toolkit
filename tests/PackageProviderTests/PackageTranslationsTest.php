@@ -8,9 +8,6 @@ use NyonCode\LaravelPackageToolkit\Packager;
 trait PackageTranslationsTest
 {
 
-    /**
-     * @throws InvalidLanguageDirectoryException
-     */
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package')->hasTranslations();

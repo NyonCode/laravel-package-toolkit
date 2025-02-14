@@ -4,6 +4,7 @@ namespace NyonCode\LaravelPackageToolkit\Contracts;
 
 interface ProvidesPackageServices
 {
+
     /**
      * Actions to perform before registering the package.
      *

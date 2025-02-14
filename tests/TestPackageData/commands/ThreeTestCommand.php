@@ -8,7 +8,6 @@ class ThreeTestCommand extends Command
 {
     protected $signature = 'app:three-test';
 
-
     public function handle(): void
     {
         $this->info('Successful test');

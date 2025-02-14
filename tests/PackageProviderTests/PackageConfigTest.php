@@ -8,9 +8,7 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageConfigTest
 {
-    /**
-     * @throws Exception
-     */
+
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package')->hasConfig();

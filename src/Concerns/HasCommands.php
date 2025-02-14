@@ -56,5 +56,4 @@ trait HasCommands
     {
         return $this->hasCommands($commandClass);
     }
-
 }

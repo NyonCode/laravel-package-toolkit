@@ -8,9 +8,7 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageMigrationTest
 {
-    /**
-     * @throws Exception
-     */
+
     public function configure(Packager $package): void
     {
         $package->name('Package test')->hasMigrations();
