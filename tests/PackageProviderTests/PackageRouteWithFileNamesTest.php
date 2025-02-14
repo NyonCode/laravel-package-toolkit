@@ -7,9 +7,7 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageRouteWithFileNamesTest
 {
-    /**
-     * @throws Exception
-     */
+
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package')->hasRoutes(['foo.php', 'test.php']);

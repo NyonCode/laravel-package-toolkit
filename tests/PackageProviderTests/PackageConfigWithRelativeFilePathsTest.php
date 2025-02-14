@@ -7,9 +7,7 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageConfigWithRelativeFilePathsTest
 {
-    /**
-     * @throws Exception
-     */
+
     public function configure(Packager $packager): void
     {
         $packager

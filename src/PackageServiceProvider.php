@@ -7,13 +7,16 @@ namespace NyonCode\LaravelPackageToolkit;
 use Composer\InstalledVersions;
 use Exception;
 use Illuminate\Foundation\Console\AboutCommand;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
-use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
+use Illuminate\View\Compilers\BladeCompiler;
+use NyonCode\LaravelPackageToolkit\Contracts\ProvidesPackageServices;
+use NyonCode\LaravelPackageToolkit\Exceptions\InvalidReturnTypeException;
+use NyonCode\LaravelPackageToolkit\Exceptions\MissingNameException;
 use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use ReflectionClass;
+use Seld\JsonLint\ParsingException;
 
-abstract class PackageServiceProvider extends ServiceProvider
+abstract class PackageServiceProvider extends ServiceProvider implements ProvidesPackageServices
 {
     /**
      * The separator used for tagging resources.
@@ -21,6 +24,13 @@ abstract class PackageServiceProvider extends ServiceProvider
      * @var string
      */
     public string $tagSeparator = '::';
+
+    /**
+     * Whether the about command has been registered.
+     *
+     * @var bool
+     */
+    private static bool $isPackageAboutRegistered = false;
 
     /**
      * Instance of the Packager class.
@@ -33,6 +43,7 @@ abstract class PackageServiceProvider extends ServiceProvider
      * Configure the packager instance.
      *
      * @param Packager $packager
+     *
      * @return void
      */
     abstract public function configure(Packager $packager): void;
@@ -44,14 +55,22 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     public function registeringPackage(): void
     {
-        // Define any actions to be performed before registering the package.
+        // #Define any actions to be performed before registering the package.
     }
 
+
     /**
-     * Register the service provider.
+     * Register the package services.
+     *
+     * This method initializes the package by booting the packager, setting the base path,
+     * and configuring it. It ensures that the package has a valid name and registers the
+     * configuration files. It also calls custom actions before and after registering the
+     * package.
+     *
+     * @throws MissingNameException if the package does not have a name.
+     * @throws Exception
      *
      * @return void
-     * @throws Exception
      */
     public function register(): void
     {
@@ -61,11 +80,14 @@ abstract class PackageServiceProvider extends ServiceProvider
         $this->packager->hasBasePath($this->getPackageBaseDir());
         $this->configure($this->packager);
 
+        $this->registerConfig();
+
+
         if (empty($this->packager->name)) {
-            throw PackagerException::missingName();
+            throw new MissingNameException('This package does not have a name. You can set one with `$package->name("")');
         }
 
-        $this->registerConfig();
+
         $this->registeredPackage();
     }
 
@@ -76,7 +98,7 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     public function registeredPackage(): void
     {
-        // Define any actions to be performed after registering the package.
+        // #Define any actions to be performed after registering the package.
     }
 
     /**
@@ -86,11 +108,13 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     public function bootingPackage(): void
     {
-        // Define any actions to be performed before booting the package.
+        // #Define any actions to be performed before booting the package.
     }
 
     /**
      * Boot the service provider.
+     *
+     * @throws ParsingException
      *
      * @return void
      */
@@ -98,19 +122,28 @@ abstract class PackageServiceProvider extends ServiceProvider
     {
         $this->bootingPackage();
 
-        $this->registerPackageCommands();
         $this->registerPublishing();
 
-        AboutCommand::add('Laravel Package Toolkit', [
-            'Version' => fn() => InstalledVersions::getPrettyVersion('laravel-package-toolkit'),
-        ]);
+        $this->registerPackageCommands();
 
+        if (!self::$isPackageAboutRegistered) {
+            AboutCommand::add(
+                section: 'Laravel Package Toolkit',
+                data: [
+                    'Version' => fn() => InstalledVersions::getPrettyVersion(
+                        'nyoncode/laravel-package-toolkit'
+                    ),
+                ]
+            );
+
+            self::$isPackageAboutRegistered = true;
+        }
 
         if ($this->packager->isRoutable) {
             $this->loadRoutes();
         }
 
-        if ($this->packager->isMigratable) {
+        if ($this->packager->isMigratable and $this->packager->hasMigrationsOnRun) {
             $this->loadMigrations();
         }
 
@@ -126,15 +159,21 @@ abstract class PackageServiceProvider extends ServiceProvider
             $this->loadViews();
         }
 
-        if ($this->packager->isViewComponent) {
-            $this->loadViewComponents();
+        if ($this->packager->isViewComponents) {
+            $this->loadViewComponents($this->packager->viewComponents());
         }
+
+        if($this->packager->isViewComponentNamespaces) {
+            $this->loadViewComponentNamespaces($this->packager->viewComponentNamespaces());
+        }
+
 
         if ($this->packager->isAboutable()) {
             $this->bootAboutCommand();
         }
 
         $this->bootedPackage();
+
     }
 
     /**
@@ -144,7 +183,7 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     public function bootedPackage(): void
     {
-        // Define any actions to be performed after booting the package.
+        // #Define any actions to be performed after booting the package.
     }
 
     /**
@@ -159,6 +198,8 @@ abstract class PackageServiceProvider extends ServiceProvider
 
     /**
      * Get about command
+     *
+     * @throws ParsingException
      *
      * @return void
      */
@@ -175,29 +216,29 @@ abstract class PackageServiceProvider extends ServiceProvider
     public function getPackageBaseDir(): string
     {
         $reflector = new ReflectionClass(get_class($this));
-
         return dirname($reflector->getFileName());
     }
 
     /**
      * Register the package configuration files.
      *
-     * @return void
      * @throws Exception
+     *
+     * @return void
      */
     protected function registerConfig(): void
     {
         if (!empty($this->packager->configFiles())) {
             foreach ($this->packager->configFiles() as $configFile) {
                 if (!is_array(require $configFile->getPathname())) {
-                    throw PackagerException::configMustReturnArray(
-                        $configFile->getBaseFilename()
+                    throw new InvalidReturnTypeException(
+                        'Configuration file [' . $configFile->getBaseFileName() . '] must return an array.'
                     );
                 }
 
                 $this->mergeConfigFrom(
                     path: $configFile->getPathname(),
-                    key: $configFile->getBaseFilename()
+                    key: $configFile->getBaseFileName()
                 );
             }
         }
@@ -252,6 +293,15 @@ abstract class PackageServiceProvider extends ServiceProvider
         );
     }
 
+    /**
+     * Load the views for the package.
+     *
+     * This method loads the views for the package using the view path
+     * provided by the packager and the short name of the package as the
+     * namespace.
+     *
+     * @return void
+     */
     protected function loadViews(): void
     {
         $this->loadViewsFrom(
@@ -260,13 +310,46 @@ abstract class PackageServiceProvider extends ServiceProvider
         );
     }
 
-    protected function loadViewComponents(): void
+    /**
+     * Load the view components registered in the package.
+     *
+     * This method uses the components registered in the packager and registers them
+     * with Blade.
+     *
+     * @param array<mixed> $components
+     *
+     * @return void
+     */
+    protected function loadViewComponents(array $components): void
     {
-        collect($this->packager->viewComponents())->each(function (
-            $component,
-            $name
-        ) {
-            Blade::component(class: $name, alias: $component);
+        $this->callAfterResolving(BladeCompiler::class, function (BladeCompiler $blade) use ($components) {
+            foreach ($components as $config) {
+                $blade->component(
+                    $config['component'],
+                    $config['alias'] ?? null,
+                    $config['prefix'] ?? null
+                );
+            }
+        });
+    }
+
+    /**
+     * Register the view component namespaces for the package.
+     *
+     * This method takes an associative array of namespace prefixes and namespaces
+     * and registers them with Blade.
+     *
+     * @param array<string, string> $namespaces An associative array of namespace prefixes and namespaces.
+     *
+     * @return void
+     */
+    protected function loadViewComponentNamespaces(array $namespaces): void
+    {
+        $this->callAfterResolving(BladeCompiler::class, function ($blade) use ($namespaces) {
+
+            foreach ($namespaces as $prefix => $namespace) {
+                $blade->componentNamespace($namespace, $prefix);
+            }
         });
     }
 
@@ -301,13 +384,17 @@ abstract class PackageServiceProvider extends ServiceProvider
 
         $this->publishes(
             paths: [
-                $migrationPath?->getPath()
-                => database_path('migrations'),
+                $migrationPath->getPath() => database_path('migrations'),
             ],
             groups: $this->publishTagFormat('migrations')
         );
     }
 
+    /**
+     * Publish the translation files for the package.
+     *
+     * @return void
+     */
     protected function publishTranslations(): void
     {
         $this->publishes(
@@ -320,6 +407,11 @@ abstract class PackageServiceProvider extends ServiceProvider
         );
     }
 
+    /**
+     * Publish the view files for the package.
+     *
+     * @return void
+     */
     protected function publishViews(): void
     {
         $this->publishes(
@@ -346,6 +438,7 @@ abstract class PackageServiceProvider extends ServiceProvider
      * Format the publishing tag for a given group.
      *
      * @param string $groupName
+     *
      * @return string
      */
     public function publishTagFormat(string $groupName): string
@@ -391,8 +484,8 @@ abstract class PackageServiceProvider extends ServiceProvider
      */
     public function registerPackageCommands(): void
     {
-        if ($this->app->runningInConsole()) {
-            $this->commands($this->packageCommands());
+        if ($this->app->runningInConsole() and $this->packager->isCommandable) {
+            $this->commands($this->packager->commands);
         }
     }
 

@@ -16,8 +16,8 @@ developers to focus on building features rather than boilerplate code.
 
 - [Installation](#installation)
 - [Usage](#usage)
-    - [Basic Configuration](#basic-configuration)
-    - [Advanced Configuration](#advanced-configuration)
+  - [Basic Configuration](#basic-configuration)
+  - [Advanced Configuration](#advanced-configuration)
 - [Lifecycle Hooks](#lifecycle-hooks)
 - [Name](#name)
 - [Short name](#short-name)
@@ -48,8 +48,9 @@ To use Laravel Package Builder, create a ServiceProvider for your package that e
 ```php
 use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
 use NyonCode\LaravelPackageToolkit\Packager;
+use NyonCode\LaravelPackageToolkit\Contracts\Packable;
 
-class MyAwesomePackageServiceProvider extends PackageServiceProvider
+class MyAwesomePackageServiceProvider extends PackageServiceProvider implements Packable
 {
     public function configure(Packager $packager): void
     {
@@ -71,8 +72,9 @@ For more control over your package configuration, you can use additional methods
 ```php
 use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
 use NyonCode\LaravelPackageToolkit\Packager;
+use NyonCode\LaravelPackageToolkit\Contracts\Packable;
 
-class AdvancedPackageServiceProvider extends PackageServiceProvider
+class AdvancedPackageServiceProvider extends PackageServiceProvider implements Packable
 {
     public function configure(Packager $packager): void
     {
@@ -125,9 +127,7 @@ $packager->name('Package name')
 
 ## Short name
 
-Define a custom short name for the package.
-The hasShortName method is used to modify the name defined by `name()` if you prefer not to use the short version from
-`$packager->name('Package name')`:
+Define a custom short name for the package:
 
 ```php
 $packager->hasShortName('custom-short-name')
@@ -141,27 +141,6 @@ To enable routing in your package:
 $packager->hasRoutes();
 ```
 
-By default, this will load routes from the `routes` directory. For custom route files:
-
-```php
-$packager->hasRoutes(['api.php', 'web.php']);
-```
-
-Or for specific file paths:
-
-```php
-$packager->hasRoute([
-        '../www/routes/web.php',
-        '../api/routes/api.php'
-    ])
-```
-
-To use an alternative directory for route files.
-
-```php
-$package->hasRoute(['web.php'], 'webRouter')
-```
-
 ## Migrations
 
 To enable migrations:
@@ -170,10 +149,10 @@ To enable migrations:
 $packager->hasMigrations();
 ```
 
-This loads migrations from the `database/migrations` directory. For a custom directory:
+### Use migration without publishing
 
 ```php
-$packager->hasMigrations('custom-migrations');
+$packager->canLoadMigrations();
 ```
 
 ## Translations
@@ -184,8 +163,6 @@ To enable translations:
 $packager->hasTranslations();
 ```
 
-This loads translations from the `lang` directory and automatically supports JSON translations.
-
 ## Views
 
 To enable views:
@@ -194,30 +171,34 @@ To enable views:
 $packager->hasViews();
 ```
 
-This loads views from the `resources/views` directory. For a custom directory:
-
-```php
-$packager->hasViews('custom-views');
-```
-
 ## View Components
 
-To register view components:
+To register multiple view components:
 
 ```php
-$packager->hasComponents([
-    'data-table' => DataTable::class,
-    'modal' => Modal::class,
-]);
+$packager->hasComponents(
+    prefix: 'nyon', 
+    components: [
+        'data-table' => DataTable::class,
+        'modal' => Modal::class,
+    ]
+);
+```
+
+To register a single view component with an optional alias:
+
+```php
+$packager->hasComponent('nyon', Alert::class, 'custom-alert');
 ```
 
 You can then use these components in your Blade templates:
 
 ```blade
-<x-data-table :data="$users"/>
-<x-modal title="User Details">
+<x-nyon-data-table :data="$users"/>
+<x-nyon-modal title="User Details">
     <!-- Modal content -->
 </x-modal>
+<x-nyon-custom-alert type="warning" message="This is a warning!"/>
 ```
 
 ## About Command
@@ -226,41 +207,27 @@ Laravel Package Builder provides methods to add package information to Laravel's
 
 ### hasAbout()
 
-The hasAbout() method allows you to include your package's information in the Laravel About command. By default, it will
-include the package's version.
-
 ```php
-  $packager->hasAbout();
+$packager->hasAbout();
 ```
 
 ### hasVersion()
 
-The hasVersion() method lets you manually set the version of your package:
-
 ```php
-  $packager->hasVersion('1.0.0'); 
+$packager->hasVersion('1.0.0'); 
 ```
-
-If no version is manually set, the package will automatically retrieve the version from your composer.json file.
 
 ### Customizing About Command Data
 
-You can extend the about command information by implementing the `aboutData()` method in your service provider:
-
 ```php
-  public function aboutData(): array
-  {
-      return [
-          'Repository' => 'https://github.com/your/package',
-          'Author' => 'Your Name',
-      ];
-  }
+public function aboutData(): array
+{
+    return [
+        'Repository' => 'https://github.com/your/package',
+        'Author' => 'Your Name',
+    ];
+}
 ```
-
-This method allows you to add custom key-value pairs to the About command output for your package.
-When you run `php artisan about`, your package's information will be displayed in a dedicated section.
-
-This implementation allows for flexible and easy inclusion of package metadata in Laravel's system information command.
 
 ## Testing
 
@@ -271,3 +238,4 @@ composer test
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
+

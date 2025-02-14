@@ -188,7 +188,7 @@ enum Language: string
     /**
      * Returns a collection of all language names
      *
-     * @return Collection<int, string>
+     * @return Collection<int, string> A collection of language names
      */
     public static function names(): Collection
     {
@@ -198,7 +198,7 @@ enum Language: string
     /**
      * Returns a collection of all language codes
      *
-     * @return Collection<int, string>
+     * @return Collection<int, string> A collection of language codes
      */
     public static function codes(): Collection
     {
@@ -208,7 +208,7 @@ enum Language: string
     /**
      * Returns a collection of all language names and codes
      *
-     * @return Collection<int, Language>
+     * @return Collection<int, Language> A collection of language names and codes
      */
     public static function collection(): Collection
     {

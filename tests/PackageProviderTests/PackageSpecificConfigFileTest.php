@@ -7,9 +7,7 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageSpecificConfigFileTest
 {
-    /**
-     * @throws Exception
-     */
+
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package')->hasConfig('../config/test-config.php');

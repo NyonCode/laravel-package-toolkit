@@ -11,7 +11,7 @@ use Seld\JsonLint\ParsingException;
 trait HasAboutCommand
 {
     /**
-     * @var array<string>
+     * @var array<string, mixed>
      */
     private array $composerData = [];
     public string $version = '';
@@ -24,16 +24,18 @@ trait HasAboutCommand
      *
      * @throws ParsingException If the composer.json file cannot be parsed.
      *
-     * @return string
+     * @return string|null
      */
-    private function getComposerValue(string $keyName): string
+    private function getComposerValue(string $keyName): string|null
     {
         $jsonFile = new JsonFile($this->path('/../composer.json'));
         if ($jsonFile->exists()) {
-            $this->composerData = $jsonFile->read();
+            $data = $jsonFile->read();
+            $this->composerData = is_array($data) ? $data : [];
         }
 
-        return $this->composerData[$keyName] ?? '';
+        $value = $this->composerData[$keyName] ?? null;
+        return is_string($value) ? $value : null;
     }
 
     /**
@@ -41,9 +43,9 @@ trait HasAboutCommand
      *
      * @throws ParsingException If the composer.json file cannot be parsed.
      *
-     * @return string
+     * @return string|null
      */
-    public function getVersion(): string
+    public function getVersion(): string|null
     {
         if (!empty($this->version)) {
             return $this->version;
@@ -132,7 +134,10 @@ trait HasAboutCommand
         return $this;
     }
 
+
     /**
+     * Whether the package is aboutable.
+     *
      * @return bool
      */
     public function isAboutable(): bool

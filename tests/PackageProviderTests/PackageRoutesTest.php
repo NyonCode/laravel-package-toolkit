@@ -7,9 +7,7 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageRoutesTest
 {
-    /**
-     * @throws Exception
-     */
+
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package Route')->hasRoutes();
@@ -18,9 +16,12 @@ trait PackageRoutesTest
 
 uses(PackageRoutesTest::class);
 
-test('can register a  router', fn() => expect($this->get('first-route')->getStatusCode())->toBe(200)
-    ->and($this->get('foo')->getStatusCode())->toBe(200)
-);
+test('can register a  router', function () {
+    expect($this->get('first-route')->getStatusCode())
+        ->toBe(200)
+        ->and($this->get('foo')->getStatusCode())
+        ->toBe(200);
+});
 
 test('route say hello', function () {
     $response = $this->get('first-route');
