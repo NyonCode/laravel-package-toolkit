@@ -2,12 +2,8 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests;
 
-use Illuminate\Console\View\Components\Alert;
-use NyonCode\LaravelPackageToolkit\Exceptions\InvalidComponentClass;
-use NyonCode\LaravelPackageToolkit\Exceptions\InvalidComponentName;
 use NyonCode\LaravelPackageToolkit\Packager;
 use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\TestCommand;
-use stdClass;
 
 beforeEach(function () {
     $this->packager = new Packager();
@@ -36,36 +32,6 @@ test(
         ->not->toBeEmpty()
         ->toBe('tp-pg')
 );
-
-//test(
-//    description: 'can validate components',
-//    closure: fn() => expect(
-//        $this->packager->validateComponents([
-//            'component1' => Alert::class,
-//            'component2' => Alert::class,
-//        ])
-//    )
-//        ->toBeTrue()
-//        ->and(
-//            fn() => $this->packager->validateComponents([
-//                123 => new stdClass(),
-//            ])
-//        )
-//        ->toThrow(InvalidComponentName::class)
-//        ->and(
-//            fn() => $this->packager->validateComponents([
-//                'component1' => 'not an object',
-//            ])
-//        )
-//        ->toThrow(InvalidComponentClass::class)
-//        ->and(
-//            fn() => $this->packager->validateComponents([
-//                'component1' => Alert::class,
-//                1 => Alert::class,
-//            ])
-//        )
-//        ->toThrow(InvalidComponentName::class)
-//);
 
 test(
     description: 'can set AboutCommand ',

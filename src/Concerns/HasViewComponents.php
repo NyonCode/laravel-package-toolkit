@@ -2,9 +2,6 @@
 
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
-use NyonCode\LaravelPackageToolkit\Exceptions\InvalidComponentClass;
-use NyonCode\LaravelPackageToolkit\Exceptions\InvalidComponentName;
-
 trait HasViewComponents
 {
     /**
