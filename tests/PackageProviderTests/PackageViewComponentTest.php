@@ -34,7 +34,7 @@ trait PackageViewComponentTest
 uses(PackageViewComponentTest::class);
 
 test('can register a view component', function () {
-    $view = Blade::render('<x-test::test name="Taylor" />');
+    $view = Blade::render('<x-test-test name="Taylor" />');
 
     expect($view)->toBeString()->toContain('Taylor');
 });
