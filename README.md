@@ -48,8 +48,9 @@ To use Laravel Package Builder, create a ServiceProvider for your package that e
 ```php
 use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
 use NyonCode\LaravelPackageToolkit\Packager;
+use NyonCode\LaravelPackageToolkit\Contracts\Packable;
 
-class MyAwesomePackageServiceProvider extends PackageServiceProvider
+class MyAwesomePackageServiceProvider extends PackageServiceProvider implements Packable
 {
     public function configure(Packager $packager): void
     {
@@ -71,8 +72,9 @@ For more control over your package configuration, you can use additional methods
 ```php
 use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
 use NyonCode\LaravelPackageToolkit\Packager;
+use NyonCode\LaravelPackageToolkit\Contracts\Packable;
 
-class AdvancedPackageServiceProvider extends PackageServiceProvider
+class AdvancedPackageServiceProvider extends PackageServiceProvider implements Packable
 {
     public function configure(Packager $packager): void
     {
