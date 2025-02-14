@@ -9,6 +9,7 @@ use Exception;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\Compilers\BladeCompiler;
 use NyonCode\LaravelPackageToolkit\Contracts\ProvidesPackageServices;
 use NyonCode\LaravelPackageToolkit\Exceptions\InvalidReturnTypeException;
 use NyonCode\LaravelPackageToolkit\Exceptions\MissingNameException;
@@ -67,6 +68,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      * package.
      *
      * @throws MissingNameException if the package does not have a name.
+     * @throws Exception
      *
      * @return void
      */
@@ -78,11 +80,14 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         $this->packager->hasBasePath($this->getPackageBaseDir());
         $this->configure($this->packager);
 
+        $this->registerConfig();
+
+
         if (empty($this->packager->name)) {
             throw new MissingNameException('This package does not have a name. You can set one with `$package->name("")');
         }
 
-        $this->registerConfig();
+
         $this->registeredPackage();
     }
 
@@ -109,6 +114,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     /**
      * Boot the service provider.
      *
+     * @throws ParsingException
      * @return void
      */
     public function boot(): void
@@ -117,9 +123,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
 
         $this->registerPublishing();
 
-        if ($this->app->runningInConsole() and $this->packager->isCommandable) {
-            $this->commands($this->packager->commands);
-        }
+        $this->registerPackageCommands();
 
         if (!self::$isPackageAboutRegistered) {
             AboutCommand::add(
@@ -154,15 +158,21 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
             $this->loadViews();
         }
 
-        if ($this->packager->isViewComponent) {
-            $this->loadViewComponents();
+        if ($this->packager->isViewComponents) {
+            $this->loadViewComponents($this->packager->viewComponents());
         }
+
+        if($this->packager->isViewComponentNamespaces) {
+            $this->loadViewComponentNamespaces($this->packager->viewComponentNamespaces());
+        }
+
 
         if ($this->packager->isAboutable()) {
             $this->bootAboutCommand();
         }
 
         $this->bootedPackage();
+
     }
 
     /**
@@ -204,7 +214,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     public function getPackageBaseDir(): string
     {
         $reflector = new ReflectionClass(get_class($this));
-
         return dirname($reflector->getFileName());
     }
 
@@ -220,13 +229,13 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
             foreach ($this->packager->configFiles() as $configFile) {
                 if (!is_array(require $configFile->getPathname())) {
                     throw new InvalidReturnTypeException(
-                        "Configuration file [$configFile->getBaseFilename()] must return an array."
+                        'Configuration file [' . $configFile->getBaseFileName() . '] must return an array.'
                     );
                 }
 
                 $this->mergeConfigFrom(
                     path: $configFile->getPathname(),
-                    key: $configFile->getBaseFilename()
+                    key: $configFile->getBaseFileName()
                 );
             }
         }
@@ -281,6 +290,15 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         );
     }
 
+    /**
+     * Load the views for the package.
+     *
+     * This method loads the views for the package using the view path
+     * provided by the packager and the short name of the package as the
+     * namespace.
+     *
+     * @return void
+     */
     protected function loadViews(): void
     {
         $this->loadViewsFrom(
@@ -289,13 +307,45 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         );
     }
 
-    protected function loadViewComponents(): void
+    /**
+     * Load the view components registered in the package.
+     *
+     * This method uses the components registered in the packager and registers them
+     * with Blade.
+     *
+     * @return void
+     */
+    protected function loadViewComponents(array $components): void
     {
-        collect($this->packager->viewComponents())->each(function (
-            $component,
-            $name
-        ) {
-            Blade::component(class: $name, alias: $component);
+        $this->callAfterResolving(BladeCompiler::class, function (BladeCompiler $blade) use ($components) {
+            foreach ($components as $config) {
+                $blade->component(
+                    $config['component'],
+                    $config['alias'] ?? null,
+                    $config['prefix'] ?? null
+                );
+            }
+        });
+    }
+
+    /**
+     * Register the view component namespaces for the package.
+     *
+     * This method takes an associative array of namespace prefixes and namespaces
+     * and registers them with Blade.
+     *
+     * @param array<string, string> $namespaces An associative array of namespace prefixes and namespaces.
+     *
+     * @return void
+     */
+    protected function loadViewComponentNamespaces(array $namespaces): void
+    {
+        $this->callAfterResolving(BladeCompiler::class, function ($blade) use ($namespaces) {
+
+
+            foreach ($namespaces as $prefix => $namespace) {
+                $blade->componentNamespace($namespace, $prefix);
+            }
         });
     }
 
@@ -419,8 +469,8 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     public function registerPackageCommands(): void
     {
-        if ($this->app->runningInConsole()) {
-            $this->commands($this->packageCommands());
+        if ($this->app->runningInConsole() and $this->packager->isCommandable) {
+            $this->commands($this->packager->commands);
         }
     }
 

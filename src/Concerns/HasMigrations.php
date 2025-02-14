@@ -25,9 +25,9 @@ trait HasMigrations
     /**
      * The migration files for the package.
      *
-     * @var string[]|SplFileInfo[]|null
+     * @var SplFileInfo[]
      */
-    protected array|null $migrationFiles = null;
+    protected array $migrationFiles = [];
 
     /**
      * Set or validate migration files.
@@ -43,41 +43,15 @@ trait HasMigrations
         array|null $migrationFiles = null,
         string $directory = 'database/migrations'
     ): static {
-
-//        /** @var array<string|SplFileInfo> $migrationFilesInfo */
-//        $migrationFilesInfo = [];
-//
-//        if (!empty($migrationFiles)) {
-//            if (!is_array($migrationFiles)) {
-//                $migrationFiles = [$migrationFiles];
-//            }
-//
-//            foreach ($migrationFiles as $migrationFile) {
-//                if (!file_exists($migrationFile)) {
-//                    throw PackagerException::fileNotExist(
-//                        file: $migrationFile,
-//                        type: 'migration'
-//                    );
-//                }
-//
-//                $migrationFilesInfo[] = $this->getFileInfo(
-//                    $this->path($migrationFile)
-//                );
-//            }
-//
-//            /** @var array<string|SplFileInfo> $migrationFilesInfo */
-//            $this->migrationFiles = $migrationFilesInfo;
-//        } else {
-//            $this->migrationFiles = $this->autoloadFiles($directory);
-//        }
-
         $this->migrationFiles = $this->resolveFiles(
             files: $migrationFiles,
             directory: $directory,
             type: 'migration'
         );
 
-        $this->isMigratable = true;
+        if(!empty($this->migrationFiles)){
+            $this->isMigratable = true;
+        }
 
         return $this;
     }
@@ -85,9 +59,9 @@ trait HasMigrations
     /**
      * Get the migration files.
      *
-     * @return string[]|SplFileInfo[]|null
+     * @return SplFileInfo[]
      */
-    public function migrationFiles(): array|null
+    public function migrationFiles(): array
     {
         return $this->migrationFiles;
     }

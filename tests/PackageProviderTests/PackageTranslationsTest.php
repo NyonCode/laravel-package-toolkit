@@ -2,13 +2,14 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
-use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
+use NyonCode\LaravelPackageToolkit\Exceptions\InvalidLanguageDirectoryException;
 use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageTranslationsTest
 {
+
     /**
-     * @throws PackagerException
+     * @throws InvalidLanguageDirectoryException
      */
     public function configure(Packager $packager): void
     {

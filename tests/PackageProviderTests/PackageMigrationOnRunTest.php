@@ -2,15 +2,15 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
+use Exception;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
-use NyonCode\LaravelPackageToolkit\Exceptions\PackagerException;
 use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageMigrationOnRunTest
 {
     /**
-     * @throws PackagerException
+     * @throws Exception
      */
     public function configure(Packager $package): void
     {

@@ -2,12 +2,15 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
+use Exception;
 use File;
 use NyonCode\LaravelPackageToolkit\Packager;
-use function Orchestra\Testbench\default_migration_path;
 
 trait PackageMigrationTest
 {
+    /**
+     * @throws Exception
+     */
     public function configure(Packager $package): void
     {
         $package->name('Package test')->hasMigrations();

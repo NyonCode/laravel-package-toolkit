@@ -4,7 +4,6 @@ namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
 use NyonCode\LaravelPackageToolkit\Packager;
 use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\FiveTestCommand;
-use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\FourTestCommand;
 use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\SecondTestCommand;
 use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\TestCommand;
 use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\ThreeTestCommand;

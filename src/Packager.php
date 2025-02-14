@@ -11,18 +11,20 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasConfig;
 use NyonCode\LaravelPackageToolkit\Concerns\HasMigrations;
 use NyonCode\LaravelPackageToolkit\Concerns\HasRoutes;
 use NyonCode\LaravelPackageToolkit\Concerns\HasTranslate;
+use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponents;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViews;
 
 class Packager
 {
     use FilesResolver;
+    use HasConfig;
     use HasAboutCommand;
     use HasCommands;
-    use HasConfig;
     use HasMigrations;
     use HasRoutes;
     use HasTranslate;
     use HasViews;
+    use HasViewComponents;
 
     public string $name;
 

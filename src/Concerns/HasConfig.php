@@ -19,16 +19,16 @@ trait HasConfig
     /**
      * The configuration files for the package.
      *
-     * @var SplFileInfo[]|null
+     * @var SplFileInfo[]
      */
-    protected array|null $configFiles = null;
+    protected array $configFiles = [];
 
     /**
      * Get the configuration files.
      *
-     * @return SplFileInfo[]|null
+     * @return SplFileInfo[]
      */
-    public function configFiles(): array|null
+    public function configFiles(): array
     {
         return $this->configFiles;
     }

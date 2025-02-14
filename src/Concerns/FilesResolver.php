@@ -11,7 +11,7 @@ use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 
 trait FilesResolver
 {
-    public string $basePath;
+    public string $basePath = '';
 
     /**
      * Get the base path of the package.
@@ -58,7 +58,7 @@ trait FilesResolver
      *
      * @param string $path The path to search for files
      *
-     * @return SplFileInfo[]|string[]
+     * @return SplFileInfo[]
      */
     private function getFiles(string $path): array
     {
@@ -114,7 +114,7 @@ trait FilesResolver
      *
      * @throws Exception If the folder does not exist
      *
-     * @return SplFileInfo[]|String[]
+     * @return SplFileInfo[]
      */
     private function autoloadFiles(string $path): array
     {
@@ -164,12 +164,12 @@ trait FilesResolver
      * @throws FileNotFoundException If any file does not exist*@throws Exception
      * @throws Exception
      *
-     * @return string[]|SplFileInfo[] The resolved files
+     * @return SplFileInfo[] The resolved files
      */
     public function resolveFiles(
         string|array|null $files, string $directory = '', string $type = ''
     ): array {
-        /** @var string[]|SplFileInfo[] $filesInfo */
+        /** @var SplFileInfo[] $filesInfo */
         $filesInfo = [];
 
         if (!empty($files)) {

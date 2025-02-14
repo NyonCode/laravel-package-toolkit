@@ -29,9 +29,9 @@ trait HasTranslate
     /**
      * The path to the translation files.
      *
-     * @var string|null
+     * @var string
      */
-    protected string|null $translationPath = null;
+    protected string $translationPath = '';
 
     /**
      * Get the path to the translation files.

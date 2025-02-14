@@ -7,12 +7,12 @@ use SplFileInfo as BaseSplFileInfo;
 class SplFileInfo extends BaseSplFileInfo
 
 {
-    private readonly string $baseFilename;
+    private readonly string $baseFileName;
 
     public function __construct(string $filename)
     {
         parent::__construct($filename);
-        $this->baseFilename = $this->getBasename('.' . $this->getExtension());
+        $this->baseFileName = $this->getBasename('.' . $this->getExtension());
     }
 
 
@@ -21,9 +21,9 @@ class SplFileInfo extends BaseSplFileInfo
      *
      * @return string The base filename
      */
-    public function getBaseFilename(): string
+    public function getBaseFileName(): string
     {
-        return $this->baseFilename;
+        return $this->baseFileName;
     }
 
 
@@ -37,5 +37,4 @@ class SplFileInfo extends BaseSplFileInfo
     {
         return $this->getSize();
     }
-
 }

@@ -19,16 +19,16 @@ trait HasRoutes
     /**
      * The route files for the package.
      *
-     * @var string[]|SplFileInfo[]|null
+     * @var SplFileInfo[]
      */
-    protected array|null $routeFiles = null;
+    protected array $routeFiles = [];
 
     /**
      * Get the route files.
      *
-     * @return string[]|SplFileInfo[]|null
+     * @return SplFileInfo[]
      */
-    public function routeFiles(): array|null
+    public function routeFiles(): array
     {
         return $this->routeFiles;
     }

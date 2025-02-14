@@ -9,4 +9,14 @@ class TestCase extends \Orchestra\Testbench\TestCase
     {
         parent::setUp();
     }
+
+    protected function getEnvironmentSetUp($app): void
+    {
+        $app['config']->set('database.default', 'sqlite');
+        $app['config']->set('database.connections.sqlite', [
+            'driver'   => 'sqlite',
+            'database' => ':memory:',
+            'prefix'   => '',
+        ]);
+    }
 }
