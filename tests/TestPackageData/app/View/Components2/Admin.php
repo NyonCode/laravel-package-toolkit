@@ -2,7 +2,6 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\TestPackageData\app\View\Components2;
 
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Admin extends Component
@@ -13,8 +12,8 @@ class Admin extends Component
         public string $name
     ) {}
 
-    public function render(): View
+    public function render()
     {
-        return $this->view('test-package::test.admin');
+        return view('test-package::test.admin');
     }
 }
