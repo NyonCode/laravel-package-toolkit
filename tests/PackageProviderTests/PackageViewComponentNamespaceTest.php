@@ -13,7 +13,7 @@ trait PackageViewComponentNamespaceTest
             ->hasViews()
             ->hasComponentNamespace(
                 prefix: 'test',
-                namespace: 'NyonCode\LaravelPackageToolkit\Tests\TestPackageData\app\View\Components'
+                namespace: 'NyonCode\\LaravelPackageToolkit\\Tests\\TestPackageData\\app\\View\\Components'
             );
     }
 }

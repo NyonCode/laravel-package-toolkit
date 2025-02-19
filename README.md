@@ -127,7 +127,9 @@ $packager->name('Package name')
 
 ## Short name
 
-Define a custom short name for the package:
+Define a custom short name for the package.
+The hasShortName method is used to modify the name defined by `name()` if you prefer not to use the short version from
+`$packager->name('Package name')`:
 
 ```php
 $packager->hasShortName('custom-short-name')
@@ -141,6 +143,22 @@ To enable routing in your package:
 $packager->hasRoutes();
 ```
 
+By default, this will load routes from the `routes` directory. For custom route files:
+```php
+$packager->hasRoutes(['api.php', 'web.php']);
+```
+Or for specific file paths:
+```php
+$packager->hasRoute([
+        '../www/routes/web.php',
+        '../api/routes/api.php'
+    ])
+```
+To use an alternative directory for route files.
+```php
+$package->hasRoute(['web.php'], 'webRouter')
+```
+
 ## Migrations
 
 To enable migrations:
@@ -148,6 +166,30 @@ To enable migrations:
 ```php
 $packager->hasMigrations();
 ```
+
+This loads migrations from the `database/migrations` directory. For a custom directory:
+
+```php
+$packager->hasMigrations('custom-migrations');
+```
+
+Or for specific file paths:
+
+```php
+$packager->hasMigrations([
+    '../www/database/migrations/2023_01_01_000000_create_users_table.php',
+    '../api/database/migrations/2023_01_01_000001_create_roles_table.php'
+])
+```
+
+To use an alternative directory for migration files.
+
+```php
+$package->hasMigrations(['2023_01_01_000000_create_users_table.php'], 'userMigrations')
+```
+
+For more information about migrations, see [Laravel migrations](https://laravel.com/docs/9.x/migrations).
+
 
 ### Use migration without publishing
 
@@ -163,6 +205,14 @@ To enable translations:
 $packager->hasTranslations();
 ```
 
+This loads translations from the `lang` directory and automatically supports JSON translations.
+
+For a custom directory:
+
+```php
+$packager->hasTranslations('../custom-lang-directory');
+```
+
 ## Views
 
 To enable views:
@@ -170,6 +220,13 @@ To enable views:
 ```php
 $packager->hasViews();
 ```
+
+This loads views from the `resources/views` directory. For a custom directory:
+
+```php
+$packager->hasViews('custom-views');
+```
+
 
 ## View Components
 
@@ -181,6 +238,7 @@ $packager->hasComponents(
     components: [
         'data-table' => DataTable::class,
         'modal' => Modal::class,
+        Sidebar::class,
     ]
 );
 ```
@@ -198,6 +256,7 @@ You can then use these components in your Blade templates:
 <x-nyon-modal title="User Details">
     <!-- Modal content -->
 </x-modal>
+<x-nyon-sidebar id="sidebar"/>
 <x-nyon-custom-alert type="warning" message="This is a warning!"/>
 ```
 
@@ -207,27 +266,37 @@ Laravel Package Builder provides methods to add package information to Laravel's
 
 ### hasAbout()
 
+The hasAbout() method allows you to include your package's information in the Laravel About command. By default, it will
+include the package's version.
 ```php
-$packager->hasAbout();
+  $packager->hasAbout();
 ```
 
 ### hasVersion()
 
+The hasVersion() method lets you manually set the version of your package:
 ```php
-$packager->hasVersion('1.0.0'); 
+  $packager->hasVersion('1.0.0'); 
 ```
 
+If no version is manually set, the package will automatically retrieve the version from your composer.json file.
 ### Customizing About Command Data
 
+You can extend the about command information by implementing the `aboutData()` method in your service provider:
 ```php
-public function aboutData(): array
-{
-    return [
-        'Repository' => 'https://github.com/your/package',
-        'Author' => 'Your Name',
-    ];
-}
+  public function aboutData(): array
+  {
+      return [
+          'Repository' => 'https://github.com/your/package',
+          'Author' => 'Your Name',
+      ];
+  }
 ```
+
+This method allows you to add custom key-value pairs to the About command output for your package.
+When you run `php artisan about`, your package's information will be displayed in a dedicated section.
+This implementation allows for flexible and easy inclusion of package metadata in Laravel's system information command.
+
 
 ## Testing
 

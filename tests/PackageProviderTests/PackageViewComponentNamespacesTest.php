@@ -37,3 +37,6 @@ test('can register a view component with namespaces', function () {
     ;
 });
 
+test('publishes the view component namespaces', function () {
+    $this->artisan('vendor:publish --tag=test-package::view-component-namespaces')->assertExitCode(0);
+});

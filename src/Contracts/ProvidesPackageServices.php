@@ -68,4 +68,15 @@ interface ProvidesPackageServices
      * @return void
      */
     public function bootedPackage(): void;
+
+    /**
+     * Get the list of package commands.
+     *
+     * Override this method to return an array of console commands
+     * specific to the package.
+     *
+     * @return array<string|object> List of command classes.
+     */
+    public function packageCommands(): array;
+
 }

@@ -11,8 +11,9 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasConfig;
 use NyonCode\LaravelPackageToolkit\Concerns\HasMigrations;
 use NyonCode\LaravelPackageToolkit\Concerns\HasRoutes;
 use NyonCode\LaravelPackageToolkit\Concerns\HasTranslate;
-use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponents;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViews;
+use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponents;
+use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponentNamespaces;
 
 class Packager
 {
@@ -25,6 +26,7 @@ class Packager
     use HasTranslate;
     use HasViews;
     use HasViewComponents;
+    use HasViewComponentNamespaces;
 
     public string $name;
 

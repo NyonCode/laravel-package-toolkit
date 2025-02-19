@@ -158,7 +158,7 @@ trait FilesResolver
     /**
      * Resolve files from the specified directory.
      *
-     * @param string|array<string>|null $files     The files to resolve. If null, autoloads all files from the specified directory.
+     * @param string|string[]|null $files     The files to resolve. If null, autoloads all files from the specified directory.
      * @param string            $directory The directory where the files are located
      * @param string            $type      The type of files to resolve (e.g. "route", "config", etc.)
      *
