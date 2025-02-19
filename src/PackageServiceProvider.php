@@ -9,15 +9,19 @@ use Exception;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Compilers\BladeCompiler;
+use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponentNamespaces;
 use NyonCode\LaravelPackageToolkit\Contracts\ProvidesPackageServices;
 use NyonCode\LaravelPackageToolkit\Exceptions\InvalidReturnTypeException;
 use NyonCode\LaravelPackageToolkit\Exceptions\MissingNameException;
+use NyonCode\LaravelPackageToolkit\Support\Concerns\HasNamespaceResolver;
 use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use ReflectionClass;
 use Seld\JsonLint\ParsingException;
 
 abstract class PackageServiceProvider extends ServiceProvider implements ProvidesPackageServices
 {
+    use HasNamespaceResolver;
+
     /**
      * The separator used for tagging resources.
      *
@@ -173,7 +177,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         }
 
         $this->bootedPackage();
-
     }
 
     /**
@@ -316,7 +319,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      * This method uses the components registered in the packager and registers them
      * with Blade.
      *
-     * @param array<mixed> $components
+     * @param array<int|string, array<string, int|string|null>|string|null> $components
      *
      * @return void
      */
@@ -367,7 +370,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
                         $configFile->getBasename()
                     ),
                 ],
-                groups: "{$this->packager->shortName()}::config"
+                groups: $this->publishTagFormat('config')
             );
         }
     }
@@ -425,6 +428,86 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     }
 
     /**
+     * Publish the view components registered in the package.
+     *
+     * This method maps the paths of the view components to the destination path
+     * where they will be published. The destination path is determined by the
+     * package's short name and the last directory name of the view component path.
+     *
+     * For example, if the package's short name is "example" and the view component
+     * path is "resources/views/components/example", the destination path will be
+     * "app/View/Components/example".
+     *
+     * If the `$publishPaths` array is not empty, the view components are published
+     * using the `publishes` method, with the `view-components` group.
+     *
+     * @return void
+     */
+    protected function publishViewComponents(): void
+    {
+        $shortName = $this->packager->shortName();
+
+        $publishComponentPaths = collect($this->packager->viewComponentPaths())
+            ->mapWithKeys(function ($sourcePath) use ($shortName) {
+                $directoryName = basename($sourcePath);
+                $destinationPath = base_path("app/View/Components/{$shortName}/{$directoryName}");
+
+                return [$sourcePath => $destinationPath];
+            })
+            ->all();
+
+        if (!empty($publishComponentPaths)) {
+            $this->publishes(
+                paths: $publishComponentPaths,
+                groups: $this->publishTagFormat('view-components')
+            );
+        }
+    }
+
+    /**
+     * Publish the view component namespaces registered in the package.
+     *
+     * This method maps the paths of the view component namespaces to the destination path
+     * where they will be published. The destination path is determined by the
+     * package's short name and the last directory name of the view component namespace path.
+     *
+     * For example, if the package's short name is "example" and the view component
+     * namespace path is "resources/views/components/example", the destination path will be
+     * "app/View/Components/example".
+     *
+     * If the `$publishPaths` array is not empty, the view components are published
+     * using the `publishes` method, with the `view-components` group.
+     *
+     * @return void
+     */
+    protected function publishViewComponentNamespaces(): void
+    {
+        $shortName = $this->packager->shortName();
+
+        $publishComponentPaths = collect($this->packager->viewComponentNamespaces())
+            ->mapWithKeys(function ($namespace) use ($shortName) {
+                $sourcePath = $this->getPathFromNamespace($namespace);
+
+                if (!$sourcePath || !is_dir($sourcePath)) {
+                    return [];
+                }
+
+                $directoryName = basename($sourcePath);
+                $destinationPath = base_path("/app/View/Components/{$shortName}/{$directoryName}");
+
+                return [$sourcePath => $destinationPath];
+            })
+            ->all();
+
+        if (!empty($publishComponentPaths)) {
+            $this->publishes(
+                paths: $publishComponentPaths,
+                groups: $this->publishTagFormat('view-component-namespaces')
+            );
+        }
+    }
+
+    /**
      * Get the tag separator for publishing.
      *
      * @return string
@@ -471,6 +554,15 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
             if ($this->packager->isView) {
                 $this->publishViews();
             }
+
+            if ($this->packager->isViewComponents){
+                $this->publishViewComponents();
+            }
+
+            if ($this->packager->isViewComponentNamespaces){
+                $this->publishViewComponentNamespaces();
+            }
+
         }
     }
 

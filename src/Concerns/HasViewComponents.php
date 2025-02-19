@@ -2,6 +2,9 @@
 
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
+use ReflectionClass;
+use ReflectionException;
+
 trait HasViewComponents
 {
     /**
@@ -12,29 +15,23 @@ trait HasViewComponents
     public bool $isViewComponents = false;
 
     /**
-     * Whether the package has view component namespaces
+     * The view components for the package.
      *
-     * @var bool
-     */
-    public bool $isViewComponentNamespaces = false;
-
-    /**
-     * The view components
-     *
-     * @var string[]
+     * @var array
      */
     protected array $viewComponents = [];
 
     /**
-     * The view component namespaces
-     * @var string[]
+     * The view component paths for the package.
+     *
+     * @var array
      */
-    protected array $viewComponentNamespaces = [];
+    protected array $viewComponentPaths = [];
 
     /**
      * Get the view components registered in the package.
      *
-     * @return string[] Array of view components.
+     * @return array Array of view components.
      */
     public function viewComponents(): array
     {
@@ -42,16 +39,16 @@ trait HasViewComponents
     }
 
     /**
-     * Get the view component namespaces registered in the package.
+     * Get the view component paths registered in the package.
      *
-     * This method returns an associative array of view component namespaces
-     * where the key is the namespace prefix and the value is the namespace.
+     * This method returns an array of paths where the view components
+     * are located within the package.
      *
-     * @return string[] Array of view component namespaces.
+     * @return array Array of view component paths.
      */
-    public function viewComponentNamespaces(): array
+    public function viewComponentPaths(): array
     {
-        return $this->viewComponentNamespaces;
+        return $this->viewComponentPaths;
     }
 
     /**
@@ -62,6 +59,8 @@ trait HasViewComponents
      * @param string $prefix The namespace prefix for the component.
      * @param string $componentClass The component class to register.
      * @param string $alias The alias for the component.
+     *
+     * @throws ReflectionException
      *
      * @return static
      */
@@ -76,7 +75,6 @@ trait HasViewComponents
         return $this;
     }
 
-
     /**
      * Set view components for the package.
      *
@@ -84,7 +82,8 @@ trait HasViewComponents
      *
      * @param string $prefix
      * @param string|string[] $components Array of view components with names as keys and component objects as
-     *                                          values.
+     *
+     * @throws ReflectionException
      *
      * @return static
      */
@@ -110,62 +109,16 @@ trait HasViewComponents
                     'prefix' => $prefix,
                 ];
             }
+
+            $componentsReflected = new ReflectionClass($component);
+            $componentsDirname = dirname($componentsReflected->getFileName());
+            if(!in_array($componentsDirname, $this->viewComponentPaths)) {
+                $this->viewComponentPaths[] = $componentsDirname;
+            }
         }
 
         if (!empty($this->viewComponents)) {
             $this->isViewComponents = true;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Registers a single view component namespace with a given prefix.
-     *
-     * This method allows you to associate a namespace with a prefix,
-     * enabling the package to correctly resolve view components within that namespace.
-     *
-     * @param string $prefix The prefix to associate with the namespace.
-     * @param string $namespace The namespace of the view components.
-     *
-     * @return static
-     */
-    public function hasComponentNamespace(
-        string $prefix,
-        string $namespace
-    ): static {
-        $this->hasComponentNamespaces([$prefix => $namespace]);
-
-        if (!empty($this->viewComponentNamespaces)) {
-            $this->isViewComponentNamespaces = true;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Registers multiple view component namespaces.
-     *
-     * This method takes an associative array of namespace prefixes and namespaces,
-     * merging them with the existing view component namespaces. If the namespaces
-     * array is not empty, it sets the `isViewComponentNamespaces` flag to true.
-     *
-     * @param array<string, string> $namespaces An associative array where the key is the namespace prefix
-     *                                          and the value is the namespace.
-     *
-     * @return static
-     */
-    public function hasComponentNamespaces(array $namespaces): static
-    {
-        if (!empty($namespaces)) {
-            $this->viewComponentNamespaces = array_merge(
-                $this->viewComponentNamespaces,
-                $namespaces
-            );
-        }
-
-        if (!empty($this->viewComponentNamespaces)) {
-            $this->isViewComponentNamespaces = true;
         }
 
         return $this;
