@@ -25,16 +25,9 @@ jobs:
           - laravel: 12.*
             testbench: 10.*
             pest: 3.*
-            carbon: 3.*
         exclude:
-            - laravel: 10.*
-              php: 8.0
-            - laravel: 11.*
-              php: 8.0
             - laravel: 11.*
               php: 8.1
-            - laravel: 12.*
-              php: 8.0
             - laravel: 12.*
               php: 8.1
 
@@ -58,7 +51,7 @@ jobs:
           echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest }}" "nesbot/carbon:^2.64.1" --no-interaction --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest }}" --no-interaction --no-update
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
       - name: Execute tests
         run: ./vendor/bin/pest
