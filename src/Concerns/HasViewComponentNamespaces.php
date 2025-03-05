@@ -9,13 +9,23 @@ trait HasViewComponentNamespaces
      *
      * @var bool
      */
-    public bool $isViewComponentNamespaces = false;
+    private bool $isViewComponentNamespaces = false;
 
     /**
      * The view component namespaces
      * @var string[]
      */
     protected array $viewComponentNamespaces = [];
+
+    /**
+     * Check if the package has view component namespaces
+     *
+     * @return bool
+     */
+    public function isViewComponentNamespaces(): bool
+    {
+        return $this->isViewComponentNamespaces;
+    }
 
     /**
      * Get the view component namespaces registered in the package.

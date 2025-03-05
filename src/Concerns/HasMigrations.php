@@ -13,7 +13,7 @@ trait HasMigrations
      *
      * @var bool
      */
-    public bool $isMigratable = false;
+    private bool $isMigratable = false;
 
     /**
      * Run migrations without publishing them.
@@ -28,6 +28,16 @@ trait HasMigrations
      * @var SplFileInfo[]
      */
     protected array $migrationFiles = [];
+
+    /**
+     * Indicates whether the package is migratable.
+     *
+     * @return bool
+     */
+    public function isMigratable(): bool
+    {
+        return $this->isMigratable;
+    }
 
     /**
      * Set or validate migration files.

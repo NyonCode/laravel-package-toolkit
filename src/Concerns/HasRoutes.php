@@ -14,7 +14,7 @@ trait HasRoutes
      *
      * @var bool
      */
-    public bool $isRoutable = false;
+    private bool $isRoutable = false;
 
     /**
      * The route files for the package.
@@ -22,6 +22,16 @@ trait HasRoutes
      * @var SplFileInfo[]
      */
     protected array $routeFiles = [];
+
+    /**
+     * Check if the package has route files.
+     *
+     * @return bool
+     */
+    public function isRoutable(): bool
+    {
+        return $this->isRoutable;
+    }
 
     /**
      * Get the route files.

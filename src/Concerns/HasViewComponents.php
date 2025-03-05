@@ -12,7 +12,7 @@ trait HasViewComponents
      *
      * @var bool
      */
-    public bool $isViewComponents = false;
+    private bool $isViewComponents = false;
 
     /**
      * The view components for the package.
@@ -26,7 +26,17 @@ trait HasViewComponents
      *
      * @var array
      */
-    protected array $viewComponentPaths = [];
+    private array $viewComponentPaths = [];
+
+    /**
+     * Check if the package has view components
+     *
+     * @return bool
+     */
+    public function isViewComponents(): bool
+    {
+        return $this->isViewComponents;
+    }
 
     /**
      * Get the view components registered in the package.

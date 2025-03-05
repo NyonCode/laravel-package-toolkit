@@ -12,7 +12,7 @@ trait HasViews
      *
      * @var bool
      */
-    public bool $isView = false;
+    private bool $isViewable = false;
 
     /**
      * The path to the views
@@ -21,11 +21,15 @@ trait HasViews
      */
     protected string $viewsPath = '';
 
+    public function isViewable(): bool
+    {
+        return $this->isViewable;
+    }
 
     /**
-     * Get the path to the views directory.
+     * Get the path to the view's directory.
      *
-     * @return string The path to the views directory.
+     * @return string The path to the view's directory.
      */
     public function views(): string
     {
@@ -59,7 +63,7 @@ trait HasViews
         }
 
         if (!empty($this->viewsPath)) {
-            $this->isView = true;
+            $this->isViewable = true;
         }
 
         return $this;

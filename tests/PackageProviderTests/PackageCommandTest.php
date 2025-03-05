@@ -11,7 +11,8 @@ trait PackageCommandTest
 
     public function configure(Packager $packager): void
     {
-        $packager->name('Test Package')->hasCommand(TestCommand::class);
+        $packager->name('Test Package')
+            ->hasCommand(TestCommand::class);
     }
 }
 

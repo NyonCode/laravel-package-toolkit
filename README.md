@@ -16,16 +16,22 @@ developers to focus on building features rather than boilerplate code.
 
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Basic Configuration](#basic-configuration)
-  - [Advanced Configuration](#advanced-configuration)
+    - [Basic Configuration](#basic-configuration)
+    - [Advanced Configuration](#advanced-configuration)
 - [Lifecycle Hooks](#lifecycle-hooks)
 - [Name](#name)
 - [Short name](#short-name)
+- [Config](#config)
 - [Routing](#routing)
 - [Migrations](#migrations)
 - [Translations](#translations)
+- [Commands](#commands)
 - [Views](#views)
 - [View Components](#view-components)
+- [View Component Namespaces](#view-component-namespaces)
+- [View Composers](#view-composers)
+- [Shared Data](#view-shared-data)
+- [Assets](#assets)
 - [About Command](#about-command)
 - [Testing](#testing)
 - [License](#license)
@@ -50,7 +56,8 @@ use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
 use NyonCode\LaravelPackageToolkit\Packager;
 use NyonCode\LaravelPackageToolkit\Contracts\Packable;
 
-class MyAwesomePackageServiceProvider extends PackageServiceProvider implements Packable
+class MyAwesomePackageServiceProvider extends PackageServiceProvider implements
+    Packable
 {
     public function configure(Packager $packager): void
     {
@@ -74,7 +81,8 @@ use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
 use NyonCode\LaravelPackageToolkit\Packager;
 use NyonCode\LaravelPackageToolkit\Contracts\Packable;
 
-class AdvancedPackageServiceProvider extends PackageServiceProvider implements Packable
+class AdvancedPackageServiceProvider extends PackageServiceProvider implements
+    Packable
 {
     public function configure(Packager $packager): void
     {
@@ -109,20 +117,20 @@ class AdvancedPackageServiceProvider extends PackageServiceProvider implements P
 Here is a list of all available life cycle hooks:
 
 | **Hook Method**        | **Description**                      |
-|------------------------|--------------------------------------|
+| ---------------------- | ------------------------------------ |
 | `registeringPackage()` | Called before `register()` is called |
 | `registeredPackage()`  | Called after `register()` is called  |
 | `bootingPackage()`     | Called before `boot()` is called     |
 | `bootedPackage()`      | Called after `boot()` is called      |
 
-___
+---
 
 ## Name
 
 Define a name for the package:
 
 ```php
-$packager->name('Package name')
+$packager->name('Package name');
 ```
 
 ## Short name
@@ -132,7 +140,36 @@ The hasShortName method is used to modify the name defined by `name()` if you pr
 `$packager->name('Package name')`:
 
 ```php
-$packager->hasShortName('custom-short-name')
+$packager->hasShortName('custom-short-name');
+```
+
+## Config
+
+To enable configuration in your package:
+
+```php
+$packager->hasConfig();
+```
+
+By default, this will load configuration from the `config` directory. For custom config files:
+
+```php
+$packager->hasConfig(['config.php', 'other-config.php']);
+```
+
+Or for specific file paths:
+
+```php
+$packager->hasConfig([
+    '../www/config/config.php',
+    '../api/config/other-config.php',
+]);
+```
+
+To use an alternative directory for config files.
+
+```php
+$package->hasConfig(directory: 'customConfig');
 ```
 
 ## Routing
@@ -144,19 +181,21 @@ $packager->hasRoutes();
 ```
 
 By default, this will load routes from the `routes` directory. For custom route files:
+
 ```php
 $packager->hasRoutes(['api.php', 'web.php']);
 ```
+
 Or for specific file paths:
+
 ```php
-$packager->hasRoute([
-        '../www/routes/web.php',
-        '../api/routes/api.php'
-    ])
+$packager->hasRoute(['../www/routes/web.php', '../api/routes/api.php']);
 ```
+
 To use an alternative directory for route files.
+
 ```php
-$package->hasRoute(['web.php'], 'webRouter')
+$package->hasRoute(['web.php'], 'webRouter');
 ```
 
 ## Migrations
@@ -178,18 +217,20 @@ Or for specific file paths:
 ```php
 $packager->hasMigrations([
     '../www/database/migrations/2023_01_01_000000_create_users_table.php',
-    '../api/database/migrations/2023_01_01_000001_create_roles_table.php'
-])
+    '../api/database/migrations/2023_01_01_000001_create_roles_table.php',
+]);
 ```
 
 To use an alternative directory for migration files.
 
 ```php
-$package->hasMigrations(['2023_01_01_000000_create_users_table.php'], 'userMigrations')
+$package->hasMigrations(
+    ['2023_01_01_000000_create_users_table.php'],
+    'userMigrations'
+);
 ```
 
 For more information about migrations, see [Laravel migrations](https://laravel.com/docs/9.x/migrations).
-
 
 ### Use migration without publishing
 
@@ -213,6 +254,38 @@ For a custom directory:
 $packager->hasTranslations('../custom-lang-directory');
 ```
 
+## Commands
+
+To enable commands:
+
+```php
+$packager->hasCommands();
+```
+
+Defaults to loading commands from the `Commands` directory.
+To use an alternative directory for command files.
+
+```php
+$packager->hasCommands(directory: 'custom-commands');
+```
+
+For single command:
+
+```php
+$packager->hasCommand('\Vendor\Package\Commands\CustomCommand::class');
+```
+
+Or for specific file names:
+
+```php
+$packager->hasCommands([
+    '\Vendor\Package\Commands\CustomCommand::class',
+    '\Vendor\Package\Commands\OtherCommand::class',
+]);
+```
+
+For more information about commands, see [Laravel commands](https://laravel.com/docs/12.x/artisan).
+
 ## Views
 
 To enable views:
@@ -227,14 +300,13 @@ This loads views from the `resources/views` directory. For a custom directory:
 $packager->hasViews('custom-views');
 ```
 
-
 ## View Components
 
 To register multiple view components:
 
 ```php
 $packager->hasComponents(
-    prefix: 'nyon', 
+    prefix: 'nyon',
     components: [
         'data-table' => DataTable::class,
         'modal' => Modal::class,
@@ -260,6 +332,75 @@ You can then use these components in your Blade templates:
 <x-nyon-custom-alert type="warning" message="This is a warning!"/>
 ```
 
+## View Component Namespaces
+
+To register multiple view component namespaces:
+
+```php
+$packager->hasComponentNamespaces(
+    namespaces: [
+        'nyon' => 'App\View\Components\Alert',
+        'admin' => 'App\View\Components\Modal',
+    ]
+);
+```
+
+To register a single view component namespace with an optional alias:
+
+```php
+$packager->hasComponentNamespace('nyon', 'App\View\Components\Alert');
+```
+
+You can then use these namespaces in your Blade templates:
+
+```blade
+<x-nyon::alert :data="$users"/>
+<x-admin::modal title="User Details">
+    <!-- Modal content -->
+</x-admin-modal>
+```
+
+## View Composers
+
+To register multiple view composers:
+
+```php
+$packager
+    ->hasViewComposer(
+        views: 'nyon',
+        composers: fn($view) => $view->with('test', 'test-value')
+    )->hasViewComposer(
+        views: ['viewName', 'anotherViewName'],
+        composers: MyViewComposer::class
+    )
+);
+```
+
+
+## View Shared Data
+
+To add shared data to views:
+
+```php
+$packager->hasSharedDataForAllViews(['key', 'value']);
+```
+
+This adds a key-value pair to the shared data array in the view.
+
+## Assets
+
+To enable assets:
+
+```php
+$packager->hasAssets();
+```
+
+This loads assets from the `dist` directory. For a custom directory:
+
+```php
+$packager->hasAssets('../custom-assets');
+```
+
 ## About Command
 
 Laravel Package Builder provides methods to add package information to Laravel's php artisan about command.
@@ -268,21 +409,25 @@ Laravel Package Builder provides methods to add package information to Laravel's
 
 The hasAbout() method allows you to include your package's information in the Laravel About command. By default, it will
 include the package's version.
+
 ```php
-  $packager->hasAbout();
+$packager->hasAbout();
 ```
 
 ### hasVersion()
 
 The hasVersion() method lets you manually set the version of your package:
+
 ```php
-  $packager->hasVersion('1.0.0'); 
+$packager->hasVersion('1.0.0');
 ```
 
 If no version is manually set, the package will automatically retrieve the version from your composer.json file.
+
 ### Customizing About Command Data
 
 You can extend the about command information by implementing the `aboutData()` method in your service provider:
+
 ```php
   public function aboutData(): array
   {
@@ -297,7 +442,6 @@ This method allows you to add custom key-value pairs to the About command output
 When you run `php artisan about`, your package's information will be displayed in a dedicated section.
 This implementation allows for flexible and easy inclusion of package metadata in Laravel's system information command.
 
-
 ## Testing
 
 ```bash
@@ -307,4 +451,3 @@ composer test
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
-

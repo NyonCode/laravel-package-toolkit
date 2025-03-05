@@ -4,8 +4,9 @@
 
 use NyonCode\LaravelPackageBuilder\Packager;
 use NyonCode\LaravelPackageBuilder\PackageServiceProvider;
+use NyonCode\LaravelPackageToolkit\Contracts\Packable;
 
-class {{ class }} extends PackageServiceProvider
+class {{ class }} extends PackageServiceProvider implements Packable
 {
     public function configure(Packager $packager): void
     {

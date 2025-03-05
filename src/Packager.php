@@ -6,27 +6,33 @@ use Illuminate\Support\Str;
 use InvalidArgumentException;
 use NyonCode\LaravelPackageToolkit\Concerns\FilesResolver;
 use NyonCode\LaravelPackageToolkit\Concerns\HasAboutCommand;
+use NyonCode\LaravelPackageToolkit\Concerns\HasAssets;
 use NyonCode\LaravelPackageToolkit\Concerns\HasCommands;
 use NyonCode\LaravelPackageToolkit\Concerns\HasConfig;
 use NyonCode\LaravelPackageToolkit\Concerns\HasMigrations;
 use NyonCode\LaravelPackageToolkit\Concerns\HasRoutes;
 use NyonCode\LaravelPackageToolkit\Concerns\HasTranslate;
+use NyonCode\LaravelPackageToolkit\Concerns\HasViewComposers;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViews;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponents;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponentNamespaces;
+use NyonCode\LaravelPackageToolkit\Concerns\HasViewSharedData;
 
 class Packager
 {
     use FilesResolver;
-    use HasConfig;
+    use HasAssets;
     use HasAboutCommand;
     use HasCommands;
+    use HasConfig;
     use HasMigrations;
     use HasRoutes;
     use HasTranslate;
     use HasViews;
     use HasViewComponents;
     use HasViewComponentNamespaces;
+    use HasViewComposers;
+    use HasViewSharedData;
 
     public string $name;
 

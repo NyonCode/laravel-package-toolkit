@@ -11,7 +11,7 @@ use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 
 trait FilesResolver
 {
-    public string $basePath = '';
+    private string $basePath = '';
 
     /**
      * Get the base path of the package.
