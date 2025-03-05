@@ -33,7 +33,7 @@ test('can register a view component with namespaces', function () {
         ->and($view2)->toBeString()
         ->and($view2)->toContain('Donald')
         ->and($view3)->toBeString()
-        ->and($view3)->toContain('Hello');
+        ->and($view3)->toContain('Hello')
     ;
 });
 

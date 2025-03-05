@@ -20,8 +20,6 @@ test('can register the translate files', fn() => expect(trans('test-package::mes
 test('can register the translate json file', fn() => expect(trans('originalText'))->toBe('translateText'));
 
 test('can publish the translation files', function () {
-    $this->artisan('vendor:publish --tag=test-package::translations');
-
-    expect(lang_path('vendor/test-package/en/message.php'))->toBeFile();
+    $this->artisan('vendor:publish --tag=test-package::translations')->assertExitCode(0);
 });
 

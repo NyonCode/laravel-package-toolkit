@@ -17,14 +17,14 @@ trait HasTranslate
      *
      * @var bool
      */
-    public bool $isTranslatable = false;
+    private bool $isTranslatable = false;
 
     /**
      * Indicates whether the package supports JSON translations.
      *
      * @var bool
      */
-    public bool $loadJsonTranslate = false;
+    private bool $loadJsonTranslate = false;
 
     /**
      * The path to the translation files.
@@ -32,6 +32,26 @@ trait HasTranslate
      * @var string
      */
     protected string $translationPath = '';
+
+    /**
+     * Get the value of isTranslatable
+     *
+     * @return bool
+     */
+    public function isTranslatable(): bool
+    {
+        return $this->isTranslatable;
+    }
+
+    /**
+     * Get the value of loadJsonTranslate
+     *
+     * @return bool
+     */
+    public function loadJsonTranslate(): bool
+    {
+        return $this->loadJsonTranslate;
+    }
 
     /**
      * Get the path to the translation files.

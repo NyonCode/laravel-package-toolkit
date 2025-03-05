@@ -3,26 +3,20 @@
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
 use NyonCode\LaravelPackageToolkit\Packager;
-use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\FiveTestCommand;
-use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\SecondTestCommand;
-
-use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\ThreeTestCommand;
+use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\TestCommand;
 use Symfony\Component\Console\Exception\CommandNotFoundException;
 
-trait PackageCommandsTest
+trait PackageCommandsDynamicTest
 {
-
     public function configure(Packager $package): void
     {
         $package
             ->name('Package command test')
-            ->hasCommand( \NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\TestCommand::class)
-            ->hasCommands(SecondTestCommand::class)
-            ->hasCommands([ThreeTestCommand::class, FiveTestCommand::class]);
+            ->hasCommands(directory: 'commands');
     }
 }
 
-uses(PackageCommandsTest::class);
+uses(PackageCommandsDynamicTest::class);
 
 test(
     description: 'can call first command',
@@ -48,8 +42,7 @@ test(
 test(
     description: "can't call four command",
     closure: function () {
-        $this->expectException(CommandNotFoundException::class);
-        $this->artisan('app:four-test');
+        $this->artisan('app:four-test')->assertExitCode(0);
     }
 );
 

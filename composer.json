@@ -21,13 +21,12 @@
     "php": "^8.1",
     "ext-readline": "*",
     "composer/composer": "^2.8",
-    "illuminate/contracts": "^9.28|^10.0|^11.0",
-    "illuminate/support": "^9.28|^10.0|^11.0"
+    "illuminate/contracts": "^9.28|^10.0|^11.0|^12.0"
   },
   "require-dev": {
     "mockery/mockery": "^1.5",
-    "orchestra/testbench": "^7.7|^8.0|^9.0",
-    "pestphp/pest": "^1.22|^2.0|^3.0",
+    "orchestra/testbench": "^7.7|^8.0|^9.0|^10.0",
+    "pestphp/pest": "^1.22|^2.0|^3.1",
     "pestphp/pest-plugin-laravel": "^1.2|^2.0|^3.0",
     "phpstan/phpstan": "^1.12"
   },

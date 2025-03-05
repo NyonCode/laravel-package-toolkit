@@ -9,7 +9,6 @@ use Exception;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Compilers\BladeCompiler;
-use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponentNamespaces;
 use NyonCode\LaravelPackageToolkit\Contracts\ProvidesPackageServices;
 use NyonCode\LaravelPackageToolkit\Exceptions\InvalidReturnTypeException;
 use NyonCode\LaravelPackageToolkit\Exceptions\MissingNameException;
@@ -17,8 +16,10 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\HasNamespaceResolver;
 use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use ReflectionClass;
 use Seld\JsonLint\ParsingException;
+use View;
 
-abstract class PackageServiceProvider extends ServiceProvider implements ProvidesPackageServices
+abstract class PackageServiceProvider extends ServiceProvider implements
+    ProvidesPackageServices
 {
     use HasNamespaceResolver;
 
@@ -62,7 +63,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         // #Define any actions to be performed before registering the package.
     }
 
-
     /**
      * Register the package services.
      *
@@ -86,11 +86,11 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
 
         $this->registerConfig();
 
-
         if (empty($this->packager->name)) {
-            throw new MissingNameException('This package does not have a name. You can set one with `$package->name("")');
+            throw new MissingNameException(
+                'This package does not have a name. You can set one with `$package->name("")'
+            );
         }
-
 
         $this->registeredPackage();
     }
@@ -143,37 +143,49 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
             self::$isPackageAboutRegistered = true;
         }
 
-        if ($this->packager->isRoutable) {
+        if ($this->packager->isRoutable()) {
             $this->loadRoutes();
         }
 
-        if ($this->packager->isMigratable and $this->packager->hasMigrationsOnRun) {
+        if (
+            $this->packager->isMigratable() and
+            $this->packager->hasMigrationsOnRun
+        ) {
             $this->loadMigrations();
         }
 
-        if ($this->packager->isTranslatable) {
+        if ($this->packager->isTranslatable()) {
             $this->loadTranslations();
 
-            if ($this->packager->loadJsonTranslate) {
+            if ($this->packager->loadJsonTranslate()) {
                 $this->loadJsonTranslations();
             }
         }
 
-        if ($this->packager->isView) {
+        if ($this->packager->isViewable()) {
             $this->loadViews();
         }
 
-        if ($this->packager->isViewComponents) {
+        if ($this->packager->isViewComponents()) {
             $this->loadViewComponents($this->packager->viewComponents());
         }
 
-        if($this->packager->isViewComponentNamespaces) {
-            $this->loadViewComponentNamespaces($this->packager->viewComponentNamespaces());
+        if ($this->packager->isViewComponentNamespaces()) {
+            $this->loadViewComponentNamespaces(
+                $this->packager->viewComponentNamespaces()
+            );
         }
 
+        if ($this->packager->isViewComposable()) {
+            $this->bootVewComposers();
+        }
 
         if ($this->packager->isAboutable()) {
             $this->bootAboutCommand();
+        }
+
+        if ($this->packager->isSharedWithViews()) {
+            $this->bootSharedViewData();
         }
 
         $this->bootedPackage();
@@ -211,6 +223,20 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         $this->packager->bootAboutCommand();
     }
 
+    public function bootSharedViewData(): void
+    {
+        foreach ($this->packager->viewSharedData() as $key => $value) {
+            View::share($key, $value);
+        }
+    }
+
+    public function bootVewComposers(): void
+    {
+        foreach ($this->packager->viewComposers() as $view => $callback) {
+            View::composer($view, $callback);
+        }
+    }
+
     /**
      * Get the base directory of the package.
      *
@@ -235,7 +261,9 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
             foreach ($this->packager->configFiles() as $configFile) {
                 if (!is_array(require $configFile->getPathname())) {
                     throw new InvalidReturnTypeException(
-                        'Configuration file [' . $configFile->getBaseFileName() . '] must return an array.'
+                        'Configuration file [' .
+                            $configFile->getBaseFileName() .
+                            '] must return an array.'
                     );
                 }
 
@@ -325,7 +353,9 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function loadViewComponents(array $components): void
     {
-        $this->callAfterResolving(BladeCompiler::class, function (BladeCompiler $blade) use ($components) {
+        $this->callAfterResolving(BladeCompiler::class, function (
+            BladeCompiler $blade
+        ) use ($components) {
             foreach ($components as $config) {
                 $blade->component(
                     $config['component'],
@@ -348,12 +378,25 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function loadViewComponentNamespaces(array $namespaces): void
     {
-        $this->callAfterResolving(BladeCompiler::class, function ($blade) use ($namespaces) {
-
+        $this->callAfterResolving(BladeCompiler::class, function (
+            BladeCompiler $blade
+        ) use ($namespaces) {
             foreach ($namespaces as $prefix => $namespace) {
                 $blade->componentNamespace($namespace, $prefix);
             }
         });
+    }
+
+    public function publishAssets(): void
+    {
+        $this->publishes(
+            paths: [
+                $this->packager->assetDirectory() => public_path(
+                    path: 'vendor/' . $this->packager->shortName()
+                ),
+            ],
+            groups: $this->publishTagFormat('assets')
+        );
     }
 
     /**
@@ -400,14 +443,25 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function publishTranslations(): void
     {
-        $this->publishes(
-            paths: [
-                $this->packager->translationPath() => lang_path(
-                    "vendor/{$this->packager->shortName()}"
-                ),
-            ],
-            groups: $this->publishTagFormat('translations')
-        );
+        if (function_exists(lang_path())) {
+            $this->publishes(
+                paths: [
+                    $this->packager->translationPath() => lang_path(
+                        "vendor/{$this->packager->shortName()}"
+                    ),
+                ],
+                groups: $this->publishTagFormat('translations')
+            );
+        } else {
+            $this->publishes(
+                paths: [
+                    $this->packager->translationPath() => resource_path(
+                        "lang/vendor/{$this->packager->shortName()}"
+                    ),
+                ],
+                groups: $this->publishTagFormat('translations')
+            );
+        }
     }
 
     /**
@@ -450,7 +504,9 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         $publishComponentPaths = collect($this->packager->viewComponentPaths())
             ->mapWithKeys(function ($sourcePath) use ($shortName) {
                 $directoryName = basename($sourcePath);
-                $destinationPath = base_path("app/View/Components/{$shortName}/{$directoryName}");
+                $destinationPath = base_path(
+                    "app/View/Components/$shortName/$directoryName"
+                );
 
                 return [$sourcePath => $destinationPath];
             })
@@ -484,7 +540,9 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     {
         $shortName = $this->packager->shortName();
 
-        $publishComponentPaths = collect($this->packager->viewComponentNamespaces())
+        $publishComponentPaths = collect(
+            $this->packager->viewComponentNamespaces()
+        )
             ->mapWithKeys(function ($namespace) use ($shortName) {
                 $sourcePath = $this->getPathFromNamespace($namespace);
 
@@ -493,7 +551,9 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
                 }
 
                 $directoryName = basename($sourcePath);
-                $destinationPath = base_path("/app/View/Components/{$shortName}/{$directoryName}");
+                $destinationPath = base_path(
+                    "/app/View/Components/$shortName/$directoryName"
+                );
 
                 return [$sourcePath => $destinationPath];
             })
@@ -539,30 +599,33 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     protected function registerPublishing(): void
     {
         if ($this->app->runningInConsole()) {
-            if ($this->packager->isConfigurable) {
+            if ($this->packager->isAssetable()) {
+                $this->publishAssets();
+            }
+
+            if ($this->packager->isConfigurable()) {
                 $this->publishConfig();
             }
 
-            if ($this->packager->isMigratable) {
+            if ($this->packager->isMigratable()) {
                 $this->publishMigrations();
             }
 
-            if ($this->packager->isTranslatable) {
+            if ($this->packager->isTranslatable()) {
                 $this->publishTranslations();
             }
 
-            if ($this->packager->isView) {
+            if ($this->packager->isViewable()) {
                 $this->publishViews();
             }
 
-            if ($this->packager->isViewComponents){
+            if ($this->packager->isViewComponents()) {
                 $this->publishViewComponents();
             }
 
-            if ($this->packager->isViewComponentNamespaces){
+            if ($this->packager->isViewComponentNamespaces()) {
                 $this->publishViewComponentNamespaces();
             }
-
         }
     }
 
@@ -576,7 +639,9 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     public function registerPackageCommands(): void
     {
-        if ($this->app->runningInConsole() and $this->packager->isCommandable) {
+        if (
+            $this->app->runningInConsole() and $this->packager->isCommandable()
+        ) {
             $this->commands($this->packager->commands);
         }
     }

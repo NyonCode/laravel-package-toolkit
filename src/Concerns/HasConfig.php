@@ -14,7 +14,7 @@ trait HasConfig
      *
      * @var bool
      */
-    public bool $isConfigurable = false;
+    private bool $isConfigurable = false;
 
     /**
      * The configuration files for the package.
@@ -22,6 +22,16 @@ trait HasConfig
      * @var SplFileInfo[]
      */
     protected array $configFiles = [];
+
+    /**
+     * Determine if the package is configurable.
+     *
+     * @return bool
+     */
+    public function isConfigurable(): bool
+    {
+        return $this->isConfigurable;
+    }
 
     /**
      * Get the configuration files.

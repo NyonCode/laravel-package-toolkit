@@ -2,6 +2,7 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests;
 
+use InvalidArgumentException;
 use NyonCode\LaravelPackageToolkit\Packager;
 use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\TestCommand;
 
@@ -61,7 +62,7 @@ test(
 test(
     description: 'can set command',
     closure: fn() => expect(
-        $this->packager->hasCommands(TestCommand::class)->isCommandable
+        $this->packager->hasCommands(TestCommand::class)->isCommandable()
     )->toBeTrue()
 );
 
@@ -110,6 +111,58 @@ test(
             ->hasComponentNamespace('component1', '\\Test\\Component1')
             ->hasComponentNamespace('component2', '\\Test\\Component2');
 
-        expect($this->packager->isViewComponentNamespaces)->toBeTrue();
+        expect($this->packager->isViewComponentNamespaces())->toBeTrue();
     }
 );
+
+test(
+    description: 'throws exception if shared data key is not a string',
+    closure: function () {
+        $this->packager->hasSharedDataForAllViews([
+            0 => 'invalid',
+        ]);
+    }
+)->throws(
+    InvalidArgumentException::class,
+    'The shared data key [0] must be a string.'
+);
+
+test(
+    description: 'throws exception if shared data value is not a scalar, array, null, or an instance of Arrayable',
+    closure: function () {
+        $this->packager->hasSharedDataForAllViews([
+            'callback' => fn() => 'invalid'
+        ]);
+    }
+)->throws(
+    exception:  InvalidArgumentException::class,
+    exceptionMessage: 'The shared data value [callback] must be a scalar, array, null, or an instance of Arrayable.'
+);
+
+test(
+    description: 'can set shared data for the views',
+    closure: function () {
+        $this->packager->hasSharedDataForAllViews([
+            'key1' => 'value1',
+            'key2' => 'value2',
+        ]);
+
+        expect($this->packager->isSharedWithViews())->toBeTrue();
+    }
+);
+
+test(
+    description: 'can get shared data for the views',
+    closure: function () {
+        $this->packager->hasSharedDataForAllViews([
+            'key1' => 'value1',
+            'key2' => 'value2',
+        ]);
+
+        expect($this->packager->viewSharedData())->toBeArray()->toMatchArray([
+            'key1' => 'value1',
+            'key2' => 'value2',
+        ]);
+    }
+);
+

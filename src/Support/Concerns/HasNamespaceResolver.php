@@ -57,4 +57,40 @@ trait HasNamespaceResolver
 
         return realpath($basePath . DIRECTORY_SEPARATOR . $relativePath);
     }
+
+    protected function getNamespaceFromPath(string $filePath): ?string
+    {
+        $normalizedFilePath = realpath($filePath);
+        if (!$normalizedFilePath) {
+            throw new \RuntimeException("Soubor nebyl nalezen: {$filePath}");
+        }
+
+        $composerAutoload = require $this->getPackageBasePath() . '/vendor/autoload.php';
+        if (!$composerAutoload instanceof ClassLoader) {
+            throw new \RuntimeException('Composer autoloader nebyl nalezen.');
+        }
+
+        $psr4Mappings = $composerAutoload->getPrefixesPsr4();
+        foreach ($psr4Mappings as $namespacePrefix => $paths) {
+            foreach ($paths as $basePath) {
+                $normalizedBasePath = realpath($basePath);
+                if (!$normalizedBasePath) {
+                    continue;
+                }
+
+                if (str_starts_with($normalizedFilePath, $normalizedBasePath)) {
+                    $relativePath = ltrim(substr($normalizedFilePath, strlen($normalizedBasePath)), DIRECTORY_SEPARATOR);
+                    $relativeDir = dirname($relativePath);
+                    $relativeDir = ($relativeDir === '.' ? '' : $relativeDir);
+
+                    $namespaceSuffix = str_replace(DIRECTORY_SEPARATOR, '\\', $relativeDir);
+
+                    return rtrim($namespacePrefix, '\\')
+                        . ($namespaceSuffix ? '\\' . $namespaceSuffix : '');
+                }
+            }
+        }
+
+        return null;
+    }
 }
