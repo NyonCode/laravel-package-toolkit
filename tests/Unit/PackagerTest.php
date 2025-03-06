@@ -111,7 +111,7 @@ test(
             ->hasComponentNamespace('component1', '\\Test\\Component1')
             ->hasComponentNamespace('component2', '\\Test\\Component2');
 
-        expect($this->packager->isViewComponentNamespaces())->toBeTrue();
+        expect($this->packager->isViewComponentNamespaceConfigured())->toBeTrue();
     }
 );
 

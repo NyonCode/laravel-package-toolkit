@@ -12,7 +12,7 @@ trait HasViewComponents
      *
      * @var bool
      */
-    private bool $isViewComponents = false;
+    private bool $isViewComponentized = false;
 
     /**
      * The view components for the package.
@@ -33,9 +33,9 @@ trait HasViewComponents
      *
      * @return bool
      */
-    public function isViewComponents(): bool
+    public function isViewComponentized(): bool
     {
-        return $this->isViewComponents;
+        return $this->isViewComponentized;
     }
 
     /**
@@ -128,7 +128,7 @@ trait HasViewComponents
         }
 
         if (!empty($this->viewComponents)) {
-            $this->isViewComponents = true;
+            $this->isViewComponentized = true;
         }
 
         return $this;

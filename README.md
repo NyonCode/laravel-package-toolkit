@@ -32,7 +32,9 @@ developers to focus on building features rather than boilerplate code.
 - [View Composers](#view-composers)
 - [Shared Data](#view-shared-data)
 - [Assets](#assets)
+- [Providers](#providers)
 - [About Command](#about-command)
+- [Publishing](#publishing)
 - [Testing](#testing)
 - [License](#license)
 
@@ -112,6 +114,41 @@ class AdvancedPackageServiceProvider extends PackageServiceProvider implements
 }
 ```
 
+### Conditional registration resources
+
+You can also use the `when()` method to conditionally register resources:
+
+```php
+use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
+use NyonCode\LaravelPackageToolkit\Packager;
+use NyonCode\LaravelPackageToolkit\Contracts\Packable;
+
+class ConditionalPackageServiceProvider extends PackageServiceProvider implements
+    Packable
+{
+    public function configure(Packager $packager): void
+    {
+        $packager
+            ->name('Conditional package')
+            ->hasRoutes(['api.php', 'web.php'])
+            ->hasMigrations('custom-migrations')
+            ->hasTranslations('lang')
+            ->hasViews('custom-views')
+            ->when($this->isInLocal(), function ($packager) {
+                $packager->hasConfig('local-config.php')
+                $packager->hasCommands();
+            })->when($this->isInProduction(), function ($packager) {
+                $packager->hasConfig('production-config.php')
+                $packager–>hasRoutes('web.php');
+            });
+    }
+}
+```
+Local and production resources will be registered when the `isInLocal()` and `isInProduction()` methods return `true`.
+
+---
+
+
 ## Lifecycle Hooks
 
 Here is a list of all available life cycle hooks:
@@ -132,6 +169,7 @@ Define a name for the package:
 ```php
 $packager->name('Package name');
 ```
+---
 
 ## Short name
 
@@ -142,7 +180,7 @@ The hasShortName method is used to modify the name defined by `name()` if you pr
 ```php
 $packager->hasShortName('custom-short-name');
 ```
-
+---
 ## Config
 
 To enable configuration in your package:
@@ -150,7 +188,7 @@ To enable configuration in your package:
 ```php
 $packager->hasConfig();
 ```
-
+---
 By default, this will load configuration from the `config` directory. For custom config files:
 
 ```php
@@ -171,6 +209,7 @@ To use an alternative directory for config files.
 ```php
 $package->hasConfig(directory: 'customConfig');
 ```
+---
 
 ## Routing
 
@@ -197,6 +236,7 @@ To use an alternative directory for route files.
 ```php
 $package->hasRoute(['web.php'], 'webRouter');
 ```
+---
 
 ## Migrations
 
@@ -237,6 +277,7 @@ For more information about migrations, see [Laravel migrations](https://laravel.
 ```php
 $packager->canLoadMigrations();
 ```
+---
 
 ## Translations
 
@@ -253,6 +294,7 @@ For a custom directory:
 ```php
 $packager->hasTranslations('../custom-lang-directory');
 ```
+---
 
 ## Commands
 
@@ -286,6 +328,8 @@ $packager->hasCommands([
 
 For more information about commands, see [Laravel commands](https://laravel.com/docs/12.x/artisan).
 
+---
+
 ## Views
 
 To enable views:
@@ -299,6 +343,7 @@ This loads views from the `resources/views` directory. For a custom directory:
 ```php
 $packager->hasViews('custom-views');
 ```
+---
 
 ## View Components
 
@@ -331,6 +376,7 @@ You can then use these components in your Blade templates:
 <x-nyon-sidebar id="sidebar"/>
 <x-nyon-custom-alert type="warning" message="This is a warning!"/>
 ```
+---
 
 ## View Component Namespaces
 
@@ -359,6 +405,7 @@ You can then use these namespaces in your Blade templates:
     <!-- Modal content -->
 </x-admin-modal>
 ```
+---
 
 ## View Composers
 
@@ -375,7 +422,7 @@ $packager
     )
 );
 ```
-
+---
 
 ## View Shared Data
 
@@ -387,6 +434,10 @@ $packager->hasSharedDataForAllViews(['key', 'value']);
 
 This adds a key-value pair to the shared data array in the view.
 
+For more information about shared data, see [Laravel shared data](https://laravel.com/docs/12.x/views#shared-data).
+
+---
+
 ## Assets
 
 To enable assets:
@@ -395,11 +446,28 @@ To enable assets:
 $packager->hasAssets();
 ```
 
-This loads assets from the `dist` directory. For a custom directory:
+This loads assets from the `public` directory. For a custom directory:
 
 ```php
-$packager->hasAssets('../custom-assets');
+$packager->hasAssets('../dist');
 ```
+---
+
+## Providers
+
+To enable service providers:
+
+```php
+$packager->hasProvider('../stubs/MyProvider.stub');
+```
+Support for multiple service providers:
+
+```php
+$packager->hasProvider('../stubs/MyProvider.stub')
+    ->hasProvider('../stubs/MyOtherProvider.stub');
+```
+
+---
 
 ## About Command
 
@@ -429,24 +497,44 @@ If no version is manually set, the package will automatically retrieve the versi
 You can extend the about command information by implementing the `aboutData()` method in your service provider:
 
 ```php
-  public function aboutData(): array
-  {
-      return [
-          'Repository' => 'https://github.com/your/package',
-          'Author' => 'Your Name',
-      ];
-  }
+public function aboutData(): array
+{
+    return [
+        'Repository' => 'https://github.com/your/package',
+        'Author' => 'Your Name',
+    ];
+}
 ```
 
 This method allows you to add custom key-value pairs to the About command output for your package.
 When you run `php artisan about`, your package's information will be displayed in a dedicated section.
 This implementation allows for flexible and easy inclusion of package metadata in Laravel's system information command.
 
+---
+
+## Publishing
+
+For publishing, you can use the following commands:
+
+```bash
+php artisan vendor:publish
+```
+`vendor:publish` show all the tags that can be used for publishing.
+
+
+### Example of using tags:
+
+Use `php artisan vendor:publish --tag=package-name::config` for publish configuration files.
+
+---
+
 ## Testing
 
 ```bash
 composer test
 ```
+
+---
 
 ## License
 

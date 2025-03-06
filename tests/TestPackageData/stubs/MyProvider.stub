@@ -1,0 +1,15 @@
+<?php
+
+//namespace {{namespace }}
+
+use NyonCode\LaravelPackageBuilder\Packager;
+use NyonCode\LaravelPackageBuilder\PackageServiceProvider;
+use NyonCode\LaravelPackageToolkit\Contracts\Packable;
+
+class MyProvider extends PackageServiceProvider implements Packable
+{
+    public function configure(Packager $packager): void
+    {
+        // $packager->name('Your package name')
+    }
+}
