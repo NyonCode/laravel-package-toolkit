@@ -135,7 +135,7 @@ trait PublishesPackageResources
             return $this;
         }
 
-        if (function_exists(lang_path())) {
+        if (function_exists('lang_path')) {
             $this->publishes(
                 paths: [
                     $this->packager->translationPath() => lang_path(
