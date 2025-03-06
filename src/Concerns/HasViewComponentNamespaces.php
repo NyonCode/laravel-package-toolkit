@@ -9,7 +9,7 @@ trait HasViewComponentNamespaces
      *
      * @var bool
      */
-    private bool $isViewComponentNamespaces = false;
+    private bool $isViewComponentNamespaceConfigured = false;
 
     /**
      * The view component namespaces
@@ -22,9 +22,9 @@ trait HasViewComponentNamespaces
      *
      * @return bool
      */
-    public function isViewComponentNamespaces(): bool
+    public function isViewComponentNamespaceConfigured(): bool
     {
-        return $this->isViewComponentNamespaces;
+        return $this->isViewComponentNamespaceConfigured;
     }
 
     /**
@@ -58,7 +58,7 @@ trait HasViewComponentNamespaces
         $this->hasComponentNamespaces([$prefix => $namespace]);
 
         if (!empty($this->viewComponentNamespaces)) {
-            $this->isViewComponentNamespaces = true;
+            $this->isViewComponentNamespaceConfigured = true;
         }
 
         return $this;
@@ -69,7 +69,7 @@ trait HasViewComponentNamespaces
      *
      * This method takes an associative array of namespace prefixes and namespaces,
      * merging them with the existing view component namespaces. If the namespaces
-     * array is not empty, it sets the `isViewComponentNamespaces` flag to true.
+     * array is not empty, it sets the `isViewComponentNamespaceConfigured` flag to true.
      *
      * @param array<string, string> $namespaces An associative array where the key is the namespace prefix
      *                                          and the value is the namespace.
@@ -86,7 +86,7 @@ trait HasViewComponentNamespaces
         }
 
         if (!empty($this->viewComponentNamespaces)) {
-            $this->isViewComponentNamespaces = true;
+            $this->isViewComponentNamespaceConfigured = true;
         }
 
         return $this;

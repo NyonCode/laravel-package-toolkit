@@ -10,6 +10,7 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasAssets;
 use NyonCode\LaravelPackageToolkit\Concerns\HasCommands;
 use NyonCode\LaravelPackageToolkit\Concerns\HasConfig;
 use NyonCode\LaravelPackageToolkit\Concerns\HasMigrations;
+use NyonCode\LaravelPackageToolkit\Concerns\HasProviders;
 use NyonCode\LaravelPackageToolkit\Concerns\HasRoutes;
 use NyonCode\LaravelPackageToolkit\Concerns\HasTranslate;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViewComposers;
@@ -27,6 +28,7 @@ class Packager
     use HasConfig;
     use HasMigrations;
     use HasRoutes;
+    use HasProviders;
     use HasTranslate;
     use HasViews;
     use HasViewComponents;
@@ -52,7 +54,11 @@ class Packager
     public function name(string $name): static
     {
         $this->name = $name;
+
+
         return $this;
+
+
     }
 
     /**

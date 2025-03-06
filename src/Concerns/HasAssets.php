@@ -9,7 +9,7 @@ trait HasAssets
 {
     use FilesResolver;
     private bool $isAssetable = false;
-    private string $assetDirectory = 'dist';
+    private string $assetDirectory = '';
 
     /**
      * Whether the package has assets.
@@ -35,7 +35,7 @@ trait HasAssets
      *
      * @return static
      */
-    public function hasAssets(string $directory = '../dist'): static
+    public function hasAssets(string $directory = '../public'): static
     {
         $path = $this->path($directory);
 
