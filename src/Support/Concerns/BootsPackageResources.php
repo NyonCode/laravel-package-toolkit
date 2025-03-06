@@ -202,9 +202,10 @@ trait BootsPackageResources
      */
     public function bootViewComponents(): static
     {
-        if (! $this->packager->isViewComposable()) {
+        if (! $this->packager->isViewComponentized()) {
             return $this;
         }
+
         $this->loadViewComponents($this->packager->viewComponents());
 
         return $this;
