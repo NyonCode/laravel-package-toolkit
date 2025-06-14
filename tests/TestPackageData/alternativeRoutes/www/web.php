@@ -1,3 +1,3 @@
 <?php
 
-Route::get('alternative', fn() => 'Hello World!');
+Route::get('alternative', fn () => 'Hello World!');

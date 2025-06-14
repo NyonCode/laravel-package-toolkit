@@ -40,10 +40,8 @@ trait HasViewComposers
      * This method accepts a view composer, which can be a string or a Closure,
      * and registers it by calling the `hasViewComposers` method.
      *
-     * @param string|array $views The views to register the composer for.
-     * @param string|Closure $composer The view composer to register.
-     *
-     * @return static
+     * @param  string|array  $views  The views to register the composer for.
+     * @param  string|Closure  $composer  The view composer to register.
      */
     public function hasViewComposer(string|array $views, string|Closure $composer): static
     {
@@ -51,6 +49,7 @@ trait HasViewComposers
             foreach ($views as $view) {
                 $this->hasViewComposers([$view => $composer]);
             }
+
             return $this;
         }
         $this->hasViewComposers([$views => $composer]);
@@ -66,9 +65,7 @@ trait HasViewComposers
      * If the array of composers is not empty, it sets the `isViewComposable` flag
      * to true.
      *
-     * @param array<string, string|Closure> $composers The view composers to register.
-     *
-     * @return static
+     * @param  array<string, string|Closure>  $composers  The view composers to register.
      */
     private function hasViewComposers(array $composers): static
     {
@@ -76,7 +73,7 @@ trait HasViewComposers
             $this->viewComposers[$view] = $composer;
         }
 
-        if(!empty($this->viewComposers)) {
+        if (! empty($this->viewComposers)) {
             $this->isViewComposable = true;
         }
 

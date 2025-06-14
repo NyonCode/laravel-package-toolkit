@@ -8,8 +8,6 @@ trait PublishesPackageResources
 {
     /**
      * Register the package's publishable resources.
-     *
-     * @return void
      */
     public function registerPublishing(): void
     {
@@ -27,8 +25,6 @@ trait PublishesPackageResources
      * Publish the package assets.
      *
      * The assets are published to the `public/vendor/<package-short-name>` directory.
-     *
-     * @return static
      */
     public function publishAssets(): static
     {
@@ -39,7 +35,7 @@ trait PublishesPackageResources
         $this->publishes(
             paths: [
                 $this->packager->assetDirectory() => public_path(
-                    path: 'vendor/' . $this->packager->shortName()
+                    path: 'vendor/'.$this->packager->shortName()
                 ),
             ],
             groups: $this->publishTagFormat('assets')
@@ -50,8 +46,6 @@ trait PublishesPackageResources
 
     /**
      * Publish the package configuration files.
-     *
-     * @return static
      */
     public function publishConfig(): static
     {
@@ -75,8 +69,6 @@ trait PublishesPackageResources
 
     /**
      * Publish the migration files for the package.
-     *
-     * @return static
      */
     public function publishMigrations(): static
     {
@@ -101,8 +93,6 @@ trait PublishesPackageResources
      * Publish the service providers for the package.
      *
      * The service providers are published to the `app/Providers/vendor/<package-short-name>` directory.
-     *
-     * @return static
      */
     public function publishProvider(): static
     {
@@ -112,7 +102,7 @@ trait PublishesPackageResources
         $providers = [];
 
         foreach ($this->packager->providers() as $provider) {
-            $providers[$provider->getPathname()] = app_path('Providers/' . $provider->getBaseFilename() . '.php');
+            $providers[$provider->getPathname()] = app_path('Providers/'.$provider->getBaseFilename().'.php');
         }
 
         $this->publishes(
@@ -123,11 +113,8 @@ trait PublishesPackageResources
         return $this;
     }
 
-
     /**
      * Publish the translation files for the package.
-     *
-     * @return static
      */
     public function publishTranslations(): static
     {
@@ -171,8 +158,6 @@ trait PublishesPackageResources
      *
      * If the `$publishPaths` array is not empty, the view components are published
      * using the `publishes` method, with the `view-components` group.
-     *
-     * @return static
      */
     protected function publishViewComponentNamespaces(): static
     {
@@ -188,7 +173,7 @@ trait PublishesPackageResources
             ->mapWithKeys(function ($namespace) use ($shortName) {
                 $sourcePath = $this->getPathFromNamespace($namespace);
 
-                if (!$sourcePath || !is_dir($sourcePath)) {
+                if (! $sourcePath || ! is_dir($sourcePath)) {
                     return [];
                 }
 
@@ -201,7 +186,7 @@ trait PublishesPackageResources
             })
             ->all();
 
-        if (!empty($publishComponentPaths)) {
+        if (! empty($publishComponentPaths)) {
             $this->publishes(
                 paths: $publishComponentPaths,
                 groups: $this->publishTagFormat('view-component-namespaces')
@@ -224,8 +209,6 @@ trait PublishesPackageResources
      *
      * If the `$publishPaths` array is not empty, the view components are published
      * using the `publishes` method, with the `view-components` group.
-     *
-     * @return static
      */
     protected function publishViewComponents(): static
     {
@@ -246,7 +229,7 @@ trait PublishesPackageResources
             })
             ->all();
 
-        if (!empty($publishComponentPaths)) {
+        if (! empty($publishComponentPaths)) {
             $this->publishes(
                 paths: $publishComponentPaths,
                 groups: $this->publishTagFormat('view-components')
@@ -258,8 +241,6 @@ trait PublishesPackageResources
 
     /**
      * Publish the view files for the package.
-     *
-     * @return static
      */
     public function publishViews(): static
     {

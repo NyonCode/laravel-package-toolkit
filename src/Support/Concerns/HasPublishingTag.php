@@ -6,15 +6,11 @@ trait HasPublishingTag
 {
     /**
      * The separator used for tagging resources.
-     *
-     * @var string
      */
     public string $tagSeparator = '::';
 
     /**
      * Get the tag separator for publishing.
-     *
-     * @return string
      */
     public function tagSeparator(): string
     {
@@ -23,16 +19,11 @@ trait HasPublishingTag
 
     /**
      * Format the publishing tag for a given group.
-     *
-     * @param string $groupName
-     *
-     * @return string
      */
     public function publishTagFormat(string $groupName): string
     {
-        return $this->packager->shortName() .
-            $this->tagSeparator() .
+        return $this->packager->shortName().
+            $this->tagSeparator().
             $groupName;
     }
-
 }

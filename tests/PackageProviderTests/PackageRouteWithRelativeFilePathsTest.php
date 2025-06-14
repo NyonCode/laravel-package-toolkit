@@ -2,18 +2,16 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
-use Exception;
 use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageRouteWithRelativeFilePathsTest
 {
-
     public function configure(Packager $packager): void
     {
         $packager->name('Package Test')->hasRoutes([
             'foo.php',
             '../routes/test.php',
-            '../alternativeRoutes/www/web.php'
+            '../alternativeRoutes/www/web.php',
         ]);
     }
 }

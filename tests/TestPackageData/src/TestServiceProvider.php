@@ -12,6 +12,6 @@ class TestServiceProvider extends PackageServiceProvider
 
     public function configure(Packager $packager): void
     {
-        (self::$providerUsing ?? fn(Packager $packager) => null)($packager);
+        (self::$providerUsing ?? fn (Packager $packager) => null)($packager);
     }
 }

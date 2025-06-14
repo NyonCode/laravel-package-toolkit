@@ -8,7 +8,6 @@ use Symfony\Component\Console\Exception\CommandNotFoundException;
 
 trait PackageCommandTest
 {
-
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package')

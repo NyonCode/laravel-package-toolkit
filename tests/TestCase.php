@@ -2,7 +2,6 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests;
 
-
 use Illuminate\Foundation\Application;
 
 class TestCase extends \Orchestra\Testbench\TestCase
@@ -17,17 +16,15 @@ class TestCase extends \Orchestra\Testbench\TestCase
      *
      * This method is called before each test.
      *
-     * @param Application $app The application instance.
-     *
-     * @return void
+     * @param  Application  $app  The application instance.
      */
     protected function getEnvironmentSetUp($app): void
     {
         $app['config']->set('database.default', 'sqlite');
         $app['config']->set('database.connections.sqlite', [
-            'driver'   => 'sqlite',
+            'driver' => 'sqlite',
             'database' => ':memory:',
-            'prefix'   => '',
+            'prefix' => '',
         ]);
     }
 }

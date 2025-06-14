@@ -15,9 +15,9 @@ trait HasEnvironmentChecks
      */
     protected function isInProduction(): bool
     {
-        if(app()->environment('production')){
+        if (app()->environment('production')) {
             return true;
-        };
+        }
 
         return false;
     }
@@ -33,9 +33,9 @@ trait HasEnvironmentChecks
      */
     protected function isInLocal(): bool
     {
-        if(app()->environment('local')){
+        if (app()->environment('local')) {
             return true;
-        };
+        }
 
         return false;
     }

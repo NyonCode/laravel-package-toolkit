@@ -2,12 +2,10 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
-use Exception;
 use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageSpecificConfigFileTest
 {
-
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package')->hasConfig('../config/test-config.php');
@@ -16,7 +14,6 @@ trait PackageSpecificConfigFileTest
 }
 
 uses(PackageSpecificConfigFileTest::class);
-
 
 test('can register a specific configuration file', function () {
     expect(config('test-config.key2'))

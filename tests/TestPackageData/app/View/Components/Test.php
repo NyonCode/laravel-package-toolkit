@@ -7,8 +7,7 @@ use Illuminate\View\View;
 
 class Test extends Component
 {
-
-    public function __construct(public  string $name) {}
+    public function __construct(public string $name) {}
 
     public function render(): View
     {
