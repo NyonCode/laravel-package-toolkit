@@ -35,9 +35,9 @@ trait HasAssets
      *
      * @return static
      */
-    public function hasAssets(string $directory = '../public'): static
+    public function hasAssets(string $directory = 'public'): static
     {
-        $path = $this->path($directory);
+        $path = $this->path("../$directory");
 
         if(! File::isDirectory($path)) {
             throw new DirectoryNotFoundException(

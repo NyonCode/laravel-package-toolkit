@@ -12,6 +12,13 @@ developers to focus on building features rather than boilerplate code.
 - Built-in exception handling for package-specific errors
 - Comprehensive language support
 
+## Support Laravel
+
+- **Laravel 9.x**
+- **Laravel 10.x**
+- **Laravel 11.x**
+- **Laravel 12.x**
+
 ## Table of Contents
 
 - [Installation](#installation)
@@ -234,7 +241,7 @@ $packager->hasRoute(['../www/routes/web.php', '../api/routes/api.php']);
 To use an alternative directory for route files.
 
 ```php
-$package->hasRoute(['web.php'], 'webRouter');
+$package->hasRoute(directory: 'webRouter');
 ```
 ---
 
@@ -246,12 +253,6 @@ To enable migrations:
 $packager->hasMigrations();
 ```
 
-This loads migrations from the `database/migrations` directory. For a custom directory:
-
-```php
-$packager->hasMigrations('custom-migrations');
-```
-
 Or for specific file paths:
 
 ```php
@@ -259,6 +260,13 @@ $packager->hasMigrations([
     '../www/database/migrations/2023_01_01_000000_create_users_table.php',
     '../api/database/migrations/2023_01_01_000001_create_roles_table.php',
 ]);
+
+```
+
+This loads migrations from the `database/migrations` directory. For a custom directory:
+
+```php
+$packager->hasMigrations(directory: 'custom-migrations');
 ```
 
 To use an alternative directory for migration files.
@@ -292,7 +300,7 @@ This loads translations from the `lang` directory and automatically supports JSO
 For a custom directory:
 
 ```php
-$packager->hasTranslations('../custom-lang-directory');
+$packager->hasTranslations('custom-lang-directory');
 ```
 ---
 
@@ -449,7 +457,7 @@ $packager->hasAssets();
 This loads assets from the `public` directory. For a custom directory:
 
 ```php
-$packager->hasAssets('../dist');
+$packager->hasAssets('dist');
 ```
 ---
 

@@ -72,9 +72,9 @@ trait HasTranslate
      *
      * @return static
      */
-    public function hasTranslations(string $translationPath = '../lang'): static
+    public function hasTranslations(string $translationPath = 'lang'): static
     {
-        $path = $this->path($translationPath);
+        $path = $this->path("../$translationPath");
         if (!File::isDirectory($path)) {
             throw new DirectoryNotFoundException(
                 "Directory [$path] does not exist"

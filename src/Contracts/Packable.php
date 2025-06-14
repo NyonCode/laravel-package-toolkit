@@ -18,4 +18,40 @@ interface Packable
      * @return void
      */
     public function configure(Packager $packager): void;
+
+    /**
+     * Actions to perform before registering the package.
+     *
+     * @return void
+     */
+    public function registeringPackage(): void;
+
+    /**
+     * Actions to perform after registering the package.
+     *
+     * @return void
+     */
+    public function registeredPackage(): void;
+
+    /**
+     * Actions to perform before booting the package.
+     *
+     * @return string
+     */
+    public function bootingPackage(): void;
+
+    /**
+     * Actions to perform after booting the package.
+     *
+     * @return void
+     */
+    public function bootedPackage(): void;
+
+    /**
+     * Get the about data for the package.
+     *
+     * @return array
+     */
+    public function aboutData(): array;
+
 }
