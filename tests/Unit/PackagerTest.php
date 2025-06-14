@@ -13,7 +13,7 @@ beforeEach(function () {
 
 test(
     description: 'can get name',
-    closure: fn() => expect($this->packager->name)
+    closure: fn () => expect($this->packager->name)
         ->not()
         ->toBeEmpty()
         ->toBe('Test Package')
@@ -21,7 +21,7 @@ test(
 
 test(
     description: 'can get short name',
-    closure: fn() => expect($this->packager->shortName())
+    closure: fn () => expect($this->packager->shortName())
         ->not()
         ->toBeEmpty()
         ->toBe('test-package')
@@ -29,17 +29,17 @@ test(
 
 test(
     description: 'can get custom short name',
-    closure: fn() => expect($this->packager->hasShortName('tp-pg')->shortName())
+    closure: fn () => expect($this->packager->hasShortName('tp-pg')->shortName())
         ->not->toBeEmpty()
         ->toBe('tp-pg')
 );
 
 test(
     description: 'can set AboutCommand ',
-    closure: fn() => expect($this->packager->hasAbout()->isAboutable())
+    closure: fn () => expect($this->packager->hasAbout()->isAboutable())
         ->toBeTrue()
         ->and(
-            fn() => expect(
+            fn () => expect(
                 $this->packager->hasAbout(false)->isAboutable()
             )->toBeFalse()
         )
@@ -47,28 +47,28 @@ test(
 
 test(
     description: 'can set AboutCommand version',
-    closure: fn() => expect($this->packager->hasVersion('1.0.1')->getVersion())
+    closure: fn () => expect($this->packager->hasVersion('1.0.1')->getVersion())
         ->not->toBeEmpty()
         ->toBe('1.0.1')
 );
 
 test(
     description: 'can set migrations on run',
-    closure: fn() => expect(
+    closure: fn () => expect(
         $this->packager->canLoadMigrations()->hasMigrationsOnRun
     )->toBeTrue()
 );
 
 test(
     description: 'can set command',
-    closure: fn() => expect(
+    closure: fn () => expect(
         $this->packager->hasCommands(TestCommand::class)->isCommandable()
     )->toBeTrue()
 );
 
 test(
     description: 'can access to view component with namespaces combined',
-    closure: fn() => expect(
+    closure: fn () => expect(
         $this->packager
             ->hasComponentNamespace('component1', '\\Test\\Component1')
             ->hasComponentNamespaces([
@@ -88,7 +88,7 @@ test(
 
 test(
     description: 'can access to view component with namespaces',
-    closure: fn() => expect(
+    closure: fn () => expect(
         $this->packager
             ->hasComponentNamespaces([
                 'component1' => '\\Test\\Component1',
@@ -131,11 +131,11 @@ test(
     description: 'throws exception if shared data value is not a scalar, array, null, or an instance of Arrayable',
     closure: function () {
         $this->packager->hasSharedDataForAllViews([
-            'callback' => fn() => 'invalid'
+            'callback' => fn () => 'invalid',
         ]);
     }
 )->throws(
-    exception:  InvalidArgumentException::class,
+    exception: InvalidArgumentException::class,
     exceptionMessage: 'The shared data value [callback] must be a scalar, array, null, or an instance of Arrayable.'
 );
 
@@ -165,4 +165,3 @@ test(
         ]);
     }
 );
-

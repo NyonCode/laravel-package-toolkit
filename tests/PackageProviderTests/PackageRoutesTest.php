@@ -2,12 +2,10 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
-use Exception;
 use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageRoutesTest
 {
-
     public function configure(Packager $packager): void
     {
         $packager->name('Test Package Route')->hasRoutes();

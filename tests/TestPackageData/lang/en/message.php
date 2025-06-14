@@ -1,5 +1,5 @@
 <?php
 
 return [
-    'text' => 'Translate text'
+    'text' => 'Translate text',
 ];

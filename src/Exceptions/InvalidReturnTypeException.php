@@ -6,7 +6,6 @@ use Exception;
 
 class InvalidReturnTypeException extends Exception
 {
-
     //
 
 }

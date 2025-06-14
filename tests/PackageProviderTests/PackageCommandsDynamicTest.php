@@ -3,8 +3,6 @@
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
 use NyonCode\LaravelPackageToolkit\Packager;
-use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\TestCommand;
-use Symfony\Component\Console\Exception\CommandNotFoundException;
 
 trait PackageCommandsDynamicTest
 {

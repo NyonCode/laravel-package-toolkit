@@ -14,19 +14,19 @@ trait HasAboutCommand
      * @var array<string, mixed>
      */
     private array $composerData = [];
+
     public string $version = '';
+
     private bool $isAboutable = false;
 
     /**
      * Retrieves a specific value from the composer.json file by key name.
      *
-     * @param string $keyName The key to retrieve from composer.json.
+     * @param  string  $keyName  The key to retrieve from composer.json.
      *
      * @throws ParsingException If the composer.json file cannot be parsed.
-     *
-     * @return string|null
      */
-    private function getComposerValue(string $keyName): string|null
+    private function getComposerValue(string $keyName): ?string
     {
         $jsonFile = new JsonFile($this->path('/../composer.json'));
         if ($jsonFile->exists()) {
@@ -35,6 +35,7 @@ trait HasAboutCommand
         }
 
         $value = $this->composerData[$keyName] ?? null;
+
         return is_string($value) ? $value : null;
     }
 
@@ -42,12 +43,10 @@ trait HasAboutCommand
      * Retrieves the version of the package.
      *
      * @throws ParsingException If the composer.json file cannot be parsed.
-     *
-     * @return string|null
      */
-    public function getVersion(): string|null
+    public function getVersion(): ?string
     {
-        if (!empty($this->version)) {
+        if (! empty($this->version)) {
             return $this->version;
         }
 
@@ -64,7 +63,7 @@ trait HasAboutCommand
     private function version(): array
     {
         return [
-            'Version' => fn() => $this->getVersion(),
+            'Version' => fn () => $this->getVersion(),
         ];
     }
 
@@ -81,13 +80,13 @@ trait HasAboutCommand
     /**
      * Merges version data and additional information for AboutCommand.
      *
-     * @throws ParsingException
-     *
      * @return array<string|Closure>
+     *
+     * @throws ParsingException
      */
     private function data(): array
     {
-        if (!empty($this->getVersion())) {
+        if (! empty($this->getVersion())) {
             return array_merge($this->version(), $this->aboutData());
         }
 
@@ -98,12 +97,10 @@ trait HasAboutCommand
      * Adds data to the AboutCommand.
      *
      * @throws ParsingException
-     *
-     * @return void
      */
     public function bootAboutCommand(): void
     {
-        if (!empty($this->name)) {
+        if (! empty($this->name)) {
             AboutCommand::add(section: $this->name, data: $this->data());
         }
     }
@@ -111,34 +108,29 @@ trait HasAboutCommand
     /**
      * Sets whether the package should include information in the AboutCommand.
      *
-     * @param bool $value Whether the package should be "aboutable."
-     *
-     * @return static
+     * @param  bool  $value  Whether the package should be "aboutable."
      */
     public function hasAbout(bool $value = true): static
     {
         $this->isAboutable = $value;
+
         return $this;
     }
 
     /**
      * Sets the version of the package.
      *
-     * @param string $version The version of the package.
-     *
-     * @return static
+     * @param  string  $version  The version of the package.
      */
     public function hasVersion(string $version): static
     {
         $this->version = $version;
+
         return $this;
     }
 
-
     /**
      * Whether the package is aboutable.
-     *
-     * @return bool
      */
     public function isAboutable(): bool
     {

@@ -192,7 +192,7 @@ enum Language: string
      */
     public static function names(): Collection
     {
-        return collect(self::cases())->map(fn($language) => $language->value);
+        return collect(self::cases())->map(fn ($language) => $language->value);
     }
 
     /**
@@ -202,7 +202,7 @@ enum Language: string
      */
     public static function codes(): Collection
     {
-        return collect(self::cases())->map(fn($language) => Str::lower($language->name));
+        return collect(self::cases())->map(fn ($language) => Str::lower($language->name));
     }
 
     /**

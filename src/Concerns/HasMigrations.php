@@ -2,23 +2,20 @@
 
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
-use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use Exception;
+use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 
 trait HasMigrations
 {
     use FilesResolver;
+
     /**
      * Indicates whether the package has migration files.
-     *
-     * @var bool
      */
     private bool $isMigratable = false;
 
     /**
      * Run migrations without publishing them.
-     *
-     * @var bool
      */
     public bool $hasMigrationsOnRun = false;
 
@@ -31,8 +28,6 @@ trait HasMigrations
 
     /**
      * Indicates whether the package is migratable.
-     *
-     * @return bool
      */
     public function isMigratable(): bool
     {
@@ -42,15 +37,13 @@ trait HasMigrations
     /**
      * Set or validate migration files.
      *
-     * @param array<string>|null $migrationFiles The migration files to validate
-     * @param string $directory The directory name where the migration files are located
+     * @param  array<string>|null  $migrationFiles  The migration files to validate
+     * @param  string  $directory  The directory name where the migration files are located
      *
      * @throws Exception If any other error occurs
-     *
-     * @return static
      */
     public function hasMigrations(
-        array|null $migrationFiles = null,
+        ?array $migrationFiles = null,
         string $directory = 'database/migrations'
     ): static {
         $this->migrationFiles = $this->resolveFiles(
@@ -59,7 +52,7 @@ trait HasMigrations
             type: 'migration'
         );
 
-        if(!empty($this->migrationFiles)){
+        if (! empty($this->migrationFiles)) {
             $this->isMigratable = true;
         }
 
@@ -82,9 +75,7 @@ trait HasMigrations
      * Set to `false` to prevent migrations from being loaded when the package is registered.
      * Set to `true` to enable loading of migrations when the package is registered.
      *
-     * @param bool $value Whether to load migrations when the package is
-     *
-     * @return static
+     * @param  bool  $value  Whether to load migrations when the package is
      */
     public function canLoadMigrations(bool $value = true): static
     {

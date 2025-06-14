@@ -5,14 +5,13 @@ namespace NyonCode\LaravelPackageToolkit\Support;
 use SplFileInfo as BaseSplFileInfo;
 
 class SplFileInfo extends BaseSplFileInfo
-
 {
     private readonly string $baseFileName;
 
     public function __construct(string $filename)
     {
         parent::__construct($filename);
-        $this->baseFileName = $this->getBasename('.' . $this->getExtension());
+        $this->baseFileName = $this->getBasename('.'.$this->getExtension());
     }
 
     /**
@@ -24,8 +23,6 @@ class SplFileInfo extends BaseSplFileInfo
     {
         return $this->baseFileName;
     }
-
-
 
     /**
      * Returns the size of the file in bytes.

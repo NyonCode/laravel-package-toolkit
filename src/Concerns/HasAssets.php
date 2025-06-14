@@ -8,13 +8,13 @@ use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 trait HasAssets
 {
     use FilesResolver;
+
     private bool $isAssetable = false;
+
     private string $assetDirectory = '';
 
     /**
      * Whether the package has assets.
-     *
-     * @return bool
      */
     public function isAssetable(): bool
     {
@@ -29,24 +29,22 @@ trait HasAssets
     /**
      * Enable the package's assets.
      *
-     * @param string $directory The directory name where the assets are located
+     * @param  string  $directory  The directory name where the assets are located
      *
      * @throws DirectoryNotFoundException if the directory does not exist
-     *
-     * @return static
      */
-    public function hasAssets(string $directory = '../public'): static
+    public function hasAssets(string $directory = 'public'): static
     {
-        $path = $this->path($directory);
+        $path = $this->path("../$directory");
 
-        if(! File::isDirectory($path)) {
+        if (! File::isDirectory($path)) {
             throw new DirectoryNotFoundException(
                 "Directory [$path] does not exist"
             );
         }
         $this->assetDirectory = $this->path($directory);
         $this->isAssetable = true;
-        
+
         return $this;
     }
 }

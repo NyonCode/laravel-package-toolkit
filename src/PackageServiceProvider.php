@@ -18,44 +18,32 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\HasPublishingTag;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\PublishesPackageResources;
 use ReflectionClass;
 use Seld\JsonLint\ParsingException;
-use View;
 
-abstract class PackageServiceProvider extends ServiceProvider implements
-    ProvidesPackageServices
+abstract class PackageServiceProvider extends ServiceProvider implements ProvidesPackageServices
 {
+    use BootsPackageResources;
+    use HasEnvironmentChecks;
     use HasNamespaceResolver;
     use HasPublishingTag;
-    use HasEnvironmentChecks;
     use PublishesPackageResources;
-    use BootsPackageResources;
 
     /**
      * Whether the about command has been registered.
-     *
-     * @var bool
      */
     private static bool $isPackageAboutRegistered = false;
 
     /**
      * Instance of the Packager class.
-     *
-     * @var Packager
      */
     protected Packager $packager;
 
     /**
      * Configure the packager instance.
-     *
-     * @param Packager $packager
-     *
-     * @return void
      */
     abstract public function configure(Packager $packager): void;
 
     /**
      * Actions to perform before registering the package.
-     *
-     * @return void
      */
     public function registeringPackage(): void
     {
@@ -72,8 +60,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements
      *
      * @throws MissingNameException if the package does not have a name.
      * @throws Exception
-     *
-     * @return void
      */
     public function register(): void
     {
@@ -96,8 +82,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements
 
     /**
      * Actions to perform after registering the package.
-     *
-     * @return void
      */
     public function registeredPackage(): void
     {
@@ -106,8 +90,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements
 
     /**
      * Actions to perform before booting the package.
-     *
-     * @return void
      */
     public function bootingPackage(): void
     {
@@ -118,8 +100,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements
      * Boot the service provider.
      *
      * @throws ParsingException
-     *
-     * @return void
      */
     public function boot(): void
     {
@@ -129,11 +109,11 @@ abstract class PackageServiceProvider extends ServiceProvider implements
 
         $this->registerPackageCommands();
 
-        if (!self::$isPackageAboutRegistered) {
+        if (! self::$isPackageAboutRegistered) {
             AboutCommand::add(
                 section: 'Laravel Package Toolkit',
                 data: [
-                    'Version' => fn() => InstalledVersions::getPrettyVersion(
+                    'Version' => fn () => InstalledVersions::getPrettyVersion(
                         'nyoncode/laravel-package-toolkit'
                     ),
                 ]
@@ -149,8 +129,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements
 
     /**
      * Actions to perform after booting the package.
-     *
-     * @return void
      */
     public function bootedPackage(): void
     {
@@ -159,8 +137,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements
 
     /**
      * Create and return a new Packager instance.
-     *
-     * @return Packager
      */
     public function bootPackager(): Packager
     {
@@ -171,17 +147,15 @@ abstract class PackageServiceProvider extends ServiceProvider implements
      * Register the package configuration files.
      *
      * @throws Exception
-     *
-     * @return void
      */
     protected function registerConfig(): void
     {
-        if (!empty($this->packager->configFiles())) {
+        if (! empty($this->packager->configFiles())) {
             foreach ($this->packager->configFiles() as $configFile) {
-                if (!is_array(require $configFile->getPathname())) {
+                if (! is_array(require $configFile->getPathname())) {
                     throw new InvalidReturnTypeException(
-                        'Configuration file [' .
-                        $configFile->getBaseFileName() .
+                        'Configuration file ['.
+                        $configFile->getBaseFileName().
                         '] must return an array.'
                     );
                 }
@@ -196,12 +170,11 @@ abstract class PackageServiceProvider extends ServiceProvider implements
 
     /**
      * Get the base directory of the package.
-     *
-     * @return string
      */
     public function getPackageBaseDir(): string
     {
         $reflector = new ReflectionClass(get_class($this));
+
         return dirname($reflector->getFileName());
     }
 
@@ -210,8 +183,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements
      *
      * This method checks if the application is running in the console
      * and, if so, registers the package commands.
-     *
-     * @return void
      */
     public function registerPackageCommands(): void
     {

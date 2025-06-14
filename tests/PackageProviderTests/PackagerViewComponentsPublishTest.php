@@ -24,7 +24,7 @@ trait PackagerViewComponentsPublishTest
             )
             ->hasComponents(
                 prefix: 'admin',
-                components: ['panel' => Admin::class, 'two' => TestTwo::class, Three::class,]
+                components: ['panel' => Admin::class, 'two' => TestTwo::class, Three::class]
             );
     }
 }

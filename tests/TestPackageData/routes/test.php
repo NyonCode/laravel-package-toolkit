@@ -1,3 +1,3 @@
 <?php
 
-Route::get('first-route', fn() => 'response route');
+Route::get('first-route', fn () => 'response route');

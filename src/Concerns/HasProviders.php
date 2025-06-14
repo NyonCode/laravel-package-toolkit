@@ -9,12 +9,11 @@ trait HasProviders
     use FilesResolver;
 
     private bool $isProvidable = false;
+
     protected array $providers = [];
 
     /**
      * Checks if the package is "providable".
-     *
-     * @return bool
      */
     public function isProvidable(): bool
     {
@@ -29,11 +28,9 @@ trait HasProviders
     /**
      * Adds a service provider to the package.
      *
-     * @param string $providerPath The name of the service provider.
+     * @param  string  $providerPath  The name of the service provider.
      *
      * @throws FileNotFoundException
-     *
-     * @return static
      */
     public function hasProvider(string $providerPath): static
     {
@@ -41,7 +38,7 @@ trait HasProviders
 
         $this->providers = array_merge($this->providers, $providerPath);
 
-        if(! empty($this->providers)) {
+        if (! empty($this->providers)) {
             $this->isProvidable = true;
         }
 
