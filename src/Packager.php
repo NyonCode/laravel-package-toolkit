@@ -9,6 +9,7 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasAboutCommand;
 use NyonCode\LaravelPackageToolkit\Concerns\HasAssets;
 use NyonCode\LaravelPackageToolkit\Concerns\HasCommands;
 use NyonCode\LaravelPackageToolkit\Concerns\HasConfig;
+use NyonCode\LaravelPackageToolkit\Concerns\HasMiddleware;
 use NyonCode\LaravelPackageToolkit\Concerns\HasMigrations;
 use NyonCode\LaravelPackageToolkit\Concerns\HasProviders;
 use NyonCode\LaravelPackageToolkit\Concerns\HasRoutes;
@@ -21,20 +22,21 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasViewSharedData;
 
 class Packager
 {
-    use FilesResolver;
-    use HasAssets;
-    use HasAboutCommand;
-    use HasCommands;
-    use HasConfig;
-    use HasMigrations;
-    use HasRoutes;
-    use HasProviders;
-    use HasTranslate;
-    use HasViews;
-    use HasViewComponents;
-    use HasViewComponentNamespaces;
-    use HasViewComposers;
-    use HasViewSharedData;
+    use FilesResolver,
+        HasAssets,
+        HasAboutCommand,
+        HasCommands,
+        HasConfig,
+        HasMiddleware,
+        HasMigrations,
+        HasRoutes,
+        HasProviders,
+        HasTranslate,
+        HasViews,
+        HasViewComponents,
+        HasViewComponentNamespaces,
+        HasViewComposers,
+        HasViewSharedData;
 
     public string $name;
 

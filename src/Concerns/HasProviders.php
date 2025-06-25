@@ -35,11 +35,35 @@ trait HasProviders
      *
      * @return static
      */
-    public function hasProvider(string $providerPath): static
+    public function hasProvider(string $provider): static
     {
-        $providerPath = $this->resolveFiles($providerPath);
+        $providerPath = $this->resolveFiles($provider);
 
         $this->providers = array_merge($this->providers, $providerPath);
+
+        if(! empty($this->providers)) {
+            $this->isProvidable = true;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Adds multiple service providers to the package.
+     *
+     * @param array<string> $providers
+     * @throws FileNotFoundException
+     * @return $this
+     */
+    public function hasProviders(array $providers): static
+    {
+        if(!empty($providers)) {
+            foreach ($providers as $provider) {
+                $providerPath = $this->resolveFiles($provider);
+
+                $this->providers = array_merge($this->providers, $providerPath);
+            }
+        }
 
         if(! empty($this->providers)) {
             $this->isProvidable = true;

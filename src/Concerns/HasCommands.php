@@ -8,8 +8,8 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\HasNamespaceResolver;
 
 trait HasCommands
 {
-    use FilesResolver;
-    use HasNamespaceResolver;
+    use FilesResolver,
+        HasNamespaceResolver;
 
     /**
      * Whether the package has commands
