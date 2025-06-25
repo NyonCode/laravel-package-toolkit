@@ -11,8 +11,6 @@ trait HasRoutes
 
     /**
      * Indicates whether the package has route files.
-     *
-     * @var bool
      */
     private bool $isRoutable = false;
 
@@ -25,8 +23,6 @@ trait HasRoutes
 
     /**
      * Check if the package has route files.
-     *
-     * @return bool
      */
     public function isRoutable(): bool
     {
@@ -43,16 +39,13 @@ trait HasRoutes
         return $this->routeFiles;
     }
 
-
     /**
      * Set or validate route files.
      *
-     * @param string[]|string|null $routeFiles The route files to validate
-     * @param string $directory The directory name where the route files are located
+     * @param  string[]|string|null  $routeFiles  The route files to validate
+     * @param  string  $directory  The directory name where the route files are located
      *
      * @throws FileNotFoundException
-     *
-     * @return static
      */
     public function hasRoutes(
         array|string|null $routeFiles = null,
@@ -64,7 +57,7 @@ trait HasRoutes
             type: 'route'
         );
 
-        if( !empty( $this->routeFiles )) {
+        if (! empty($this->routeFiles)) {
             $this->isRoutable = true;
         }
 

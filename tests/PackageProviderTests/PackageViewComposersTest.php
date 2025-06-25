@@ -2,7 +2,6 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
-use Illuminate\Support\Facades\Blade;
 use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageViewComposersTest

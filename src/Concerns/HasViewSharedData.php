@@ -3,10 +3,7 @@
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
 use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Support\Collection;
 use InvalidArgumentException;
-use function Pest\Laravel\instance;
-use function PHPUnit\Framework\isInstanceOf;
 
 trait HasViewSharedData
 {
@@ -46,24 +43,22 @@ trait HasViewSharedData
      * sets the `isSharedWithViews` flag to true if the
      * array is not empty.
      *
-     * @param array $viewSharedData The shared data for the views
-     *
-     * @return static
+     * @param  array  $viewSharedData  The shared data for the views
      */
     public function hasSharedDataForAllViews(array $viewSharedData): static
     {
         foreach ($viewSharedData as $key => $value) {
-            if (!is_string($key)) {
+            if (! is_string($key)) {
                 throw new InvalidArgumentException(
                     message: "The shared data key [$key] must be a string."
                 );
             }
 
             if (
-                !is_scalar($value) and
-                !is_array($value) and
-                !is_null($value) and
-                !($value instanceof Arrayable)
+                ! is_scalar($value) and
+                ! is_array($value) and
+                ! is_null($value) and
+                ! ($value instanceof Arrayable)
             ) {
                 throw new InvalidArgumentException(
                     message: "The shared data value [$key] must be a scalar, array, null, or an instance of Arrayable."
@@ -76,7 +71,7 @@ trait HasViewSharedData
             $viewSharedData
         );
 
-        if (!empty($this->viewSharedData)) {
+        if (! empty($this->viewSharedData)) {
             $this->isSharedWithViews = true;
         }
 

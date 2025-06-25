@@ -6,30 +6,23 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 interface Packable
 {
-
     /**
      * Configure the package using the given packager instance.
      *
      * This method allows setting up the package's name and other configurations
      * like routes, views, translations, etc., using the provided Packager instance.
      *
-     * @param Packager $packager The packager instance to configure the package.
-     *
-     * @return void
+     * @param  Packager  $packager  The packager instance to configure the package.
      */
     public function configure(Packager $packager): void;
 
     /**
      * Actions to perform before registering the package.
-     *
-     * @return void
      */
     public function registeringPackage(): void;
 
     /**
      * Actions to perform after registering the package.
-     *
-     * @return void
      */
     public function registeredPackage(): void;
 
@@ -42,16 +35,11 @@ interface Packable
 
     /**
      * Actions to perform after booting the package.
-     *
-     * @return void
      */
     public function bootedPackage(): void;
 
     /**
      * Get the about data for the package.
-     *
-     * @return array
      */
     public function aboutData(): array;
-
 }

@@ -7,8 +7,6 @@ use Illuminate\View\View;
 
 class Admin extends Component
 {
-
-
     public function __construct(
         public string $name
     ) {}

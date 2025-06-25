@@ -9,29 +9,21 @@ trait HasViewComponents
 {
     /**
      * Whether the package has view components
-     *
-     * @var bool
      */
     private bool $isViewComponentized = false;
 
     /**
      * The view components for the package.
-     *
-     * @var array
      */
     protected array $viewComponents = [];
 
     /**
      * The view component paths for the package.
-     *
-     * @var array
      */
     private array $viewComponentPaths = [];
 
     /**
      * Check if the package has view components
-     *
-     * @return bool
      */
     public function isViewComponentized(): bool
     {
@@ -66,19 +58,17 @@ trait HasViewComponents
      *
      * Validates and registers the given view component in the package.
      *
-     * @param string $prefix The namespace prefix for the component.
-     * @param string $componentClass The component class to register.
-     * @param string $alias The alias for the component.
+     * @param  string  $prefix  The namespace prefix for the component.
+     * @param  string  $componentClass  The component class to register.
+     * @param  string  $alias  The alias for the component.
      *
      * @throws ReflectionException
-     *
-     * @return static
      */
     public function hasComponent(string $prefix, string $componentClass, string $alias = ''): static
     {
         $this->hasComponents($prefix, $componentClass);
 
-        if (!empty($alias)) {
+        if (! empty($alias)) {
             $this->hasComponents($prefix, [$alias => $componentClass]);
         }
 
@@ -90,18 +80,15 @@ trait HasViewComponents
      *
      * Validates and registers the given view components.
      *
-     * @param string $prefix
-     * @param string|string[] $components Array of view components with names as keys and component objects as
+     * @param  string|string[]  $components  Array of view components with names as keys and component objects as
      *
      * @throws ReflectionException
-     *
-     * @return static
      */
     public function hasComponents(
         string $prefix,
         array|string $components
     ): static {
-        if (!is_array($components)) {
+        if (! is_array($components)) {
             $components = [$components];
         }
 
@@ -112,7 +99,7 @@ trait HasViewComponents
                 'prefix' => $prefix,
             ];
 
-            if (!empty($alias)) {
+            if (! empty($alias)) {
                 $this->viewComponents[] = [
                     'component' => $component,
                     'alias' => $alias,
@@ -122,12 +109,12 @@ trait HasViewComponents
 
             $componentsReflected = new ReflectionClass($component);
             $componentsDirname = dirname($componentsReflected->getFileName());
-            if(!in_array($componentsDirname, $this->viewComponentPaths)) {
+            if (! in_array($componentsDirname, $this->viewComponentPaths)) {
                 $this->viewComponentPaths[] = $componentsDirname;
             }
         }
 
-        if (!empty($this->viewComponents)) {
+        if (! empty($this->viewComponents)) {
             $this->isViewComponentized = true;
         }
 

@@ -10,7 +10,8 @@ class TestAliasMiddleware
     public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
-        $response->setContent('Middleware alias see - ' . $response->getContent());
+        $response->setContent('Middleware alias see - '.$response->getContent());
+
         return $response;
     }
 }

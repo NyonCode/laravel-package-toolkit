@@ -4,7 +4,6 @@ namespace NyonCode\LaravelPackageToolkit\Support\Concerns;
 
 use Composer\Autoload\ClassLoader;
 use Composer\InstalledVersions;
-use RuntimeException;
 
 trait HasNamespaceResolver
 {
@@ -22,16 +21,13 @@ trait HasNamespaceResolver
 
     /**
      * Get the filesystem path from a namespace.
-     *
-     * @param string $componentNamespace
-     * @return string|null
      */
     protected function getPathFromNamespace(string $componentNamespace): ?string
     {
         /** @var ClassLoader|null $composerAutoload */
-        $composerAutoload = require $this->getPackageBasePath() . '/vendor/autoload.php';
+        $composerAutoload = require $this->getPackageBasePath().'/vendor/autoload.php';
 
-        if (!$composerAutoload instanceof ClassLoader) {
+        if (! $composerAutoload instanceof ClassLoader) {
             return null;
         }
 
@@ -48,25 +44,25 @@ trait HasNamespaceResolver
             }
         }
 
-        if (!$matchingPrefix || !$basePath) {
+        if (! $matchingPrefix || ! $basePath) {
             return null;
         }
 
         $relativeNamespace = substr($componentNamespace, strlen($matchingPrefix));
         $relativePath = str_replace('\\', DIRECTORY_SEPARATOR, $relativeNamespace);
 
-        return realpath($basePath . DIRECTORY_SEPARATOR . $relativePath);
+        return realpath($basePath.DIRECTORY_SEPARATOR.$relativePath);
     }
 
     protected function getNamespaceFromPath(string $filePath): ?string
     {
         $normalizedFilePath = realpath($filePath);
-        if (!$normalizedFilePath) {
+        if (! $normalizedFilePath) {
             throw new \RuntimeException("Soubor nebyl nalezen: {$filePath}");
         }
 
-        $composerAutoload = require $this->getPackageBasePath() . '/vendor/autoload.php';
-        if (!$composerAutoload instanceof ClassLoader) {
+        $composerAutoload = require $this->getPackageBasePath().'/vendor/autoload.php';
+        if (! $composerAutoload instanceof ClassLoader) {
             throw new \RuntimeException('Composer autoloader nebyl nalezen.');
         }
 
@@ -74,7 +70,7 @@ trait HasNamespaceResolver
         foreach ($psr4Mappings as $namespacePrefix => $paths) {
             foreach ($paths as $basePath) {
                 $normalizedBasePath = realpath($basePath);
-                if (!$normalizedBasePath) {
+                if (! $normalizedBasePath) {
                     continue;
                 }
 
@@ -86,7 +82,7 @@ trait HasNamespaceResolver
                     $namespaceSuffix = str_replace(DIRECTORY_SEPARATOR, '\\', $relativeDir);
 
                     return rtrim($namespacePrefix, '\\')
-                        . ($namespaceSuffix ? '\\' . $namespaceSuffix : '');
+                        .($namespaceSuffix ? '\\'.$namespaceSuffix : '');
                 }
             }
         }

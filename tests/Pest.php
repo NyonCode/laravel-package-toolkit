@@ -15,7 +15,6 @@ use NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests\PackageServiceProv
 
 uses(PackageServiceProviderTestCase::class)->in('PackageProviderTests');
 
-
 /*
 |--------------------------------------------------------------------------
 | Expectations

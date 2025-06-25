@@ -10,7 +10,6 @@ use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\app\View\Components2\Te
 
 trait PackageViewComponentTest
 {
-
     public function configure(Packager $packager): void
     {
         $packager
@@ -28,7 +27,7 @@ trait PackageViewComponentTest
             )->hasComponent(
                 'admin',
                 TestTwo::class,
-            ) ;
+            );
     }
 }
 

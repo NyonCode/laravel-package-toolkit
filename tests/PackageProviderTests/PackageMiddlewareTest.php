@@ -12,24 +12,21 @@ trait PackageMiddlewareTest
 {
     /**
      * Configure the packager instance
-     *
-     * @param Packager $packager
-     * @return void
      */
     public function configure(Packager $packager): void
     {
         $packager
             ->name('Test Package')
             ->hasMiddlewareAliases([
-                'test.alias' => TestAliasMiddleware::class
+                'test.alias' => TestAliasMiddleware::class,
             ])
             ->hasMiddlewareGroups([
                 'web' => [
-                    TestGroupMiddleware::class
-                ]
+                    TestGroupMiddleware::class,
+                ],
             ])
             ->hasMiddlewareGlobals([
-                TestGlobalMiddleware::class
+                TestGlobalMiddleware::class,
             ]);
     }
 }

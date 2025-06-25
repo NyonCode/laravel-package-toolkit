@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace NyonCode\LaravelPackageToolkit;
 
@@ -14,59 +16,52 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasMigrations;
 use NyonCode\LaravelPackageToolkit\Concerns\HasProviders;
 use NyonCode\LaravelPackageToolkit\Concerns\HasRoutes;
 use NyonCode\LaravelPackageToolkit\Concerns\HasTranslate;
+use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponentNamespaces;
+use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponents;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViewComposers;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViews;
-use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponents;
-use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponentNamespaces;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViewSharedData;
 
 class Packager
 {
     use FilesResolver,
-        HasAssets,
         HasAboutCommand,
+        HasAssets,
         HasCommands,
         HasConfig,
         HasMiddleware,
         HasMigrations,
-        HasRoutes,
         HasProviders,
+        HasRoutes,
         HasTranslate,
-        HasViews,
-        HasViewComponents,
         HasViewComponentNamespaces,
+        HasViewComponents,
         HasViewComposers,
+        HasViews,
         HasViewSharedData;
 
     public string $name;
 
     /**
      * The short name of the package, or null if not set.
-     *
-     * @var string|null
      */
-    private string|null $shortName = null;
+    private ?string $shortName = null;
 
     /**
      * Set the name of the package.
      *
-     * @param string $name The name of the package
-     * @return static
+     * @param  string  $name  The name of the package
      */
     public function name(string $name): static
     {
         $this->name = $name;
 
-
         return $this;
-
 
     }
 
     /**
      * Get the short name of the package.
-     *
-     * @return string
      */
     public function shortName(): string
     {
@@ -76,11 +71,9 @@ class Packager
     /**
      * Set a custom short name for the package.
      *
-     * @param string $shortName The short name to set
+     * @param  string  $shortName  The short name to set
      *
      * @throws InvalidArgumentException If the provided short name is not in the expected format
-     *
-     * @return static
      */
     public function hasShortName(string $shortName): static
     {

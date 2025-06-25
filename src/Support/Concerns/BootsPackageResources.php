@@ -9,7 +9,6 @@ trait BootsPackageResources
 {
     use BladeComponentLoader;
 
-
     /**
      * Boot the package resources.
      *
@@ -21,8 +20,6 @@ trait BootsPackageResources
      * `bootViews`.
      *
      * @throws ParsingException
-     *
-     * @return void
      */
     public function bootPackageResources(): void
     {
@@ -34,8 +31,7 @@ trait BootsPackageResources
             ->bootVewComposers()
             ->bootViewComponentNamespaces()
             ->bootViewComponents()
-            ->bootViews()
-        ;
+            ->bootViews();
     }
 
     /**
@@ -45,8 +41,6 @@ trait BootsPackageResources
      * registers it by calling the `bootAboutCommand` method on the packager.
      *
      * @throws ParsingException
-     *
-     * @return static
      */
     public function bootAboutCommand(): static
     {
@@ -65,8 +59,6 @@ trait BootsPackageResources
      * This method loads the migration files for the package using the paths
      * provided by the packager. It ensures that the package is migratable
      * before attempting to load the migrations.
-     *
-     * @return static
      */
     public function bootMigrations(): static
     {
@@ -87,8 +79,6 @@ trait BootsPackageResources
      * This method loads the route files for the package using the paths
      * provided by the packager. It ensures that the package is routable
      * before attempting to load the routes.
-     *
-     * @return static
      */
     public function bootRoutes(): static
     {
@@ -109,8 +99,6 @@ trait BootsPackageResources
      * This method checks if the package has shared data for views. If so, it iterates
      * through the shared data and registers each key-value pair with the View facade.
      * This allows the package to share data across all views.
-     *
-     * @return static
      */
     public function bootSharedViewData(): static
     {
@@ -130,8 +118,6 @@ trait BootsPackageResources
      * This method checks if the package is translatable and, if so, loads the
      * translations from the translation path provided by the packager. It
      * loads both PHP and JSON translations.
-     *
-     * @return static
      */
     public function bootTranslations(): static
     {
@@ -157,8 +143,6 @@ trait BootsPackageResources
      * This method iterates through the view composers registered in the package
      * and registers them with the View facade. This allows the package to
      * bind data to views when they are rendered.
-     *
-     * @return static
      */
     public function bootVewComposers(): static
     {
@@ -178,8 +162,6 @@ trait BootsPackageResources
      *
      * This method checks if the view component namespaces are configured and,
      * if so, loads the namespaces using the packager's configuration.
-     *
-     * @return static
      */
     public function bootViewComponentNamespaces(): static
     {
@@ -197,8 +179,6 @@ trait BootsPackageResources
      *
      * This method checks if the package is view composable and, if so,
      * loads the view components using the packager's configuration.
-     *
-     * @return static
      */
     public function bootViewComponents(): static
     {
@@ -218,8 +198,6 @@ trait BootsPackageResources
      * using the paths and namespace provided by the packager. This allows
      * the package views to be accessible using the package's short name as
      * the namespace.
-     *
-     * @return static
      */
     public function bootViews(): static
     {

@@ -5,23 +5,27 @@ namespace NyonCode\LaravelPackageToolkit\Concerns;
 trait HasMiddleware
 {
     private bool $isSetMiddlewareAliases = false;
+
     protected array $middlewareAliases = [];
-    private bool $isSetMiddlewareGroups  = false;
+
+    private bool $isSetMiddlewareGroups = false;
+
     protected array $middlewareGroups = [];
+
     private bool $isSetMiddlewareGlobals = false;
+
     protected array $middlewareGlobals = [];
 
     /**
      * Add middleware aliases
      *
-     * @param array $aliases
      * @return $this
      */
     public function hasMiddlewareAliases(array $aliases): static
     {
         $this->middlewareAliases = array_merge($this->middlewareAliases, $aliases);
 
-        if( !empty( $this->middlewareAliases )) {
+        if (! empty($this->middlewareAliases)) {
             $this->isSetMiddlewareAliases = true;
         }
 
@@ -31,7 +35,6 @@ trait HasMiddleware
     /**
      * Add middleware groups
      *
-     * @param array $groups
      * @return $this
      */
     public function hasMiddlewareGroups(array $groups): static
@@ -42,7 +45,7 @@ trait HasMiddleware
                 (array) $middlewares
             );
         }
-        if( !empty( $this->middlewareGroups )) {
+        if (! empty($this->middlewareGroups)) {
             $this->isSetMiddlewareGroups = true;
         }
 
@@ -52,14 +55,13 @@ trait HasMiddleware
     /**
      * Add global middlewares
      *
-     * @param array $middlewares
      * @return $this
      */
     public function hasMiddlewareGlobals(array $middlewares): static
     {
         $this->middlewareGlobals = array_merge($this->middlewareGlobals, $middlewares);
 
-        if( !empty( $this->middlewareGlobals )) {
+        if (! empty($this->middlewareGlobals)) {
             $this->isSetMiddlewareGlobals = true;
         }
 
@@ -68,8 +70,6 @@ trait HasMiddleware
 
     /**
      * Get middleware aliases
-     *
-     * @return array
      */
     public function getMiddlewareAliases(): array
     {
@@ -78,8 +78,6 @@ trait HasMiddleware
 
     /**
      * Get middleware groups
-     *
-     * @return array
      */
     public function getMiddlewareGroups(): array
     {
@@ -88,8 +86,6 @@ trait HasMiddleware
 
     /**
      * Get global middlewares
-     *
-     * @return array
      */
     public function getMiddlewareGlobals(): array
     {
@@ -98,8 +94,6 @@ trait HasMiddleware
 
     /**
      * Check if the package has middleware aliases
-     *
-     * @return bool
      */
     public function isSetMiddlewareAliases(): bool
     {
@@ -108,8 +102,6 @@ trait HasMiddleware
 
     /**
      * Check if the package has middleware groups
-     *
-     * @return bool
      */
     public function isSetMiddlewareGroups(): bool
     {
@@ -118,8 +110,6 @@ trait HasMiddleware
 
     /**
      * Check if the package has global middlewares
-     *
-     * @return bool
      */
     public function isSetMiddlewareGlobals(): bool
     {

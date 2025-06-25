@@ -12,9 +12,7 @@ trait BladeComponentLoader
      * This method uses the components registered in the packager and registers them
      * with Blade.
      *
-     * @param array<int|string, array<string, int|string|null>|string|null> $components
-     *
-     * @return void
+     * @param  array<int|string, array<string, int|string|null>|string|null>  $components
      */
     protected function loadViewComponents(array $components): void
     {
@@ -37,9 +35,7 @@ trait BladeComponentLoader
      * This method takes an associative array of namespace prefixes and namespaces
      * and registers them with Blade.
      *
-     * @param array<string, string> $namespaces An associative array of namespace prefixes and namespaces.
-     *
-     * @return void
+     * @param  array<string, string>  $namespaces  An associative array of namespace prefixes and namespaces.
      */
     protected function loadViewComponentNamespaces(array $namespaces): void
     {

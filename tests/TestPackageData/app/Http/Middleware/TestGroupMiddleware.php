@@ -10,7 +10,8 @@ class TestGroupMiddleware
     public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
-        $response->setContent('Middleware group see - ' . $response->getContent());;
+        $response->setContent('Middleware group see - '.$response->getContent());
+
         return $response;
     }
 }

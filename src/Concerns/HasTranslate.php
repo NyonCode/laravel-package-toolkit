@@ -14,29 +14,21 @@ trait HasTranslate
 
     /**
      * Indicates whether the package is translatable.
-     *
-     * @var bool
      */
     private bool $isTranslatable = false;
 
     /**
      * Indicates whether the package supports JSON translations.
-     *
-     * @var bool
      */
     private bool $loadJsonTranslate = false;
 
     /**
      * The path to the translation files.
-     *
-     * @var string
      */
     protected string $translationPath = '';
 
     /**
      * Get the value of isTranslatable
-     *
-     * @return bool
      */
     public function isTranslatable(): bool
     {
@@ -45,8 +37,6 @@ trait HasTranslate
 
     /**
      * Get the value of loadJsonTranslate
-     *
-     * @return bool
      */
     public function loadJsonTranslate(): bool
     {
@@ -55,8 +45,6 @@ trait HasTranslate
 
     /**
      * Get the path to the translation files.
-     *
-     * @return string
      */
     public function translationPath(): string
     {
@@ -66,16 +54,14 @@ trait HasTranslate
     /**
      * Set or validate translation files.
      *
-     * @param string $translationPath The path to the translation files
+     * @param  string  $translationPath  The path to the translation files
      *
      * @throws InvalidLanguageDirectoryException
-     *
-     * @return static
      */
     public function hasTranslations(string $translationPath = 'lang'): static
     {
         $path = $this->path("../$translationPath");
-        if (!File::isDirectory($path)) {
+        if (! File::isDirectory($path)) {
             throw new DirectoryNotFoundException(
                 "Directory [$path] does not exist"
             );
@@ -92,7 +78,7 @@ trait HasTranslate
         }
 
         foreach (File::directories($path) as $directory) {
-            if (!Language::codes()->search(Str::afterLast($directory, '/'))) {
+            if (! Language::codes()->search(Str::afterLast($directory, '/'))) {
                 throw new InvalidLanguageDirectoryException(
                     "Invalid language directory [$directory]. Directory name must be one of the supported languages."
                 );

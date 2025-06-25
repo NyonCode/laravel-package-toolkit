@@ -6,7 +6,6 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageConfigWithRelativeFilePathsTest
 {
-
     public function configure(Packager $packager): void
     {
         $packager
@@ -19,11 +18,11 @@ uses(PackageConfigWithRelativeFilePathsTest::class);
 
 test(
     'can register the alternative config files',
-    fn() => expect(config('foo.foo'))
+    fn () => expect(config('foo.foo'))
         ->not->toBeNull()
         ->toBe('alt-bar')
         ->and(
-            fn() => expect(config('test-config.key2'))
+            fn () => expect(config('test-config.key2'))
                 ->not()
                 ->toBe('value2')
                 ->toBeEmpty()

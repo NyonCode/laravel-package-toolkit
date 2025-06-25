@@ -2,8 +2,8 @@
 
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
-use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 use Exception;
+use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 
 trait HasConfig
 {
@@ -11,8 +11,6 @@ trait HasConfig
 
     /**
      * Indicates whether the package is configurable.
-     *
-     * @var bool
      */
     private bool $isConfigurable = false;
 
@@ -25,8 +23,6 @@ trait HasConfig
 
     /**
      * Determine if the package is configurable.
-     *
-     * @return bool
      */
     public function isConfigurable(): bool
     {
@@ -46,12 +42,10 @@ trait HasConfig
     /**
      * Set or validate configuration files.
      *
-     * @param string[]|string|null $configFiles The configuration files to validate
-     * @param string $directory The directory name where the configuration files are located
+     * @param  string[]|string|null  $configFiles  The configuration files to validate
+     * @param  string  $directory  The directory name where the configuration files are located
      *
      * @throws Exception If the directory does not exist
-     *
-     * @return static
      */
     public function hasConfig(
         string|array|null $configFiles = null,
@@ -63,7 +57,7 @@ trait HasConfig
             type: 'config'
         );
 
-        if( !empty( $this->configFiles )) {
+        if (! empty($this->configFiles)) {
             $this->isConfigurable = true;
         }
 

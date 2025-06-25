@@ -10,7 +10,8 @@ class TestGlobalMiddleware
     public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
-        $response->setContent('Global middleware see - ' . $response->getContent());
+        $response->setContent('Global middleware see - '.$response->getContent());
+
         return $response;
     }
 }
