@@ -10,7 +10,7 @@ class TestGroupMiddleware
     public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
-        $response->setContent('Middleware group see - '.$response->getContent());
+        $response->headers->set('X-Test-Middleware', 'Group Applied');
 
         return $response;
     }

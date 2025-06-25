@@ -10,7 +10,7 @@ class TestAliasMiddleware
     public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
-        $response->setContent('Middleware alias see - '.$response->getContent());
+        $response->headers->set('X-Test-Middleware', 'Alias Applied');
 
         return $response;
     }

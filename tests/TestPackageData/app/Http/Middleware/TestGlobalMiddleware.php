@@ -10,7 +10,7 @@ class TestGlobalMiddleware
     public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
-        $response->setContent('Global middleware see - '.$response->getContent());
+        $response->headers->set('X-Test-Middleware', 'Global Applied');
 
         return $response;
     }
