@@ -13,7 +13,7 @@ trait HasViewComponents
     private bool $isViewComponentized = false;
 
     /**
-     * @var array The view components for the package.
+    * @var array The view components for the package.
      */
     protected array $viewComponents = [];
 
