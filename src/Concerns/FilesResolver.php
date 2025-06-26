@@ -18,8 +18,6 @@ trait FilesResolver
 
     /**
      * Get the base path of the package.
-     *
-     * @return string
      */
     public function basePath(): string
     {
