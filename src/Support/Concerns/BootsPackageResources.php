@@ -2,6 +2,8 @@
 
 namespace NyonCode\LaravelPackageToolkit\Support\Concerns;
 
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Routing\Router;
 use Seld\JsonLint\ParsingException;
 use View;
 
@@ -26,6 +28,7 @@ trait BootsPackageResources
         $this->bootAboutCommand()
             ->bootMigrations()
             ->bootRoutes()
+            ->bootMiddleware()
             ->bootSharedViewData()
             ->bootTranslations()
             ->bootVewComposers()
@@ -88,6 +91,40 @@ trait BootsPackageResources
 
         foreach ($this->packager->routeFiles() as $routeFile) {
             $this->loadRoutesFrom(path: $routeFile->getPathname());
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * Boot middleware for the package.
+     *
+     * @return static
+     */
+    public function bootMiddleware(): static
+    {
+        $router = resolve(Router::class);
+        $kernel = resolve(Kernel::class);
+
+        if ($this->packager->isSetMiddlewareAliases()) {
+            foreach ($this->packager->getMiddlewareAliases() as $alias => $middleware) {
+                $router->aliasMiddleware($alias, $middleware);
+            }
+        }
+
+        if ($this->packager->isSetMiddlewareGroups()) {
+            foreach ($this->packager->getMiddlewareGroups() as $group => $middlewares) {
+                foreach ($middlewares as $middleware) {
+                    $router->pushMiddlewareToGroup($group, $middleware);
+                }
+            }
+        }
+
+        if ($this->packager->isSetMiddlewareGlobals()) {
+            foreach ($this->packager->getMiddlewareGlobals() as $middleware) {
+                $kernel->pushMiddleware($middleware);
+            }
         }
 
         return $this;
