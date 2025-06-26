@@ -30,6 +30,7 @@ developers to focus on building features rather than boilerplate code.
 - [Short name](#short-name)
 - [Config](#config)
 - [Routing](#routing)
+- [Middlewares](#middlewares)
 - [Migrations](#migrations)
 - [Translations](#translations)
 - [Commands](#commands)
@@ -244,6 +245,55 @@ To use an alternative directory for route files.
 $package->hasRoute(directory: 'webRouter');
 ```
 ---
+
+## Middlewares
+
+To register middleware for your package, use these methods:
+
+### Register Middleware Aliases
+
+To define route middleware aliases:
+
+```php
+$packager->hasMiddlewareAlias([
+    'custom.alias' => \Vendor\Package\Http\Middleware\CustomMiddleware::class,
+]);
+```
+This allows you to assign the middleware to routes using its alias:
+
+```php
+    Route::get('/example', fn () => 'Hello')->middleware('custom.alias');
+```
+
+### Register Middleware Groups
+
+To push middleware into existing middleware groups:
+
+```php
+$packager->hasMiddlewareGroup([
+    'web' => [
+        \Vendor\Package\Http\Middleware\WebMiddleware::class,
+    ],
+    'api' => [
+        \Vendor\Package\Http\Middleware\ApiMiddleware::class,
+    ],
+]);
+```
+This will automatically add your middleware to the specified groups (e.g. web, api).
+
+
+### Register Middleware Globally
+
+To register global middleware (executed for every request):
+
+```php
+$packager->hasMiddlewareGlobal([
+    \Vendor\Package\Http\Middleware\GlobalMiddleware::class,
+]);
+```
+
+This middleware will be added to the middleware group `core` is useful for applying middleware to all routes regardless of their group.
+
 
 ## Migrations
 
@@ -474,6 +524,14 @@ Support for multiple service providers:
 $packager->hasProvider('../stubs/MyProvider.stub')
     ->hasProvider('../stubs/MyOtherProvider.stub');
 ```
+
+```php
+$packager->hasProviders([
+    '../stubs/MyProvider.stub',
+    '../stubs/MyOtherProvider.stub',
+])
+```
+
 
 ---
 

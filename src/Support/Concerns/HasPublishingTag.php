@@ -5,12 +5,12 @@ namespace NyonCode\LaravelPackageToolkit\Support\Concerns;
 trait HasPublishingTag
 {
     /**
-     * The separator used for tagging resources.
+     * @var string The separator used for tagging resources.
      */
     public string $tagSeparator = '::';
 
     /**
-     * Get the tag separator for publishing.
+     *  Get the tag separator for publishing.
      */
     public function tagSeparator(): string
     {

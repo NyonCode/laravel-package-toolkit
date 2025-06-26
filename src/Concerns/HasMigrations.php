@@ -10,19 +10,17 @@ trait HasMigrations
     use FilesResolver;
 
     /**
-     * Indicates whether the package has migration files.
+     * @var bool Indicates whether the package has migration files.
      */
     private bool $isMigratable = false;
 
     /**
-     * Run migrations without publishing them.
+     * @var bool Run migrations without publishing them.
      */
     public bool $hasMigrationsOnRun = false;
 
     /**
-     * The migration files for the package.
-     *
-     * @var SplFileInfo[]
+     * @var SplFileInfo[] The migration files for the package.
      */
     protected array $migrationFiles = [];
 

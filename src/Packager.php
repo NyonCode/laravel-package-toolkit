@@ -11,6 +11,7 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasAboutCommand;
 use NyonCode\LaravelPackageToolkit\Concerns\HasAssets;
 use NyonCode\LaravelPackageToolkit\Concerns\HasCommands;
 use NyonCode\LaravelPackageToolkit\Concerns\HasConfig;
+use NyonCode\LaravelPackageToolkit\Concerns\HasMiddleware;
 use NyonCode\LaravelPackageToolkit\Concerns\HasMigrations;
 use NyonCode\LaravelPackageToolkit\Concerns\HasProviders;
 use NyonCode\LaravelPackageToolkit\Concerns\HasRoutes;
@@ -23,25 +24,29 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasViewSharedData;
 
 class Packager
 {
-    use FilesResolver;
-    use HasAboutCommand;
-    use HasAssets;
-    use HasCommands;
-    use HasConfig;
-    use HasMigrations;
-    use HasProviders;
-    use HasRoutes;
-    use HasTranslate;
-    use HasViewComponentNamespaces;
-    use HasViewComponents;
-    use HasViewComposers;
-    use HasViews;
-    use HasViewSharedData;
+    use FilesResolver,
+        HasAboutCommand,
+        HasAssets,
+        HasCommands,
+        HasConfig,
+        HasMiddleware,
+        HasMigrations,
+        HasProviders,
+        HasRoutes,
+        HasTranslate,
+        HasViewComponentNamespaces,
+        HasViewComponents,
+        HasViewComposers,
+        HasViews,
+        HasViewSharedData;
 
+    /**
+     * @var string The name of the package
+     */
     public string $name;
 
     /**
-     * The short name of the package, or null if not set.
+     * @var string|null The short name of the package
      */
     private ?string $shortName = null;
 

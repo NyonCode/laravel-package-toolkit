@@ -8,18 +8,16 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\HasNamespaceResolver;
 
 trait HasCommands
 {
-    use FilesResolver;
-    use HasNamespaceResolver;
+    use FilesResolver,
+        HasNamespaceResolver;
 
     /**
-     * Whether the package has commands
+     * @var bool Whether the package has commands
      */
     protected bool $isCommandable = false;
 
     /**
-     * The commands
-     *
-     * @var string[]
+     * @var string[] The commands
      */
     public array $commands = [];
 

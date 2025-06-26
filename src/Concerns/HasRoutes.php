@@ -10,14 +10,12 @@ trait HasRoutes
     use FilesResolver;
 
     /**
-     * Indicates whether the package has route files.
+     * @var bool Indicates whether the package has route files.
      */
     private bool $isRoutable = false;
 
     /**
-     * The route files for the package.
-     *
-     * @var SplFileInfo[]
+     * @var SplFileInfo[] The route files for the package.
      */
     protected array $routeFiles = [];
 

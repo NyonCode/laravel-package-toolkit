@@ -7,8 +7,14 @@ use InvalidArgumentException;
 
 trait HasViewSharedData
 {
+    /**
+     * @var bool Indicates whether the package has shared data for the views
+     */
     private bool $isSharedWithViews = false;
 
+    /**
+     * @var array The shared data for the views
+     */
     private array $viewSharedData = [];
 
     /**

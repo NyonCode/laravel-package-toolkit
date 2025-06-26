@@ -6,6 +6,9 @@ use SplFileInfo as BaseSplFileInfo;
 
 class SplFileInfo extends BaseSplFileInfo
 {
+    /**
+     * @var string The base filename (without extension)
+     */
     private readonly string $baseFileName;
 
     public function __construct(string $filename)

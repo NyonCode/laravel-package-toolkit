@@ -104,9 +104,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     public function boot(): void
     {
         $this->bootingPackage();
-
         $this->registerPublishing();
-
         $this->registerPackageCommands();
 
         if (! self::$isPackageAboutRegistered) {

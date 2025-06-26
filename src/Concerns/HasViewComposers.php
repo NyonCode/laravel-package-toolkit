@@ -6,8 +6,14 @@ use Closure;
 
 trait HasViewComposers
 {
+    /**
+     * @var bool Whether the package has view composers
+     */
     private bool $isViewComposable = false;
 
+    /**
+     * @var array The view composers for the package
+     */
     protected array $viewComposers = [];
 
     /**

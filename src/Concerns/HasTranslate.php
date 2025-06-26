@@ -13,17 +13,17 @@ trait HasTranslate
     use FilesResolver;
 
     /**
-     * Indicates whether the package is translatable.
+     * @var bool Indicates whether the package is translatable.
      */
     private bool $isTranslatable = false;
 
     /**
-     * Indicates whether the package supports JSON translations.
+     * @var bool Indicates whether the package supports JSON translations.
      */
     private bool $loadJsonTranslate = false;
 
     /**
-     * The path to the translation files.
+     * @var string The path to the translation files.
      */
     protected string $translationPath = '';
 
