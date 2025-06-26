@@ -96,11 +96,8 @@ trait BootsPackageResources
         return $this;
     }
 
-
     /**
      * Boot middleware for the package.
-     *
-     * @return static
      */
     public function bootMiddleware(): static
     {
