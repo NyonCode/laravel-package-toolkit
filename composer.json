@@ -21,7 +21,7 @@
     "php": "^8.1",
     "ext-readline": "*",
     "composer/composer": "^2.8",
-    "illuminate/contracts": "^9.28|^10.0|^11.0|^12.0"
+    "illuminate/contracts": "^9.36|^10.0|^11.0|^12.0"
   },
   "require-dev": {
     "mockery/mockery": "^1.5",
