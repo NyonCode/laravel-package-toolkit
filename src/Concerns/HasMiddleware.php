@@ -4,16 +4,34 @@ namespace NyonCode\LaravelPackageToolkit\Concerns;
 
 trait HasMiddleware
 {
+    /**
+     * @var bool Whether the package has middleware
+     */
     private bool $isSetMiddlewareAliases = false;
 
+    /**
+     * @var array The middleware aliases
+     */
     protected array $middlewareAliases = [];
 
+    /**
+     * @var bool Whether the package has middleware groups
+     */
     private bool $isSetMiddlewareGroups = false;
 
+    /**
+     * @var array The middleware groups
+     */
     protected array $middlewareGroups = [];
 
+    /**
+     * @var bool Whether the package has global middlewares
+     */
     private bool $isSetMiddlewareGlobals = false;
 
+    /**
+     * @var array The global middlewares
+     */
     protected array $middlewareGlobals = [];
 
     /**

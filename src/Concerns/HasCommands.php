@@ -12,14 +12,12 @@ trait HasCommands
         HasNamespaceResolver;
 
     /**
-     * Whether the package has commands
+     * @var bool Whether the package has commands
      */
     protected bool $isCommandable = false;
 
     /**
-     * The commands
-     *
-     * @var string[]
+     * @var string[] The commands
      */
     public array $commands = [];
 

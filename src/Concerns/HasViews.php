@@ -9,12 +9,12 @@ trait HasViews
     use FilesResolver;
 
     /**
-     * Whether the package has views
+     * @var bool Whether the package has views
      */
     private bool $isViewable = false;
 
     /**
-     * The path to the views
+     * @var string The path to the views
      */
     protected string $viewsPath = '';
 

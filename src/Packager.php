@@ -40,10 +40,13 @@ class Packager
         HasViews,
         HasViewSharedData;
 
+    /**
+     * @var string The name of the package
+     */
     public string $name;
 
     /**
-     * The short name of the package, or null if not set.
+     * @var string|null The short name of the package
      */
     private ?string $shortName = null;
 

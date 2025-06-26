@@ -10,14 +10,12 @@ trait HasConfig
     use FilesResolver;
 
     /**
-     * Indicates whether the package is configurable.
+     * @var bool Indicates whether the package is configurable.
      */
     private bool $isConfigurable = false;
 
     /**
-     * The configuration files for the package.
-     *
-     * @var SplFileInfo[]
+     * @var SplFileInfo[] The configuration files for the package.
      */
     protected array $configFiles = [];
 

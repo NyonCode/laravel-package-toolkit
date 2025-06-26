@@ -11,12 +11,18 @@ use Seld\JsonLint\ParsingException;
 trait HasAboutCommand
 {
     /**
-     * @var array<string, mixed>
+     * @var array<string, mixed> The data from composer.json
      */
     private array $composerData = [];
 
+    /**
+     * @var string The version of the package
+     */
     public string $version = '';
 
+    /**
+     * @var bool Whether the package is aboutable
+     */
     private bool $isAboutable = false;
 
     /**

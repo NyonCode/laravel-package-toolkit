@@ -8,17 +8,17 @@ use ReflectionException;
 trait HasViewComponents
 {
     /**
-     * Whether the package has view components
+     * @var bool Whether the package has view components
      */
     private bool $isViewComponentized = false;
 
     /**
-     * The view components for the package.
+     * @var array The view components for the package.
      */
     protected array $viewComponents = [];
 
     /**
-     * The view component paths for the package.
+     * @var array The view component paths for the package.
      */
     private array $viewComponentPaths = [];
 

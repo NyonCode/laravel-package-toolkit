@@ -9,8 +9,14 @@ trait HasAssets
 {
     use FilesResolver;
 
+    /**
+     * @var bool Whether the package has assets
+     */
     private bool $isAssetable = false;
 
+    /**
+     * @var string The directory name where the assets are located
+     */
     private string $assetDirectory = '';
 
     /**

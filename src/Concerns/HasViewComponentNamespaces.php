@@ -5,14 +5,12 @@ namespace NyonCode\LaravelPackageToolkit\Concerns;
 trait HasViewComponentNamespaces
 {
     /**
-     * Whether the package has view component namespaces
+     * @var bool Whether the package has configured view component namespaces
      */
     private bool $isViewComponentNamespaceConfigured = false;
 
     /**
-     * The view component namespaces
-     *
-     * @var string[]
+     * @var string[] Array of view component namespaces
      */
     protected array $viewComponentNamespaces = [];
 

@@ -106,7 +106,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     public function boot(): void
     {
         $this->bootingPackage();
-        $this->bootMiddleware();
         $this->registerPublishing();
         $this->registerPackageCommands();
 
@@ -205,34 +204,5 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     public function packageCommands(): array
     {
         return [];
-    }
-
-    /**
-     * Boot middleware for the package.
-     */
-    public function bootMiddleware(): void
-    {
-        $router = resolve(Router::class);
-        $kernel = resolve(Kernel::class);
-
-        if ($this->packager->isSetMiddlewareAliases()) {
-            foreach ($this->packager->getMiddlewareAliases() as $alias => $middleware) {
-                $router->aliasMiddleware($alias, $middleware);
-            }
-        }
-
-        if ($this->packager->isSetMiddlewareGroups()) {
-            foreach ($this->packager->getMiddlewareGroups() as $group => $middlewares) {
-                foreach ($middlewares as $middleware) {
-                    $router->pushMiddlewareToGroup($group, $middleware);
-                }
-            }
-        }
-
-        if ($this->packager->isSetMiddlewareGlobals()) {
-            foreach ($this->packager->getMiddlewareGlobals() as $middleware) {
-                $kernel->pushMiddleware($middleware);
-            }
-        }
     }
 }
