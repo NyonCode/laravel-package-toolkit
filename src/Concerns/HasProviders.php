@@ -9,6 +9,7 @@ trait HasProviders
     use FilesResolver;
 
     private bool $isProvidable = false;
+
     protected array $providers = [];
 
     /**

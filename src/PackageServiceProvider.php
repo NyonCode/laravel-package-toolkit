@@ -6,9 +6,7 @@ namespace NyonCode\LaravelPackageToolkit;
 
 use Composer\InstalledVersions;
 use Exception;
-use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Console\AboutCommand;
-use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use NyonCode\LaravelPackageToolkit\Contracts\ProvidesPackageServices;
 use NyonCode\LaravelPackageToolkit\Exceptions\InvalidReturnTypeException;
