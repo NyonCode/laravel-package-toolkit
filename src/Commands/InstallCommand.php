@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use NyonCode\LaravelPackageToolkit\Commands\Concerns\PublishableResources;
 use NyonCode\LaravelPackageToolkit\Packager;
+
 use function Laravel\Prompts\confirm;
 
 class InstallCommand extends Command
