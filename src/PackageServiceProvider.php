@@ -18,6 +18,8 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\HasPublishingTag;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\PublishesPackageResources;
 use ReflectionClass;
 use Seld\JsonLint\ParsingException;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\NullOutput;
 
 abstract class PackageServiceProvider extends ServiceProvider implements ProvidesPackageServices
 {
@@ -76,6 +78,12 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
                 'This package does not have a name. You can set one with `$package->name("")'
             );
         }
+
+        // Register install command if enabled
+        $this->registerInstallCommand();
+
+        // Auto-install if configured
+        $this->performAutoInstall();
 
         $this->registeredPackage();
     }
@@ -162,6 +170,64 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
                     path: $configFile->getPathname(),
                     key: $configFile->getBaseFileName()
                 );
+            }
+        }
+    }
+
+    /**
+     * Register the install command if enabled.
+     */
+    protected function registerInstallCommand(): void
+    {
+        if (! $this->packager->isInstallable()) {
+            return;
+        }
+
+        if ($this->app->runningInConsole()) {
+            $installCommand = $this->packager->createInstallCommand();
+            $this->commands([$installCommand]);
+        }
+    }
+
+    /**
+     * Perform auto-installation if configured.
+     */
+    protected function performAutoInstall(): void
+    {
+        if (! $this->packager->shouldInstallOnRun()) {
+            return;
+        }
+
+        // Schedule auto-installation to run after all providers are booted
+        $this->app->booted(function () {
+            if ($this->app->runningInConsole()) {
+                $this->performSilentInstallation();
+            }
+        });
+    }
+
+    /**
+     * Perform silent installation without user interaction.
+     *
+     * @throws Exception
+     */
+    protected function performSilentInstallation(): void
+    {
+        try {
+            $installCommand = $this->packager->createInstallCommand();
+
+            // Create a mock input/output for silent execution
+            $input = new ArrayInput([
+                '--no-interaction' => true,
+            ]);
+
+            $output = new NullOutput();
+
+            $installCommand->run($input, $output);
+        } catch (Exception $e) {
+            // Log the error but don't break the application
+            if ($this->app->hasDebugModeEnabled()) {
+                throw $e;
             }
         }
     }
