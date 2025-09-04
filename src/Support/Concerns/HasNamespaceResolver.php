@@ -4,9 +4,13 @@ namespace NyonCode\LaravelPackageToolkit\Support\Concerns;
 
 use Composer\Autoload\ClassLoader;
 use Composer\InstalledVersions;
+use RuntimeException;
 
 trait HasNamespaceResolver
 {
+    /**
+     * Get the base path of the package.
+     */
     protected function getPackageBasePath(): string
     {
         if (class_exists(InstalledVersions::class)) {
@@ -21,6 +25,8 @@ trait HasNamespaceResolver
 
     /**
      * Get the filesystem path from a namespace.
+     *
+     * @param  string  $componentNamespace  The namespace to resolve
      */
     protected function getPathFromNamespace(string $componentNamespace): ?string
     {
@@ -54,16 +60,24 @@ trait HasNamespaceResolver
         return realpath($basePath.DIRECTORY_SEPARATOR.$relativePath);
     }
 
+    /**
+     * Get the namespace from a filesystem path.
+     *
+     * @param  string  $filePath  The path to the file
+     * @return string|null The namespace of the file
+     *
+     * @throws RuntimeException If the file does not exist
+     */
     protected function getNamespaceFromPath(string $filePath): ?string
     {
         $normalizedFilePath = realpath($filePath);
         if (! $normalizedFilePath) {
-            throw new \RuntimeException("Soubor nebyl nalezen: {$filePath}");
+            throw new RuntimeException("Soubor nebyl nalezen: $filePath");
         }
 
         $composerAutoload = require $this->getPackageBasePath().'/vendor/autoload.php';
         if (! $composerAutoload instanceof ClassLoader) {
-            throw new \RuntimeException('Composer autoloader nebyl nalezen.');
+            throw new RuntimeException('Composer autoloader nebyl nalezen.');
         }
 
         $psr4Mappings = $composerAutoload->getPrefixesPsr4();

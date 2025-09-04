@@ -31,11 +31,44 @@ trait FilesResolver
      */
     public function hasBasePath(string $basePath): string
     {
-        if (Str::contains($basePath, 'src/Providers')) {
-            return $this->basePath = Str::before($basePath, '/Providers');
+        // Normalize path separators for cross-platform compatibility
+        $basePath = $this->normalizePath($basePath);
+
+        if (Str::contains($basePath, 'src'.DIRECTORY_SEPARATOR.'Providers')) {
+            return $this->basePath = Str::before($basePath, DIRECTORY_SEPARATOR.'Providers');
         }
 
         return $this->basePath = $basePath;
+    }
+
+    /**
+     * Normalize path separators for cross-platform compatibility.
+     */
+    private function normalizePath(string $path): string
+    {
+        // Convert all separators to the current OS separator
+        $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+
+        // Remove duplicate separators
+        $path = preg_replace('#'.preg_quote(DIRECTORY_SEPARATOR).'+#', DIRECTORY_SEPARATOR, $path);
+
+        // Remove trailing separator unless it's root
+        if (strlen($path) > 1 && str_ends_with($path, DIRECTORY_SEPARATOR)) {
+            $path = rtrim($path, DIRECTORY_SEPARATOR);
+        }
+
+        return $path;
+    }
+
+    /**
+     * Join path components with proper separators.
+     */
+    private function joinPaths(string ...$parts): string
+    {
+        $parts = array_filter($parts, fn ($part) => $part !== '');
+        $path = implode(DIRECTORY_SEPARATOR, $parts);
+
+        return $this->normalizePath($path);
     }
 
     /**
@@ -45,9 +78,64 @@ trait FilesResolver
      */
     public function path(string $path): string
     {
-        return $this->basePath.
-            DIRECTORY_SEPARATOR.
-            ltrim($path, DIRECTORY_SEPARATOR);
+        $path = $this->normalizePath($path);
+
+        return $this->joinPaths($this->basePath, ltrim($path, DIRECTORY_SEPARATOR));
+    }
+
+    /**
+     * Get real path with better cross-platform handling.
+     */
+    private function getRealPath(string $path): string|false
+    {
+        $realPath = realpath($path);
+
+        // On Windows, realpath might fail for non-existent paths
+        // Try to resolve manually if realpath fails
+        if ($realPath === false && $this->isWindows()) {
+            $realPath = $this->resolveWindowsPath($path);
+        }
+
+        return $realPath;
+    }
+
+    /**
+     * Check if running on Windows.
+     */
+    private function isWindows(): bool
+    {
+        return PHP_OS_FAMILY === 'Windows';
+    }
+
+    /**
+     * Resolve Windows paths manually when realpath fails.
+     */
+    private function resolveWindowsPath(string $path): string|false
+    {
+        $path = $this->normalizePath($path);
+        $parts = explode(DIRECTORY_SEPARATOR, $path);
+        $resolved = [];
+
+        foreach ($parts as $part) {
+            if ($part === '' || $part === '.') {
+                continue;
+            }
+
+            if ($part === '..') {
+                array_pop($resolved);
+            } else {
+                $resolved[] = $part;
+            }
+        }
+
+        $resolvedPath = implode(DIRECTORY_SEPARATOR, $resolved);
+
+        // Handle drive letters on Windows
+        if ($this->isWindows() && preg_match('/^[A-Za-z]:/', $path)) {
+            $resolvedPath = substr($path, 0, 2).DIRECTORY_SEPARATOR.ltrim($resolvedPath, DIRECTORY_SEPARATOR);
+        }
+
+        return $resolvedPath;
     }
 
     /**
@@ -58,41 +146,65 @@ trait FilesResolver
      */
     private function getFiles(string $path): array
     {
-        $loadedFiles = File::files($this->path($path));
+        $fullPath = $this->path($path);
+
+        if (! is_dir($fullPath) || ! is_readable($fullPath)) {
+            throw new DirectoryNotFoundException("Directory [$fullPath] does not exist or is not readable");
+        }
+
+        $loadedFiles = File::files($fullPath);
+        $files = [];
 
         foreach ($loadedFiles as $loadedFile) {
-            $files[] = $this->getFileInfo($loadedFile->getPathname());
+            try {
+                $fileInfo = $this->getFileInfo($loadedFile->getPathname());
+                if ($fileInfo->isReadable()) {
+                    $files[] = $fileInfo;
+                }
+            } catch (Exception) {
+                // Skip unreadable files rather than failing completely
+                continue;
+            }
         }
 
-        if (! empty($files)) {
-            return $files;
-        }
-
-        return [];
+        return $files;
     }
 
     /**
      * Get file information as SplFileInfo object.
      *
      * @param  string  $filePath  The path to the file
+     *
+     * @throws FileNotFoundException
      */
     private function getFileInfo(string $filePath): SplFileInfo
     {
-        return new SplFileInfo($filePath);
+        $normalizedPath = $this->normalizePath($filePath);
+
+        if (! is_file($normalizedPath)) {
+            throw new FileNotFoundException("File [$normalizedPath] does not exist");
+        }
+
+        if (! is_readable($normalizedPath)) {
+            throw new FileNotFoundException("File [$normalizedPath] is not readable");
+        }
+
+        return new SplFileInfo($normalizedPath);
     }
 
     /**
-     * Validate if the given folder exists.
+     * Validate if the given directory exists.
      *
-     * @param  string  $path  The path of the folder to validate
+     * @param  string  $path  The path of the directory to validate
      *
-     * @throws Exception If the folder does not exist
+     * @throws Exception If the directory does not exist
      */
-    private function validFolder(string $path): void
+    private function validDirectory(string $path): void
     {
-        $realPath = realpath($path);
+        $normalizedPath = $this->normalizePath($path);
+        $realPath = $this->getRealPath($normalizedPath);
 
-        if ($realPath === false or ! is_dir($realPath)) {
+        if ($realPath === false || ! is_dir($realPath)) {
             throw new DirectoryNotFoundException(
                 "Directory [$path] does not exist"
             );
@@ -100,18 +212,19 @@ trait FilesResolver
     }
 
     /**
-     * Autoload files from the specified path.
+     * Discover files from the specified path.
      *
-     * @param  string  $path  The path to autoload files from
+     * @param  string  $path  The path to discover files from
      * @return SplFileInfo[]
      *
-     * @throws Exception If the folder does not exist
+     * @throws Exception If the directory does not exist
      */
-    private function autoloadFiles(string $path): array
+    private function discoverFiles(string $path): array
     {
-        $this->validFolder($this->path("../$path"));
+        $fullPath = $this->path($path);
+        $this->validDirectory($fullPath);
 
-        return $this->getFiles("../$path");
+        return $this->getFiles($path);
     }
 
     /**
@@ -119,26 +232,22 @@ trait FilesResolver
      *
      * @param  string  $file  The name of the file to resolve
      * @param  string  $directory  Directory name where files are located
-     * @return string Full path if the file exists, or null if not found
+     * @return string Full path if the file exists, or empty string if not found
      */
     private function resolveFilePath(string $file, string $directory): string
     {
-        if (Str::startsWith($file, '..')) {
-            $relativePath = $this->path($file);
+        $file = $this->normalizePath($file);
 
+        // If file path starts with .. or / it's already a relative/absolute path
+        if (Str::startsWith($file, ['..', '/', DIRECTORY_SEPARATOR]) || preg_match('/^[A-Za-z]:/', $file)) {
+            $relativePath = $this->path($file);
             if (is_file($relativePath)) {
                 return $relativePath;
             }
         }
 
-        $directPath = $this->path(
-            '..'.
-                DIRECTORY_SEPARATOR.
-                $directory.
-                DIRECTORY_SEPARATOR.
-                $file
-        );
-
+        // Try direct path construction
+        $directPath = $this->path($this->joinPaths($directory, $file));
         if (is_file($directPath)) {
             return $directPath;
         }
@@ -149,17 +258,16 @@ trait FilesResolver
     /**
      * Resolve files from the specified directory.
      *
-     * @param  string|string[]|null  $files  The files to resolve. If null, autoloads all files from the specified directory.
+     * @param  string|string[]|null  $files  The files to resolve. If null, discover all files from the specified directory.
      * @param  string  $directory  The directory where the files are located
-     * @param  string  $type  The type of files to resolve (e.g. "route", "config", etc.)
+     * @param  string  $type  The type of files to resolve
      * @return SplFileInfo[] The resolved files
      *
-     * @throws FileNotFoundException If any file does not exist*@throws Exception
+     * @throws FileNotFoundException If any file does not exist
      * @throws Exception
      */
-    public function resolveFiles(
-        string|array|null $files, string $directory = '', string $type = ''
-    ): array {
+    public function resolveFiles(string|array|null $files, string $directory = '', string $type = ''): array
+    {
         /** @var SplFileInfo[] $filesInfo */
         $filesInfo = [];
 
@@ -171,13 +279,12 @@ trait FilesResolver
             foreach ($files as $file) {
                 $filePath = $this->resolveFilePath($file, $directory);
 
-                if (empty($filePath) && ! is_file($filePath)) {
-                    throw new FileNotFoundException(
-                        $type
-                            ? Str::title($type).
-                                " file [$file] does not exist."
-                            : "File [$file] does not exist."
-                    );
+                if (empty($filePath) || ! is_file($filePath)) {
+                    $errorMessage = $type
+                        ? (Str::title($type)." file [$file] does not exist in directory [$directory].")
+                        : "File [$file] does not exist in directory [$directory].";
+
+                    throw new FileNotFoundException($errorMessage);
                 }
 
                 $filesInfo[] = $this->getFileInfo($filePath);
@@ -186,6 +293,6 @@ trait FilesResolver
             return $filesInfo;
         }
 
-        return $this->autoloadFiles($directory);
+        return $this->discoverFiles($directory);
     }
 }

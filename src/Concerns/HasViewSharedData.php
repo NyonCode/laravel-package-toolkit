@@ -50,6 +50,7 @@ trait HasViewSharedData
      * array is not empty.
      *
      * @param  array  $viewSharedData  The shared data for the views
+     * @return static The current instance
      */
     public function hasSharedDataForAllViews(array $viewSharedData): static
     {

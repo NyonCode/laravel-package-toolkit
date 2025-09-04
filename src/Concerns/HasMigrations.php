@@ -42,7 +42,7 @@ trait HasMigrations
      */
     public function hasMigrations(
         ?array $migrationFiles = null,
-        string $directory = 'database/migrations'
+        string $directory = '../database/migrations'
     ): static {
         $this->migrationFiles = $this->resolveFiles(
             files: $migrationFiles,

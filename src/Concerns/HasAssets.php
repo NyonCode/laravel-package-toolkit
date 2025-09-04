@@ -39,7 +39,7 @@ trait HasAssets
      *
      * @throws DirectoryNotFoundException if the directory does not exist
      */
-    public function hasAssets(string $directory = 'public'): static
+    public function hasAssets(string $directory = 'dist'): static
     {
         $path = $this->path("../$directory");
 

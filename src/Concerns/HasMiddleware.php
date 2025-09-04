@@ -35,7 +35,7 @@ trait HasMiddleware
     protected array $middlewareGlobals = [];
 
     /**
-     * Add middleware aliases
+     * Add middleware aliases to the package
      *
      * @return $this
      */
@@ -51,7 +51,7 @@ trait HasMiddleware
     }
 
     /**
-     * Add middleware groups
+     * Add middleware groups to the package
      *
      * @return $this
      */
@@ -71,7 +71,7 @@ trait HasMiddleware
     }
 
     /**
-     * Add global middlewares
+     * Add global middlewares to the package
      *
      * @return $this
      */
@@ -87,7 +87,7 @@ trait HasMiddleware
     }
 
     /**
-     * Get middleware aliases
+     * Get middleware aliases from the package
      */
     public function getMiddlewareAliases(): array
     {

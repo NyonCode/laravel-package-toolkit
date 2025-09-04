@@ -2,15 +2,19 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
+use Exception;
 use NyonCode\LaravelPackageToolkit\Packager;
 
 trait PackageCommandsDynamicTest
 {
+    /**
+     * @throws Exception
+     */
     public function configure(Packager $package): void
     {
         $package
             ->name('Package command test')
-            ->hasCommands(directory: 'commands');
+            ->hasCommands();
     }
 }
 
