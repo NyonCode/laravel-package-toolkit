@@ -47,7 +47,7 @@ trait HasConfig
      */
     public function hasConfig(
         string|array|null $configFiles = null,
-        string $directory = 'config'
+        string $directory = '../config'
     ): static {
         $this->configFiles = $this->resolveFiles(
             files: $configFiles,

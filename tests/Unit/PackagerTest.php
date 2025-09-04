@@ -4,7 +4,7 @@ namespace NyonCode\LaravelPackageToolkit\Tests;
 
 use InvalidArgumentException;
 use NyonCode\LaravelPackageToolkit\Packager;
-use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands\TestCommand;
+use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\src\Commands\TestCommand;
 
 beforeEach(function () {
     $this->packager = new Packager();

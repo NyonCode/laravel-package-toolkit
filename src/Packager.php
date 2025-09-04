@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace NyonCode\LaravelPackageToolkit;
 
 use Illuminate\Support\Str;
@@ -23,6 +21,7 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponents;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViewComposers;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViews;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViewSharedData;
+use NyonCode\LaravelPackageToolkit\Support\Concerns\HasLifecycleHooks;
 
 class Packager
 {
@@ -42,7 +41,8 @@ class Packager
         HasViewComponents,
         HasViewComposers,
         HasViews,
-        HasViewSharedData;
+        HasViewSharedData,
+        HasLifecycleHooks;
 
     /**
      * @var string The name of the package
@@ -58,6 +58,9 @@ class Packager
      * Set the name of the package.
      *
      * @param  string  $name  The name of the package
+     * @return static The current instance
+     *
+     * @throws InvalidArgumentException If the package name is empty
      */
     public function name(string $name): static
     {
@@ -73,6 +76,11 @@ class Packager
 
     /**
      * Get the short name of the package.
+     *
+     *
+     * @return string The short name of the package
+     *
+     * @throws InvalidArgumentException If the package name is empty
      */
     public function shortName(): string
     {
@@ -91,6 +99,7 @@ class Packager
      * Set a custom short name for the package with enhanced validation.
      *
      * @param  string  $shortName  The short name to set
+     * @return static The current instance
      *
      * @throws InvalidArgumentException If the provided short name is not in the expected format
      */

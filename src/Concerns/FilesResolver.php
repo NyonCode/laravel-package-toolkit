@@ -221,29 +221,10 @@ trait FilesResolver
      */
     private function discoverFiles(string $path): array
     {
-        $this->validDirectory($this->path('..'.DIRECTORY_SEPARATOR.$path));
+        $fullPath = $this->path($path);
+        $this->validDirectory($fullPath);
 
-        return $this->getFiles('..'.DIRECTORY_SEPARATOR.$path);
-    }
-
-    /**
-     * Get suggested directories for better error messages.
-     */
-    private function getSuggestedDirectories(string $targetPath): string
-    {
-        $suggestions = [];
-        $searchPaths = ['config', 'routes', 'database/migrations', 'resources/views', 'lang', 'commands'];
-
-        foreach ($searchPaths as $searchPath) {
-            $testPath = $this->path($this->joinPaths('..', $searchPath));
-            if (is_dir($testPath) && levenshtein($targetPath, $searchPath) <= 2) {
-                $suggestions[] = $searchPath;
-            }
-        }
-
-        return ! empty($suggestions)
-            ? 'Did you mean: '.implode(', ', $suggestions)
-            : 'Available directories: '.implode(', ', $searchPaths);
+        return $this->getFiles($path);
     }
 
     /**
@@ -257,16 +238,16 @@ trait FilesResolver
     {
         $file = $this->normalizePath($file);
 
-        if (Str::startsWith($file, '..')) {
+        // If file path starts with .. or / it's already a relative/absolute path
+        if (Str::startsWith($file, ['..', '/', DIRECTORY_SEPARATOR]) || preg_match('/^[A-Za-z]:/', $file)) {
             $relativePath = $this->path($file);
-
             if (is_file($relativePath)) {
                 return $relativePath;
             }
         }
 
-        $directPath = $this->path($this->joinPaths('..', $directory, $file));
-
+        // Try direct path construction
+        $directPath = $this->path($this->joinPaths($directory, $file));
         if (is_file($directPath)) {
             return $directPath;
         }
@@ -277,7 +258,7 @@ trait FilesResolver
     /**
      * Resolve files from the specified directory.
      *
-     * @param  string|string[]|null  $files  The files to resolve. If null, discovery all files from the specified directory.
+     * @param  string|string[]|null  $files  The files to resolve. If null, discover all files from the specified directory.
      * @param  string  $directory  The directory where the files are located
      * @param  string  $type  The type of files to resolve
      * @return SplFileInfo[] The resolved files
@@ -298,11 +279,12 @@ trait FilesResolver
             foreach ($files as $file) {
                 $filePath = $this->resolveFilePath($file, $directory);
 
-                if (empty($filePath) && ! is_file($filePath)) {
-                    throw new FileNotFoundException(
-                        $type
-                            ? (Str::title($type)." file [$file] does not exist.") : "File [$file] does not exist."
-                    );
+                if (empty($filePath) || ! is_file($filePath)) {
+                    $errorMessage = $type
+                        ? (Str::title($type)." file [$file] does not exist in directory [$directory].")
+                        : "File [$file] does not exist in directory [$directory].";
+
+                    throw new FileNotFoundException($errorMessage);
                 }
 
                 $filesInfo[] = $this->getFileInfo($filePath);

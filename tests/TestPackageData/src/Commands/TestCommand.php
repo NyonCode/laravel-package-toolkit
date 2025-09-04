@@ -1,6 +1,6 @@
 <?php
 
-namespace NyonCode\LaravelPackageToolkit\Tests\TestPackageData\commands;
+namespace NyonCode\LaravelPackageToolkit\Tests\TestPackageData\src\Commands;
 
 use Illuminate\Console\Command;
 

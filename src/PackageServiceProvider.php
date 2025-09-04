@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace NyonCode\LaravelPackageToolkit;
 
 use Composer\InstalledVersions;
@@ -16,10 +14,12 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\HasEnvironmentChecks;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\HasNamespaceResolver;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\HasPublishingTag;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\PublishesPackageResources;
+use NyonCode\LaravelPackageToolkit\Support\Enums\LifecycleHook;
 use ReflectionClass;
 use Seld\JsonLint\ParsingException;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
+use Throwable;
 
 abstract class PackageServiceProvider extends ServiceProvider implements ProvidesPackageServices
 {
@@ -30,26 +30,65 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     use PublishesPackageResources;
 
     /**
-     * Whether the about command has been registered.
+     * Whether the about command has been registered globally.
      */
     private static bool $isPackageAboutRegistered = false;
 
     /**
      * Instance of the Packager class.
      */
-    protected Packager $packager;
+    protected ?Packager $packager = null;
 
     /**
      * Configure the packager instance.
+     *
+     * @param Packager $packager The packager instance to configure
+     * @throws PackageConfigurationException When configuration fails
      */
     abstract public function configure(Packager $packager): void;
 
     /**
      * Actions to perform before registering the package.
+     *
+     * Safely executes the registering lifecycle hook if defined.
+     *
+     * @throws Throwable
      */
     public function registeringPackage(): void
     {
-        // #Define any actions to be performed before registering the package.
+        $this->packager->executeLifecycleHook(LifecycleHook::Registering);
+    }
+
+    /**
+     * Actions to perform after registering the package.
+     *
+     * Safely executes the registered lifecycle hook if defined.
+     *
+     * @throws Throwable
+     */
+    public function registeredPackage(): void
+    {
+        $this->packager->executeLifecycleHook(LifecycleHook::Registered);
+    }
+
+    /**
+     * Actions to perform before booting the package.
+     *
+     * Safely executes the booting lifecycle hook if defined.
+     */
+    public function bootingPackage(): void
+    {
+        $this->packager->executeLifecycleHook(LifecycleHook::Booting);
+    }
+
+    /**
+     * Actions to perform after booting the package.
+     *
+     * Safely executes the booted lifecycle hook if defined.
+     */
+    public function bootedPackage(): void
+    {
+        $this->packager->executeLifecycleHook(LifecycleHook::Booted);
     }
 
     /**
@@ -60,89 +99,51 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      * configuration files. It also calls custom actions before and after registering the
      * package.
      *
-     * @throws MissingNameException if the package does not have a name.
-     * @throws Exception
+     * @throws MissingNameException When the package does not have a name
+     * @throws PackageConfigurationException When package configuration fails
+     * @throws Exception|Throwable When registration fails
      */
     public function register(): void
     {
-        $this->registeringPackage();
+            $this->registeringPackage();
 
-        $this->packager = $this->bootPackager();
-        $this->packager->hasBasePath($this->getPackageBaseDir());
-        $this->configure($this->packager);
+            $this->packager = $this->bootPackager();
+            $this->validatePackager();
 
-        $this->registerConfig();
+            $this->packager->hasBasePath($this->getPackageBaseDir());
+            $this->configure($this->packager);
+            $this->validatePackageConfiguration();
 
-        if (empty($this->packager->name)) {
-            throw new MissingNameException(
-                'This package does not have a name. You can set one with `$package->name("")'
-            );
-        }
+            $this->registerConfig();
+            $this->registerInstallCommand();
+            $this->performAutoInstall();
 
-        // Register install command if enabled
-        $this->registerInstallCommand();
+            $this->registeredPackage();
 
-        // Auto-install if configured
-        $this->performAutoInstall();
-
-        $this->registeredPackage();
-    }
-
-    /**
-     * Actions to perform after registering the package.
-     */
-    public function registeredPackage(): void
-    {
-        // #Define any actions to be performed after registering the package.
-    }
-
-    /**
-     * Actions to perform before booting the package.
-     */
-    public function bootingPackage(): void
-    {
-        // #Define any actions to be performed before booting the package.
     }
 
     /**
      * Boot the service provider.
      *
-     * @throws ParsingException
+     * @throws ParsingException When parsing fails
+     * @throws Exception When booting fails
      */
     public function boot(): void
     {
-        $this->bootingPackage();
-        $this->registerPublishing();
-        $this->registerPackageCommands();
+            $this->bootingPackage();
 
-        if (! self::$isPackageAboutRegistered) {
-            AboutCommand::add(
-                section: 'Laravel Package Toolkit',
-                data: [
-                    'Version' => fn () => InstalledVersions::getPrettyVersion(
-                        'nyoncode/laravel-package-toolkit'
-                    ),
-                ]
-            );
+            $this->registerPublishing();
+            $this->registerPackageCommands();
+            $this->registerAboutCommand();
+            $this->bootPackageResources();
 
-            self::$isPackageAboutRegistered = true;
-        }
-
-        $this->bootPackageResources();
-
-        $this->bootedPackage();
-    }
-
-    /**
-     * Actions to perform after booting the package.
-     */
-    public function bootedPackage(): void
-    {
-        // #Define any actions to be performed after booting the package.
+            $this->bootedPackage();
     }
 
     /**
      * Create and return a new Packager instance.
+     *
+     * @return Packager The packager instance
      */
     public function bootPackager(): Packager
     {
@@ -150,15 +151,94 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     }
 
     /**
+     * Get the base directory of the package.
+     *
+     * @throws PackageConfigurationException
+     * @return string The package base directory path
+     */
+    public function getPackageBaseDir(): string
+    {
+            $reflector = new ReflectionClass(static::class);
+            $filename = $reflector->getFileName();
+
+            if ($filename === false) {
+                throw new PackageConfigurationException(
+                    'Unable to determine package base directory from reflection'
+                );
+            }
+
+            return dirname($filename);
+    }
+
+    /**
+     * Register package-specific console commands.
+     *
+     * This method checks if the application is running in the console
+     * and, if so, registers the package commands.
+     */
+    public function registerPackageCommands(): void
+    {
+        if (!$this->app->runningInConsole() || !$this->packager?->isCommandable()) {
+            return;
+        }
+
+        $commands = $this->packager->commands ?? [];
+
+        if (!empty($commands)) {
+            $this->commands($commands);
+        }
+    }
+
+    /**
+     * Get the list of package commands.
+     *
+     * Override this method to return an array of console commands
+     * specific to the package.
+     *
+     * @return array<string|object> List of command classes
+     */
+    public function packageCommands(): array
+    {
+        return [];
+    }
+
+    /**
+     * Validate the packager instance.
+     *
+     * @throws PackageConfigurationException When packager is invalid
+     */
+    protected function validatePackager(): void
+    {
+        if ($this->packager === null) {
+            throw new PackageConfigurationException('Packager instance is null');
+        }
+    }
+
+    /**
+     * Validate package configuration after setup.
+     *
+     * @throws MissingNameException When package name is missing
+     */
+    protected function validatePackageConfiguration(): void
+    {
+        if (empty($this->packager?->name)) {
+            throw new MissingNameException(
+                'This package does not have a name. You can set one with $package->name("package-name")'
+            );
+        }
+    }
+
+    /**
      * Register the package configuration files.
      *
-     * @throws Exception
+     * @throws InvalidReturnTypeException When config file doesn't return array
+     * @throws Exception When registration fails
      */
     protected function registerConfig(): void
     {
         if (! empty($this->packager->configFiles())) {
             foreach ($this->packager->configFiles() as $configFile) {
-                if (! is_array(require $configFile->getPathname())) {
+                if (!is_array(require $configFile->getPathname())) {
                     throw new InvalidReturnTypeException(
                         'Configuration file ['.
                         $configFile->getBaseFileName().
@@ -175,18 +255,18 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     }
 
     /**
-     * Register the install command if enabled.
+     * Register the installation command if enabled.
      */
     protected function registerInstallCommand(): void
     {
-        if (! $this->packager->isInstallable()) {
+        if (!$this->packager?->isInstallable() || !$this->app->runningInConsole()) {
             return;
         }
 
-        if ($this->app->runningInConsole()) {
             $installCommand = $this->packager->createInstallCommand();
             $this->commands([$installCommand]);
-        }
+
+
     }
 
     /**
@@ -194,11 +274,10 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function performAutoInstall(): void
     {
-        if (! $this->packager->shouldInstallOnRun()) {
+        if (!$this->packager?->shouldInstallOnRun()) {
             return;
         }
 
-        // Schedule auto-installation to run after all providers are booted
         $this->app->booted(function () {
             if ($this->app->runningInConsole()) {
                 $this->performSilentInstallation();
@@ -208,65 +287,52 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
 
     /**
      * Perform silent installation without user interaction.
-     *
-     * @throws Exception
      */
     protected function performSilentInstallation(): void
     {
-        try {
-            $installCommand = $this->packager->createInstallCommand();
+            $installCommand = $this->packager?->createInstallCommand();
 
-            // Create a mock input/output for silent execution
-            $input = new ArrayInput([
-                '--no-interaction' => true,
-            ]);
+            if ($installCommand === null) {
+                return;
+            }
 
+            $input = new ArrayInput(['--no-interaction' => true]);
             $output = new NullOutput();
 
             $installCommand->run($input, $output);
-        } catch (Exception $e) {
-            // Log the error but don't break the application
-            if ($this->app->hasDebugModeEnabled()) {
-                throw $e;
-            }
+
+    }
+
+    /**
+     * Register the about command information.
+     */
+    protected function registerAboutCommand(): void
+    {
+        if (self::$isPackageAboutRegistered) {
+            return;
         }
+
+            AboutCommand::add(
+                section: 'Laravel Package Toolkit',
+                data: [
+                    'Version' => fn() => $this->getToolkitVersion(),
+                ]
+            );
+
+            self::$isPackageAboutRegistered = true;
     }
 
     /**
-     * Get the base directory of the package.
-     */
-    public function getPackageBaseDir(): string
-    {
-        $reflector = new ReflectionClass(get_class($this));
-
-        return dirname($reflector->getFileName());
-    }
-
-    /**
-     * Register package-specific console commands.
+     * Get the toolkit version.
      *
-     * This method checks if the application is running in the console
-     * and, if so, registers the package commands.
+     * @return string The toolkit version
      */
-    public function registerPackageCommands(): void
+    protected function getToolkitVersion(): string
     {
-        if (
-            $this->app->runningInConsole() and $this->packager->isCommandable()
-        ) {
-            $this->commands($this->packager->commands);
+        try {
+            return InstalledVersions::getPrettyVersion('nyoncode/laravel-package-toolkit') ?? 'unknown';
+        } catch (Throwable) {
+            return 'unknown';
         }
-    }
-
-    /**
-     * Get the list of package commands.
-     *
-     * Override this method to return an array of console commands
-     * specific to the package.
-     *
-     * @return array<string|object> List of command classes.
-     */
-    public function packageCommands(): array
-    {
-        return [];
     }
 }

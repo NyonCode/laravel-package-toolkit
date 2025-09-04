@@ -47,7 +47,7 @@ trait HasRoutes
      */
     public function hasRoutes(
         array|string|null $routeFiles = null,
-        string $directory = 'routes'
+        string $directory = '../routes'
     ): static {
         $this->routeFiles = $this->resolveFiles(
             files: $routeFiles,

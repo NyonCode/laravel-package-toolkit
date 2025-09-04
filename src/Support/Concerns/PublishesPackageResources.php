@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NyonCode\LaravelPackageToolkit\Support\Concerns;
 
 use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
