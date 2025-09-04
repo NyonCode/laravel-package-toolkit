@@ -11,6 +11,10 @@ developers to focus on building features rather than boilerplate code.
 - Support for view components
 - Built-in exception handling for package-specific errors
 - Comprehensive language support
+- Install command with customizable publishing options
+- Conditional resource loading based on environment
+- Lifecycle hooks for advanced customization
+- Middleware registration and management
 
 ## Support Laravel
 
@@ -41,9 +45,11 @@ developers to focus on building features rather than boilerplate code.
 - [Shared Data](#view-shared-data)
 - [Assets](#assets)
 - [Providers](#providers)
+- [Install Command](#install-command)
 - [About Command](#about-command)
 - [Publishing](#publishing)
 - [Testing](#testing)
+- [Versioning](#versioning)
 - [License](#license)
 
 ## Installation
@@ -143,23 +149,53 @@ class ConditionalPackageServiceProvider extends PackageServiceProvider implement
             ->hasTranslations('lang')
             ->hasViews('custom-views')
             ->when($this->isInLocal(), function ($packager) {
-                $packager->hasConfig('local-config.php')
+                $packager->hasConfig('local-config.php');
                 $packager->hasCommands();
             })->when($this->isInProduction(), function ($packager) {
-                $packager->hasConfig('production-config.php')
-                $packager–>hasRoutes('web.php');
+                $packager->hasConfig('production-config.php');
+                $packager->hasRoutes('web.php');
             });
     }
 }
 ```
 Local and production resources will be registered when the `isInLocal()` and `isInProduction()` methods return `true`.
 
----
+#### Additional Conditional Methods
 
+The package provides several convenient methods for conditional loading:
+
+```php
+$packager
+    // Environment-based conditions
+    ->whenEnvironment(['local', 'testing'], function ($packager) {
+        $packager->hasCommands(['DevCommand::class']);
+    })
+    ->whenProduction(function ($packager) {
+        $packager->hasConfig('production-config.php');
+    })
+    ->whenLocal(function ($packager) {
+        $packager->hasConfig('local-config.php');
+    })
+    
+    // Runtime conditions
+    ->whenConsole(function ($packager) {
+        $packager->hasCommands();
+    })
+    
+    // Class/extension existence
+    ->whenClassExists('SomeClass', function ($packager) {
+        $packager->hasConfig('optional-config.php');
+    })
+    ->whenExtensionLoaded('redis', function ($packager) {
+        $packager->hasConfig('redis-config.php');
+    });
+```
+
+---
 
 ## Lifecycle Hooks
 
-Here is a list of all available life cycle hooks:
+The package provides lifecycle hooks that allow you to execute custom logic at specific points during package registration and booting:
 
 | **Hook Method**        | **Description**                      |
 | ---------------------- | ------------------------------------ |
@@ -167,6 +203,31 @@ Here is a list of all available life cycle hooks:
 | `registeredPackage()`  | Called after `register()` is called  |
 | `bootingPackage()`     | Called before `boot()` is called     |
 | `bootedPackage()`      | Called after `boot()` is called      |
+
+### Using Lifecycle Hooks in Configuration
+
+You can define lifecycle hooks directly in your package configuration:
+
+```php
+$packager
+    ->name('My Package')
+    ->registeringPackage(function ($packager) {
+        // Logic executed before package registration
+        Log::info('Registering My Package');
+    })
+    ->registeredPackage(function ($packager) {
+        // Logic executed after package registration
+        $this->app->singleton('my-service', MyService::class);
+    })
+    ->bootingPackage(function ($packager) {
+        // Logic executed before package boot
+        Event::listen('my-event', MyListener::class);
+    })
+    ->bootedPackage(function ($packager) {
+        // Logic executed after package boot
+        Log::info('My Package fully loaded');
+    });
+```
 
 ---
 
@@ -188,6 +249,9 @@ The hasShortName method is used to modify the name defined by `name()` if you pr
 ```php
 $packager->hasShortName('custom-short-name');
 ```
+
+The short name must be in kebab-case format and contain only lowercase letters, numbers, and hyphens.
+
 ---
 ## Config
 
@@ -255,14 +319,15 @@ To register middleware for your package, use these methods:
 To define route middleware aliases:
 
 ```php
-$packager->hasMiddlewareAlias([
+$packager->hasMiddlewareAliases([
     'custom.alias' => \Vendor\Package\Http\Middleware\CustomMiddleware::class,
+    'auth.custom' => \Vendor\Package\Http\Middleware\CustomAuthMiddleware::class,
 ]);
 ```
 This allows you to assign the middleware to routes using its alias:
 
 ```php
-    Route::get('/example', fn () => 'Hello')->middleware('custom.alias');
+Route::get('/example', fn () => 'Hello')->middleware('custom.alias');
 ```
 
 ### Register Middleware Groups
@@ -270,30 +335,30 @@ This allows you to assign the middleware to routes using its alias:
 To push middleware into existing middleware groups:
 
 ```php
-$packager->hasMiddlewareGroup([
+$packager->hasMiddlewareGroups([
     'web' => [
         \Vendor\Package\Http\Middleware\WebMiddleware::class,
     ],
     'api' => [
         \Vendor\Package\Http\Middleware\ApiMiddleware::class,
+        \Vendor\Package\Http\Middleware\RateLimitMiddleware::class,
     ],
 ]);
 ```
 This will automatically add your middleware to the specified groups (e.g. web, api).
-
 
 ### Register Middleware Globally
 
 To register global middleware (executed for every request):
 
 ```php
-$packager->hasMiddlewareGlobal([
+$packager->hasMiddlewareGlobals([
     \Vendor\Package\Http\Middleware\GlobalMiddleware::class,
+    \Vendor\Package\Http\Middleware\SecurityMiddleware::class,
 ]);
 ```
 
-This middleware will be added to the middleware group `core` is useful for applying middleware to all routes regardless of their group.
-
+This middleware will be added to the middleware stack and is useful for applying middleware to all routes regardless of their group.
 
 ## Migrations
 
@@ -335,6 +400,9 @@ For more information about migrations, see [Laravel migrations](https://laravel.
 ```php
 $packager->canLoadMigrations();
 ```
+
+This will load migrations directly when the package is registered, without requiring them to be published first.
+
 ---
 
 ## Translations
@@ -352,6 +420,9 @@ For a custom directory:
 ```php
 $packager->hasTranslations('custom-lang-directory');
 ```
+
+The package automatically validates language directory names against supported language codes and detects JSON translation files.
+
 ---
 
 ## Commands
@@ -401,6 +472,16 @@ This loads views from the `resources/views` directory. For a custom directory:
 ```php
 $packager->hasViews('custom-views');
 ```
+
+You can also specify a custom views directory with a different path:
+
+```php
+$packager->hasViews(
+    viewsPath: 'my-views', 
+    directory: '../resources/my-views'
+);
+```
+
 ---
 
 ## View Components
@@ -477,9 +558,17 @@ $packager
     )->hasViewComposer(
         views: ['viewName', 'anotherViewName'],
         composers: MyViewComposer::class
-    )
-);
+    );
 ```
+
+You can also bind a composer to all views using the wildcard `*`:
+
+```php
+$packager->hasViewComposer('*', function ($view) {
+    $view->with('globalData', 'available-everywhere');
+});
+```
+
 ---
 
 ## View Shared Data
@@ -487,10 +576,10 @@ $packager
 To add shared data to views:
 
 ```php
-$packager->hasSharedDataForAllViews(['key', 'value']);
+$packager->hasSharedDataForAllViews(['key' => 'value', 'user' => 'john']);
 ```
 
-This adds a key-value pair to the shared data array in the view.
+This adds key-value pairs to the shared data array in the view. The shared data must have string keys and values must be scalar, array, null, or implement the `Arrayable` interface.
 
 For more information about shared data, see [Laravel shared data](https://laravel.com/docs/12.x/views#shared-data).
 
@@ -504,11 +593,14 @@ To enable assets:
 $packager->hasAssets();
 ```
 
-This loads assets from the `public` directory. For a custom directory:
+This loads assets from the `dist` directory by default. For a custom directory:
 
 ```php
-$packager->hasAssets('dist');
+$packager->hasAssets('public');
 ```
+
+Assets will be published to `public/vendor/{package-short-name}` when using the publish command.
+
 ---
 
 ## Providers
@@ -529,9 +621,130 @@ $packager->hasProvider('../stubs/MyProvider.stub')
 $packager->hasProviders([
     '../stubs/MyProvider.stub',
     '../stubs/MyOtherProvider.stub',
-])
+]);
 ```
 
+Service providers will be published to `app/Providers/{ProviderName}.php` when using the publish command.
+
+---
+
+## Install Command
+
+The package provides a powerful install command system that allows users to easily install and configure your package.
+
+### Basic Install Command
+
+To enable the install command:
+
+```php
+$packager->hasInstallCommand();
+```
+
+This creates a command `{package-short-name}:install` that users can run to install your package.
+
+### Configuring the Install Command
+
+You can configure what gets installed using a callback:
+
+```php
+$packager->hasInstallCommand(function (InstallCommand $command) {
+    $command->publishConfig()
+        ->publishMigrations()
+        ->publishAssets()
+        ->publishViews();
+});
+```
+
+### Install Command Options
+
+The install command supports several configuration options:
+
+```php
+$packager
+    // Custom command name
+    ->installCommandName('setup')  // Creates package:setup instead of package:install
+    
+    // Hide command from artisan list
+    ->installCommandHidden(true)
+    
+    // Auto-install when package loads
+    ->installOnRun(true)
+    
+    // Install only in specific environments
+    ->installOnRunInEnvironment(['local', 'testing'])
+    ->installOnRunInLocal()
+    ->installOnRunInProduction();
+```
+
+### Pre-built Install Configurations
+
+The package provides several pre-built installation configurations:
+
+```php
+// Quick install (config, migrations, assets)
+$packager->hasQuickInstall();
+
+// Full install (everything)
+$packager->hasFullInstall();
+
+// Minimal install (config only)
+$packager->hasMinimalInstall();
+
+// Development install (config, migrations, views, assets, routes in local only)
+$packager->hasDevInstall();
+```
+
+### Advanced Install Command Configuration
+
+For more advanced configurations, you can use the full callback approach:
+
+```php
+$packager->hasInstallCommand(function (InstallCommand $command) {
+    $command
+        ->publishConfig()
+        ->publishMigrations()
+        ->publishAssets()
+        ->publishForEnvironment(['local'], 'routes')
+        ->publishForProduction('config')
+        ->beforeInstallation(function ($command) {
+            $command->info('Starting installation...');
+        })
+        ->afterInstallation(function ($command) {
+            $command->info('Installation completed!');
+            $command->call('migrate');
+        })
+        ->askToStarRepoOnGitHub('https://github.com/your/repo');
+});
+```
+
+### Available Publishing Methods
+
+The install command supports the following publishing methods:
+
+- `publishConfig()` / `publishConfigFile()` / `publishConfigFiles()`
+- `publishMigrations()`
+- `publishRoutes()` / `publishRouteFiles()`
+- `publishTranslations()` / `publishTranslationFiles()` / `publishLanguageFiles()`
+- `publishAssets()` / `publishPublicAssets()`
+- `publishViews()` / `publishViewFiles()`
+- `publishProviders()` / `publishServiceProviders()`
+- `publishComponents()` / `publishViewComponents()`
+- `publishComponentNamespaces()` / `publishViewComponentNamespaces()`
+- `publishEverything()` / `publishAll()`
+- `publishEssentials()` (config, migrations, assets)
+
+### Conditional Publishing
+
+You can conditionally publish resources:
+
+```php
+$command
+    ->publishIf($someCondition, 'config', 'migrations')
+    ->publishUnless($otherCondition, 'routes')
+    ->publishForEnvironment(['local', 'testing'], 'routes')
+    ->publishForProduction('config')
+    ->publishForLocal('assets');
+```
 
 ---
 
@@ -568,6 +781,8 @@ public function aboutData(): array
     return [
         'Repository' => 'https://github.com/your/package',
         'Author' => 'Your Name',
+        'License' => 'MIT',
+        'Documentation' => 'https://docs.example.com',
     ];
 }
 ```
@@ -587,10 +802,33 @@ php artisan vendor:publish
 ```
 `vendor:publish` show all the tags that can be used for publishing.
 
+### Available Publishing Tags
+
+Each resource type has its own publishing tag in the format `{package-short-name}::{resource-type}`:
+
+- `{package-name}::config` - Configuration files
+- `{package-name}::migrations` - Database migrations
+- `{package-name}::routes` - Route files
+- `{package-name}::translations` - Translation files
+- `{package-name}::assets` - Public assets
+- `{package-name}::views` - View files
+- `{package-name}::providers` - Service providers
+- `{package-name}::view-components` - View components
+- `{package-name}::view-component-namespaces` - View component namespaces
 
 ### Example of using tags:
 
-Use `php artisan vendor:publish --tag=package-name::config` for publish configuration files.
+Use `php artisan vendor:publish --tag=package-short-name::config` for publish configuration files.
+
+```bash
+# Publish specific resources
+php artisan vendor:publish --tag=my-package::config
+php artisan vendor:publish --tag=my-package::migrations
+php artisan vendor:publish --tag=my-package::assets
+
+# Publish with force (overwrite existing files)
+php artisan vendor:publish --tag=my-package::config --force
+```
 
 ---
 
@@ -598,6 +836,49 @@ Use `php artisan vendor:publish --tag=package-name::config` for publish configur
 
 ```bash
 composer test
+```
+
+The package includes comprehensive tests for all features including:
+
+- Configuration loading and publishing
+- Route registration
+- Middleware registration
+- Migration handling
+- Translation loading
+- View and component registration
+- Command registration
+- Install command functionality
+- Lifecycle hooks
+- Conditional loading
+
+---
+
+## Versioning
+
+This package follows [Semantic Versioning](https://semver.org/) (SemVer).
+
+Given a version number `MAJOR.MINOR.PATCH`, we increment the:
+
+- **MAJOR** version when we make incompatible API changes
+- **MINOR** version when we add functionality in a backwards compatible manner
+- **PATCH** version when we make backwards compatible bug fixes
+
+Additional labels for pre-release and build metadata are available as extensions to the `MAJOR.MINOR.PATCH` format.
+
+### Compatibility Promise
+
+- **Major versions** may contain breaking changes
+- **Minor versions** will maintain backward compatibility within the same major version
+- **Patch versions** will only contain bug fixes and security updates
+
+We recommend using version constraints in your `composer.json` that allow for minor and patch updates but protect against major version changes:
+
+```json
+{
+	"require": {
+		"nyoncode/laravel-package-toolkit": "^1.0"
+	}
+}
 ```
 
 ---

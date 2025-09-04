@@ -3,6 +3,7 @@
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
 use Closure;
+use Throwable;
 
 trait HasConditionalLoading
 {
@@ -54,7 +55,7 @@ trait HasConditionalLoading
         foreach ($this->conditionalCallbacks as $callback) {
             try {
                 $callback($this);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Log error but continue with other callbacks
                 error_log('Error in conditional callback: '.$e->getMessage());
             }
@@ -196,6 +197,12 @@ trait HasConditionalLoading
      *
      * This method can be overridden in classes using this trait
      * to provide custom environment detection logic.
+     *
+     * Following Laravel standard behavior:
+     * - Use app()->environment() if available (recommended)
+     * - Fallback to config('app.env') if config is available
+     * - Fallback to direct ENV variables as last resort
+     * - Default to 'production' for security
      */
     protected function getCurrentEnvironment(): string
     {
@@ -204,18 +211,30 @@ trait HasConditionalLoading
             try {
                 return app()->environment();
             } catch (\Throwable $e) {
-                // Fall back to other methods
+                // Continue to fallback
             }
         }
 
-        // Check common environment variables
-        $env = $_ENV['APP_ENV'] ?? $_ENV['ENVIRONMENT'] ?? getenv('APP_ENV') ?: getenv('ENVIRONMENT');
-
-        if ($env) {
-            return strtolower($env);
+        // Try config helper (works when config is cached)
+        if (function_exists('config')) {
+            try {
+                $environment = config('app.env');
+                if (!empty($environment) && is_string($environment)) {
+                    return $environment;
+                }
+            } catch (\Throwable $e) {
+                // Continue to fallback
+            }
         }
 
-        // Default fallback
+        // Fallback to environment variables
+        $env = $_ENV['APP_ENV'] ?? $_ENV['ENVIRONMENT'] ?? getenv('APP_ENV') ?: getenv('ENVIRONMENT');
+
+        if (!empty($env) && is_string($env)) {
+            return strtolower(trim($env));
+        }
+
+        // Secure default
         return 'production';
     }
 }

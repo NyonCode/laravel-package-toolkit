@@ -109,15 +109,23 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         $this->packager = $this->bootPackager();
         $this->validatePackager();
         $this->packager->hasBasePath($this->getPackageBaseDir());
+
+        // Configure package
         $this->configure($this->packager);
+
+        // Execute conditional callbacks immediately after configuration
+        $this->packager->executeConditionalCallbacks();
+
         $this->validatePackageConfiguration();
 
+        // Execute registering package hooks
         $this->registeringPackage();
 
         $this->registerConfig();
         $this->registerInstallCommand();
         $this->performAutoInstall();
 
+        // Execute registered package hooks
         $this->registeredPackage();
     }
 
