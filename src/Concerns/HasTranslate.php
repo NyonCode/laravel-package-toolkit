@@ -78,7 +78,7 @@ trait HasTranslate
         }
 
         foreach (File::directories($path) as $directory) {
-            if (! Language::codes()->search(Str::afterLast($directory, '/'))) {
+            if (! Language::codes()->search(Str::afterLast($directory, DIRECTORY_SEPARATOR))) {
                 throw new InvalidLanguageDirectoryException(
                     "Invalid language directory [$directory]. Directory name must be one of the supported languages."
                 );
