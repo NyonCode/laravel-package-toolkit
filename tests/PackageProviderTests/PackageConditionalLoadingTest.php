@@ -7,11 +7,17 @@ use NyonCode\LaravelPackageToolkit\Packager;
 trait PackageConditionalLoadingTest
 {
     private bool $whenExecuted = false;
+
     private bool $unlessExecuted = false;
+
     private bool $localExecuted = false;
+
     private bool $productionExecuted = false;
+
     private bool $consoleExecuted = false;
+
     private bool $classExistsExecuted = false;
+
     private int $multipleCallbacksCount = 0;
 
     public function configure(Packager $packager): void

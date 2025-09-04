@@ -219,7 +219,7 @@ trait HasConditionalLoading
         if (function_exists('config')) {
             try {
                 $environment = config('app.env');
-                if (!empty($environment) && is_string($environment)) {
+                if (! empty($environment) && is_string($environment)) {
                     return $environment;
                 }
             } catch (\Throwable $e) {
@@ -230,7 +230,7 @@ trait HasConditionalLoading
         // Fallback to environment variables
         $env = $_ENV['APP_ENV'] ?? $_ENV['ENVIRONMENT'] ?? getenv('APP_ENV') ?: getenv('ENVIRONMENT');
 
-        if (!empty($env) && is_string($env)) {
+        if (! empty($env) && is_string($env)) {
             return strtolower(trim($env));
         }
 
