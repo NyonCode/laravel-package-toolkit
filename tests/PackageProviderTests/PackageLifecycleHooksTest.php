@@ -8,8 +8,11 @@ use NyonCode\LaravelPackageToolkit\Support\Enums\LifecycleHook;
 trait PackageLifecycleHooksTest
 {
     private bool $bootingCalled = false;
+
     private bool $bootedCalled = false;
+
     private bool $registeringCalled = false;
+
     private bool $registeredCalled = false;
 
     public function configure(Packager $package): void
@@ -140,10 +143,10 @@ test('lifecycle hooks maintain proper defined flags', function () {
     $this->assertFalse($package->registeredDefined);
 
     // After defining hooks, flags should be true
-    $package->bootingPackage(fn() => null);
-    $package->bootedPackage(fn() => null);
-    $package->registeringPackage(fn() => null);
-    $package->registeredPackage(fn() => null);
+    $package->bootingPackage(fn () => null);
+    $package->bootedPackage(fn () => null);
+    $package->registeringPackage(fn () => null);
+    $package->registeredPackage(fn () => null);
 
     $this->assertTrue($package->bootingDefined);
     $this->assertTrue($package->bootedDefined);
@@ -169,10 +172,10 @@ test('multiple hooks can be chained fluently', function () {
     $package = new Packager();
 
     $result = $package->name('Test Package')
-        ->bootingPackage(fn() => null)
-        ->bootedPackage(fn() => null)
-        ->registeringPackage(fn() => null)
-        ->registeredPackage(fn() => null);
+        ->bootingPackage(fn () => null)
+        ->bootedPackage(fn () => null)
+        ->registeringPackage(fn () => null)
+        ->registeredPackage(fn () => null);
 
     $this->assertSame($package, $result);
     $this->assertTrue($package->bootingDefined);

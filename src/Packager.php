@@ -32,6 +32,7 @@ class Packager
         HasConditionalLoading,
         HasConfig,
         HasInstallation,
+        HasLifecycleHooks,
         HasMiddleware,
         HasMigrations,
         HasProviders,
@@ -41,8 +42,7 @@ class Packager
         HasViewComponents,
         HasViewComposers,
         HasViews,
-        HasViewSharedData,
-        HasLifecycleHooks;
+        HasViewSharedData;
 
     /**
      * @var string The name of the package

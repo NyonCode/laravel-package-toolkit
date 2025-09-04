@@ -4,7 +4,6 @@ namespace NyonCode\LaravelPackageToolkit\Support\Concerns;
 
 use Closure;
 use NyonCode\LaravelPackageToolkit\Support\Enums\LifecycleHook;
-use Throwable;
 
 trait HasLifecycleHooks
 {
@@ -131,13 +130,13 @@ trait HasLifecycleHooks
     /**
      * Safely execute a lifecycle hook.
      *
-     * @param  LifecycleHook  $hook The lifecycle hook to execute
+     * @param  LifecycleHook  $hook  The lifecycle hook to execute
      */
     public function executeLifecycleHook(LifecycleHook $hook): void
     {
         $hookName = $hook->value;
 
-        $definedProperty = $hookName . 'Defined';
+        $definedProperty = $hookName.'Defined';
         $callbackProperty = $hookName;
 
         if (! $this->{$definedProperty}) {
