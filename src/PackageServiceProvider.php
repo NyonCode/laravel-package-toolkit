@@ -42,7 +42,8 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     /**
      * Configure the packager instance.
      *
-     * @param Packager $packager The packager instance to configure
+     * @param  Packager  $packager  The packager instance to configure
+     *
      * @throws PackageConfigurationException When configuration fails
      */
     abstract public function configure(Packager $packager): void;
@@ -105,21 +106,19 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     public function register(): void
     {
-            $this->registeringPackage();
+        $this->packager = $this->bootPackager();
+        $this->validatePackager();
+        $this->packager->hasBasePath($this->getPackageBaseDir());
+        $this->configure($this->packager);
+        $this->validatePackageConfiguration();
 
-            $this->packager = $this->bootPackager();
-            $this->validatePackager();
+        $this->registeringPackage();
 
-            $this->packager->hasBasePath($this->getPackageBaseDir());
-            $this->configure($this->packager);
-            $this->validatePackageConfiguration();
+        $this->registerConfig();
+        $this->registerInstallCommand();
+        $this->performAutoInstall();
 
-            $this->registerConfig();
-            $this->registerInstallCommand();
-            $this->performAutoInstall();
-
-            $this->registeredPackage();
-
+        $this->registeredPackage();
     }
 
     /**
@@ -130,14 +129,14 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     public function boot(): void
     {
-            $this->bootingPackage();
+        $this->bootingPackage();
 
-            $this->registerPublishing();
-            $this->registerPackageCommands();
-            $this->registerAboutCommand();
-            $this->bootPackageResources();
+        $this->registerPublishing();
+        $this->registerPackageCommands();
+        $this->registerAboutCommand();
+        $this->bootPackageResources();
 
-            $this->bootedPackage();
+        $this->bootedPackage();
     }
 
     /**
@@ -153,21 +152,22 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     /**
      * Get the base directory of the package.
      *
-     * @throws PackageConfigurationException
      * @return string The package base directory path
+     *
+     * @throws PackageConfigurationException
      */
     public function getPackageBaseDir(): string
     {
-            $reflector = new ReflectionClass(static::class);
-            $filename = $reflector->getFileName();
+        $reflector = new ReflectionClass(static::class);
+        $filename = $reflector->getFileName();
 
-            if ($filename === false) {
-                throw new PackageConfigurationException(
-                    'Unable to determine package base directory from reflection'
-                );
-            }
+        if ($filename === false) {
+            throw new PackageConfigurationException(
+                'Unable to determine package base directory from reflection'
+            );
+        }
 
-            return dirname($filename);
+        return dirname($filename);
     }
 
     /**
@@ -178,13 +178,16 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     public function registerPackageCommands(): void
     {
-        if (!$this->app->runningInConsole() || !$this->packager?->isCommandable()) {
+        if (
+            ! $this->app->runningInConsole() ||
+            ! $this->packager?->isCommandable()
+        ) {
             return;
         }
 
         $commands = $this->packager->commands ?? [];
 
-        if (!empty($commands)) {
+        if (! empty($commands)) {
             $this->commands($commands);
         }
     }
@@ -210,7 +213,9 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     protected function validatePackager(): void
     {
         if ($this->packager === null) {
-            throw new PackageConfigurationException('Packager instance is null');
+            throw new PackageConfigurationException(
+                'Packager instance is null'
+            );
         }
     }
 
@@ -238,11 +243,11 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     {
         if (! empty($this->packager->configFiles())) {
             foreach ($this->packager->configFiles() as $configFile) {
-                if (!is_array(require $configFile->getPathname())) {
+                if (! is_array(require $configFile->getPathname())) {
                     throw new InvalidReturnTypeException(
                         'Configuration file ['.
-                        $configFile->getBaseFileName().
-                        '] must return an array.'
+                            $configFile->getBaseFileName().
+                            '] must return an array.'
                     );
                 }
 
@@ -259,14 +264,15 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function registerInstallCommand(): void
     {
-        if (!$this->packager?->isInstallable() || !$this->app->runningInConsole()) {
+        if (
+            ! $this->packager?->isInstallable() ||
+            ! $this->app->runningInConsole()
+        ) {
             return;
         }
 
-            $installCommand = $this->packager->createInstallCommand();
-            $this->commands([$installCommand]);
-
-
+        $installCommand = $this->packager->createInstallCommand();
+        $this->commands([$installCommand]);
     }
 
     /**
@@ -274,7 +280,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function performAutoInstall(): void
     {
-        if (!$this->packager?->shouldInstallOnRun()) {
+        if (! $this->packager?->shouldInstallOnRun()) {
             return;
         }
 
@@ -290,17 +296,16 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function performSilentInstallation(): void
     {
-            $installCommand = $this->packager?->createInstallCommand();
+        $installCommand = $this->packager?->createInstallCommand();
 
-            if ($installCommand === null) {
-                return;
-            }
+        if ($installCommand === null) {
+            return;
+        }
 
-            $input = new ArrayInput(['--no-interaction' => true]);
-            $output = new NullOutput();
+        $input = new ArrayInput(['--no-interaction' => true]);
+        $output = new NullOutput();
 
-            $installCommand->run($input, $output);
-
+        $installCommand->run($input, $output);
     }
 
     /**
@@ -312,14 +317,14 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
             return;
         }
 
-            AboutCommand::add(
-                section: 'Laravel Package Toolkit',
-                data: [
-                    'Version' => fn() => $this->getToolkitVersion(),
-                ]
-            );
+        AboutCommand::add(
+            section: 'Laravel Package Toolkit',
+            data: [
+                'Version' => fn () => $this->getToolkitVersion(),
+            ]
+        );
 
-            self::$isPackageAboutRegistered = true;
+        self::$isPackageAboutRegistered = true;
     }
 
     /**
@@ -330,7 +335,9 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     protected function getToolkitVersion(): string
     {
         try {
-            return InstalledVersions::getPrettyVersion('nyoncode/laravel-package-toolkit') ?? 'unknown';
+            return InstalledVersions::getPrettyVersion(
+                'nyoncode/laravel-package-toolkit'
+            ) ?? 'unknown';
         } catch (Throwable) {
             return 'unknown';
         }

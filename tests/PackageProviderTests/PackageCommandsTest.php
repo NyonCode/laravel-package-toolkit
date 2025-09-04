@@ -2,6 +2,8 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
+use Exception;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use NyonCode\LaravelPackageToolkit\Packager;
 use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\src\Commands\FiveTestCommand;
 use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\src\Commands\SecondTestCommand;
@@ -10,6 +12,13 @@ use Symfony\Component\Console\Exception\CommandNotFoundException;
 
 trait PackageCommandsTest
 {
+    /**
+     * Configure the package.
+     *
+     *
+     * @throws FileNotFoundException
+     * @throws Exception
+     */
     public function configure(Packager $package): void
     {
         $package
