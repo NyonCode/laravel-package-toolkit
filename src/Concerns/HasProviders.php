@@ -64,6 +64,7 @@ trait HasProviders
         }
 
         if (! empty($this->providers)) {
+
             $this->isProvidable = true;
         }
 
