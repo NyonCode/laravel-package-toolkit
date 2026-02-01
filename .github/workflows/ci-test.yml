@@ -18,7 +18,7 @@ jobs:
             pest: 1.*
           - laravel: 10.*
             testbench: 8.*
-            pest: 2.*
+            pest: 1.*
           - laravel: 11.*
             testbench: 9.*
             pest: 2.*
