@@ -3,9 +3,12 @@
 namespace NyonCode\LaravelPackageToolkit\Tests;
 
 use Illuminate\Foundation\Application;
+use NyonCode\LaravelPackageToolkit\Packager;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
+    protected Packager $packager;
+
     protected function setUp(): void
     {
         parent::setUp();

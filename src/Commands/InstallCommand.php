@@ -413,7 +413,7 @@ class InstallCommand extends Command
                     return $composer['support']['source'];
                 }
             }
-        } catch (Exception $e) {
+        } catch (Exception) {
             // Ignore errors
         }
 
@@ -432,7 +432,7 @@ class InstallCommand extends Command
     /**
      * Confirm with Laravel Prompts fallback.
      */
-    private function confirm(string $question, bool $default = true): bool
+    public function confirm(string $question, bool $default = true): bool
     {
         if ($this->hasLaravelPrompts() && function_exists('Laravel\Prompts\confirm')) {
             return confirm($question, $default);

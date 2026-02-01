@@ -19,6 +19,10 @@ test(
         ->toBe('Test Package')
 );
 
+it('throws when name is empty', function () {
+    $this->packager->name('');
+})->throws(InvalidArgumentException::class);
+
 test(
     description: 'can get short name',
     closure: fn () => expect($this->packager->shortName())
@@ -26,6 +30,26 @@ test(
         ->toBeEmpty()
         ->toBe('test-package')
 );
+
+it('throws when short name is not in kebab case', function () {
+    $this->packager->hasShortName('testShortName');
+})->throws(InvalidArgumentException::class);
+
+it('rejects invalid custom shortName format', function (string $invalid) {
+    (new Packager())->hasShortName($invalid);
+})
+    ->throws(\InvalidArgumentException::class)
+    ->with([
+        'Invalid Name',
+        'MyPackage',
+        'my_package',
+        'my@pkg',
+        'UPPERCASE',
+    ]);
+
+it('throws when shortName is called without name', function () {
+    (new Packager())->shortName();
+})->throws(InvalidArgumentException::class);
 
 test(
     description: 'can get custom short name',
