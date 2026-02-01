@@ -53,7 +53,6 @@ class Packager
      * @var string|null The short name of the package
      */
     private ?string $shortName = null;
-
     /**
      * Set the name of the package.
      *

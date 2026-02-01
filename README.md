@@ -482,6 +482,14 @@ $packager->hasViews(
 );
 ```
 
+or 
+
+```php
+$packager->hasViews(__DIR__.'/../resources/views/admin', 'admin', 'mypackage-admin');
+```
+
+
+
 ---
 
 ## View Components

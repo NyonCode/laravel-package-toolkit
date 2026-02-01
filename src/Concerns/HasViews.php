@@ -17,6 +17,8 @@ trait HasViews
      * @var string The path to the views
      */
     protected string $viewsPath = '';
+    protected ?string $viewNamespace = null;
+
 
     public function isViewable(): bool
     {
@@ -34,16 +36,31 @@ trait HasViews
     }
 
     /**
-     * Set or variable views folder
+     * Configure or set the path to the view templates for the package or component.
      *
-     * @param  string|null  $viewsPath  The path to the views files
-     * @param  string  $directory  The directory name where the views files are located
+     * This method allows you to define a custom path where the Blade views are located.
+     * If no path is provided, a default relative directory (e.g., `../resources/views`) is used.
+     * It also allows optional registration of a namespace for easier referencing in views.
      *
-     * @throw DirectoryNotFoundException
+     * Example usage:
+     * ```php
+     * $this->hasViews(__DIR__ . '/../resources/views', 'views', 'mypackage');
+     * ```
+     *
+     * @param  string|null  $viewsPath   Absolute or relative path to the views directory.
+     *                                   If `null`, the `$directory` parameter will be used.
+     * @param  string       $directory   Default relative directory path used when `$viewsPath` is not set.
+     * @param  string|null  $namespace   Optional view namespace (e.g., `'mypackage'`) for namespaced Blade includes.
+     *
+     * @throws DirectoryNotFoundException
+     *         Thrown when the provided views directory does not exist.
+     *
+     * @return static  Returns the current instance for method chaining.
      */
     public function hasViews(
         ?string $viewsPath = null,
-        string $directory = '../resources/views'
+        string $directory = '../resources/views',
+        ?string $namespace = null
     ): static {
         if (! empty($viewsPath)) {
             if (! is_dir($this->path($viewsPath))) {
@@ -55,6 +72,10 @@ trait HasViews
             $this->viewsPath = $viewsPath;
         } else {
             $this->viewsPath = $this->path($directory);
+        }
+
+        if (! empty($namespace)) {
+            $this->viewNamespace = $namespace;
         }
 
         if (! empty($this->viewsPath)) {
