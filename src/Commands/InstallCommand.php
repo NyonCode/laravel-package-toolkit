@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\File;
 use NyonCode\LaravelPackageToolkit\Commands\Concerns\PublishableResources;
 use NyonCode\LaravelPackageToolkit\Packager;
 
-use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\confirm as promptConfirm;
 
 class InstallCommand extends Command
 {
@@ -432,13 +432,15 @@ class InstallCommand extends Command
     /**
      * Confirm with Laravel Prompts fallback.
      *
-     * @param string    $question
-     * @param bool      $default
+     * @param  string  $question
+     * @param  bool  $default
+     *
+     * @return bool
      */
-    public function confirm(string $question, bool $default = true): bool
+    public function confirm($question, bool $default = true): bool
     {
-        if ($this->hasLaravelPrompts() && function_exists('Laravel\Prompts\confirm')) {
-            return confirm($question, $default);
+        if ($this->hasLaravelPrompts()) {
+            return promptConfirm($question, $default);
         }
 
         // Fallback to standard Artisan confirm for Laravel 9
