@@ -51,14 +51,14 @@ jobs:
           echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Install dependencies
-              run: |
-                composer config audit.ignore-advisories true
-                composer config audit.abandoned ignore
+        run: |
+          composer config audit.ignore-advisories true
+          composer config audit.abandoned ignore
 
-                composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
-                composer require "orchestra/testbench:${{ matrix.testbench }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest }}" --dev --no-interaction --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
+          composer require "orchestra/testbench:${{ matrix.testbench }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest }}" --dev --no-interaction --no-update
 
-                composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-audit
+          composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-audit
 
       - name: Execute tests (Unix)
         if: matrix.os != 'windows-latest'
