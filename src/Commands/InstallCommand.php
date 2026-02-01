@@ -433,9 +433,6 @@ class InstallCommand extends Command
      * Confirm with Laravel Prompts fallback.
      *
      * @param  string  $question
-     * @param  bool  $default
-     *
-     * @return bool
      */
     public function confirm($question, bool $default = true): bool
     {
