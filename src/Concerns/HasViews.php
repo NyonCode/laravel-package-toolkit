@@ -17,8 +17,8 @@ trait HasViews
      * @var string The path to the views
      */
     protected string $viewsPath = '';
-    protected ?string $viewNamespace = null;
 
+    protected ?string $viewNamespace = null;
 
     public function isViewable(): bool
     {
@@ -47,15 +47,14 @@ trait HasViews
      * $this->hasViews(__DIR__ . '/../resources/views', 'views', 'mypackage');
      * ```
      *
-     * @param  string|null  $viewsPath   Absolute or relative path to the views directory.
-     *                                   If `null`, the `$directory` parameter will be used.
-     * @param  string       $directory   Default relative directory path used when `$viewsPath` is not set.
-     * @param  string|null  $namespace   Optional view namespace (e.g., `'mypackage'`) for namespaced Blade includes.
+     * @param  string|null  $viewsPath  Absolute or relative path to the views directory.
+     *                                  If `null`, the `$directory` parameter will be used.
+     * @param  string  $directory  Default relative directory path used when `$viewsPath` is not set.
+     * @param  string|null  $namespace  Optional view namespace (e.g., `'mypackage'`) for namespaced Blade includes.
+     * @return static Returns the current instance for method chaining.
      *
      * @throws DirectoryNotFoundException
-     *         Thrown when the provided views directory does not exist.
-     *
-     * @return static  Returns the current instance for method chaining.
+     *                                    Thrown when the provided views directory does not exist.
      */
     public function hasViews(
         ?string $viewsPath = null,
