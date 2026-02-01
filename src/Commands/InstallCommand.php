@@ -39,9 +39,11 @@ class InstallCommand extends Command
     public function __construct(Packager $packager)
     {
         $this->packager = $packager;
-        $this->signature = $this->packager->shortName().':install 
-                           {--force : Force the operation to run when in production}
-                           {--no-interaction : Do not ask any interactive question}';
+
+        // Odstraněn --no-interaction, protože je nativně přítomen v každém příkazu
+        $this->signature = $this->packager->shortName().':install
+                           {--force : Force the operation to run when in production}';
+
         $this->description = 'Install '.$this->packager->name.' package';
         $this->hidden = $packager->isInstallCommandHidden();
 
@@ -433,17 +435,20 @@ class InstallCommand extends Command
      * Confirm with Laravel Prompts fallback.
      *
      * @param  string  $question
-     * @param  bool  $default
-     *
-     * @return bool
      */
-    public function confirm($question, bool $default = true): bool
+    /**
+     * Confirm with Laravel Prompts fallback.
+     *
+     * @param  string  $question
+     * @param  bool  $default
+     */
+    public function confirm($question, $default = false)
     {
         if ($this->hasLaravelPrompts()) {
             return promptConfirm($question, $default);
         }
 
-        // Fallback to standard Artisan confirm for Laravel 9
+        // Fallback pro Laravel 9
         return parent::confirm($question, $default);
     }
 }
