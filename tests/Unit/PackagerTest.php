@@ -38,7 +38,7 @@ it('throws when short name is not in kebab case', function () {
 it('rejects invalid custom shortName format', function (string $invalid) {
     (new Packager())->hasShortName($invalid);
 })
-    ->throws(\InvalidArgumentException::class)
+    ->throws(InvalidArgumentException::class)
     ->with([
         'Invalid Name',
         'MyPackage',

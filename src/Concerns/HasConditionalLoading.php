@@ -210,7 +210,7 @@ trait HasConditionalLoading
         if (function_exists('app')) {
             try {
                 return app()->environment();
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Continue to fallback
             }
         }
@@ -222,7 +222,7 @@ trait HasConditionalLoading
                 if (! empty($environment) && is_string($environment)) {
                     return $environment;
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Continue to fallback
             }
         }
