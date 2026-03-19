@@ -67,9 +67,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer config audit.ignore-advisories true
-          composer config audit.abandoned ignore
-
           composer require "laravel/framework:${{ matrix.laravel.version }}" --no-interaction --no-update
           composer require "orchestra/testbench:${{ matrix.laravel.testbench }}" "pestphp/pest:${{ matrix.laravel.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.laravel.pest }}" --dev --no-interaction --no-update
 
