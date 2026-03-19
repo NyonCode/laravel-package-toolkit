@@ -5,13 +5,12 @@ namespace NyonCode\LaravelPackageToolkit\Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\Testing\TestResponse;
 use NyonCode\LaravelPackageToolkit\Packager;
+use Random\RandomException;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
     /**
      * Compatibility with older Orchestra Testbench versions used by prefer-lowest.
-     *
-     * @var TestResponse|null
      */
     protected static ?TestResponse $latestResponse;
 
@@ -29,7 +28,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
      *
      * @param  Application  $app  The application instance.
      *
-     * @throws \Random\RandomException
+     * @throws RandomException
      */
     protected function getEnvironmentSetUp($app): void
     {
