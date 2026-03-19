@@ -3,10 +3,18 @@
 namespace NyonCode\LaravelPackageToolkit\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Testing\TestResponse;
 use NyonCode\LaravelPackageToolkit\Packager;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
+    /**
+     * Compatibility with older Orchestra Testbench versions used by prefer-lowest.
+     *
+     * @var TestResponse|null
+     */
+    protected static ?TestResponse $latestResponse;
+
     protected Packager $packager;
 
     protected function setUp(): void
@@ -20,6 +28,8 @@ class TestCase extends \Orchestra\Testbench\TestCase
      * This method is called before each test.
      *
      * @param  Application  $app  The application instance.
+     *
+     * @throws \Random\RandomException
      */
     protected function getEnvironmentSetUp($app): void
     {
