@@ -16,49 +16,52 @@ jobs:
         stability: [ prefer-lowest, prefer-stable ]
         include:
           # ──────────────────────────────────────────────
-          # Laravel 10 — Pest 2 + Testbench 8
-          # Supports PHP 8.1–8.3 only
+          # Laravel 10 — Pest ^2.0 + Testbench ^8.0
+          # PHP 8.1–8.3
+          #
+          # Using ^2.0 (not 2.36.*) so Composer can resolve
+          # whichever Pest 2.x still has an installable
+          # pinned PHPUnit version. Pest 2.36.0 is broken
+          # (pins phpunit 10.5.36, now unavailable) and
+          # 2.36.1 requires php ^8.2.
           # ──────────────────────────────────────────────
           - laravel: '10.*'
-            testbench: '8.37.*'
-            pest: '2.36.*'
-            pest_plugin_laravel: '2.4.*'
+            testbench: '^8.0'
+            pest: '^2.0'
+            pest_plugin_laravel: '^2.0'
 
           # ──────────────────────────────────────────────
-          # Laravel 11 — Pest 2 + Testbench 9
-          # Supports PHP 8.2–8.4
-          # Pest 2 uses paratest with restrictive PHP ranges,
-          # preventing PHP 8.5 support
+          # Laravel 11 — Pest ^2.0 + Testbench ^9.0
+          # PHP 8.2–8.4
           # ──────────────────────────────────────────────
           - laravel: '11.*'
-            testbench: '9.17.*'
-            pest: '2.36.*'
-            pest_plugin_laravel: '2.4.*'
+            testbench: '^9.0'
+            pest: '^2.0'
+            pest_plugin_laravel: '^2.0'
 
           # ──────────────────────────────────────────────
-          # Laravel 12 — Pest 3 + Testbench 10
-          # Supports PHP 8.2–8.5
-          # Testbench 10.8+ has explicit PHP 8.5 compat
+          # Laravel 12 — Pest ^3.1 + Testbench ^10.0
+          # PHP 8.2–8.5
           # ──────────────────────────────────────────────
           - laravel: '12.*'
-            testbench: '10.11.*'
-            pest: '3.8.*'
-            pest_plugin_laravel: '3.2.*'
+            testbench: '^10.0'
+            pest: '^3.1'
+            pest_plugin_laravel: '^3.0'
 
           # ──────────────────────────────────────────────
-          # Laravel 13 — Pest 4 + Testbench 11
-          # Supports PHP 8.3–8.5
+          # Laravel 13 — Pest ^4.0 + Testbench ^11.0
+          # PHP 8.3–8.5
           # ──────────────────────────────────────────────
           - laravel: '13.*'
-            testbench: '11.0.*'
-            pest: '4.4.*'
-            pest_plugin_laravel: '4.1.*'
+            testbench: '^11.0'
+            pest: '^4.0'
+            pest_plugin_laravel: '^4.0'
 
         exclude:
           # ── Laravel 10: PHP 8.1–8.3 only ────────────
-          # L10 ecosystem (testbench 8, pest 2, paratest)
-          # cannot resolve on PHP 8.4+ due to
-          # symfony/process ^6.2 + paratest PHP constraints
+          # Testbench 8 requires symfony/process ^6.2,
+          # paratest has no version supporting PHP 8.4+
+          # with that constraint.
           - laravel: '10.*'
             php: '8.4'
           - laravel: '10.*'
@@ -67,10 +70,7 @@ jobs:
           # ── Laravel 11: requires PHP >= 8.2 ─────────
           - laravel: '11.*'
             php: '8.1'
-          # L11 + Pest 2 + paratest cannot resolve on 8.5
-          # (paratest versions supporting 8.5 need
-          #  symfony/process ^7.3+ conflicting with
-          #  testbench 9's constraints)
+          # Pest 2 + paratest cannot resolve on PHP 8.5
           - laravel: '11.*'
             php: '8.5'
 
