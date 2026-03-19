@@ -3,7 +3,6 @@
 namespace NyonCode\LaravelPackageToolkit\Tests;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Testing\TestResponse;
 use NyonCode\LaravelPackageToolkit\Packager;
 use Random\RandomException;
 
@@ -12,7 +11,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
     /**
      * Compatibility with older Orchestra Testbench versions used by prefer-lowest.
      */
-    protected static ?TestResponse $latestResponse;
+    public static $latestResponse;
 
     protected Packager $packager;
 
