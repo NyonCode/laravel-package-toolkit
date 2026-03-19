@@ -15,76 +15,69 @@ jobs:
         laravel: [ '13.*', '12.*', '11.*', '10.*' ]
         stability: [ prefer-lowest, prefer-stable ]
         include:
-          # ──────────────────────────────────────────────
-          # Laravel 10 — Pest ^2.0 + Testbench ^8.0
-          # PHP 8.1–8.3
-          #
-          # Using ^2.0 (not 2.36.*) so Composer can resolve
-          # whichever Pest 2.x still has an installable
-          # pinned PHPUnit version. Pest 2.36.0 is broken
-          # (pins phpunit 10.5.36, now unavailable) and
-          # 2.36.1 requires php ^8.2.
-          # ──────────────────────────────────────────────
+          # ──────────────────────────────────────────
+          # Laravel 10 — PHP 8.1–8.3
+          # Testbench ^8.0 | Pest ^2.0 (PHPUnit 10)
+          # ──────────────────────────────────────────
           - laravel: '10.*'
             testbench: '^8.0'
             pest: '^2.0'
             pest_plugin_laravel: '^2.0'
 
-          # ──────────────────────────────────────────────
-          # Laravel 11 — Pest ^2.0 + Testbench ^9.0
-          # PHP 8.2–8.4
-          # ──────────────────────────────────────────────
+          # ──────────────────────────────────────────
+          # Laravel 11 — PHP 8.2–8.4
+          # Testbench ^9.0 | Pest ^2.0 (PHPUnit 10)
+          # ──────────────────────────────────────────
           - laravel: '11.*'
             testbench: '^9.0'
             pest: '^2.0'
             pest_plugin_laravel: '^2.0'
 
-          # ──────────────────────────────────────────────
-          # Laravel 12 — Pest ^3.1 + Testbench ^10.0
-          # PHP 8.2–8.5
-          # ──────────────────────────────────────────────
+          # ──────────────────────────────────────────
+          # Laravel 12 — PHP 8.2–8.5
+          # Testbench ^10.0 | Pest ^3.1 (PHPUnit 11)
+          # ──────────────────────────────────────────
           - laravel: '12.*'
             testbench: '^10.0'
             pest: '^3.1'
             pest_plugin_laravel: '^3.0'
 
-          # ──────────────────────────────────────────────
-          # Laravel 13 — Pest ^4.0 + Testbench ^11.0
-          # PHP 8.3–8.5
-          # ──────────────────────────────────────────────
+          # ──────────────────────────────────────────
+          # Laravel 13 — PHP 8.3–8.5
+          # Testbench ^11.0 | Pest ^4.0 (PHPUnit 12)
+          # ──────────────────────────────────────────
           - laravel: '13.*'
             testbench: '^11.0'
             pest: '^4.0'
             pest_plugin_laravel: '^4.0'
 
         exclude:
-          # ── Laravel 10: PHP 8.1–8.3 only ────────────
-          # Testbench 8 requires symfony/process ^6.2,
-          # paratest has no version supporting PHP 8.4+
-          # with that constraint.
+          # Laravel 10 — testbench 8 requires
+          # symfony/process ^6.2; paratest has no
+          # version bridging PHP 8.4+ with that.
           - laravel: '10.*'
             php: '8.4'
           - laravel: '10.*'
             php: '8.5'
 
-          # ── Laravel 11: requires PHP >= 8.2 ─────────
+          # Laravel 11 — minimum PHP 8.2
           - laravel: '11.*'
             php: '8.1'
-          # Pest 2 + paratest cannot resolve on PHP 8.5
+          # Pest 2 + paratest unresolvable on PHP 8.5
           - laravel: '11.*'
             php: '8.5'
 
-          # ── Laravel 12: requires PHP >= 8.2 ─────────
+          # Laravel 12 — minimum PHP 8.2
           - laravel: '12.*'
             php: '8.1'
 
-          # ── Laravel 13: requires PHP >= 8.3 ─────────
+          # Laravel 13 — minimum PHP 8.3
           - laravel: '13.*'
             php: '8.1'
           - laravel: '13.*'
             php: '8.2'
 
-    name: PHP ${{ matrix.php }} | Laravel ${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
+    name: P${{ matrix.php }} | L${{ matrix.laravel }} | ${{ matrix.stability }} | ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -107,7 +100,6 @@ jobs:
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
           composer require "orchestra/testbench:${{ matrix.testbench }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest_plugin_laravel }}" --dev --no-interaction --no-update
-
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-audit
 
       - name: Execute tests (Unix)
