@@ -71,6 +71,10 @@ trait PublishesPackageResources
 
     /**
      * Publish the migration files for the package.
+     *
+     * Supports both timestamped and timeless migrations. Timeless migrations
+     * automatically receive a timestamp prefix when published to ensure
+     * correct execution order.
      */
     public function publishMigrations(): static
     {
@@ -78,15 +82,22 @@ trait PublishesPackageResources
             return $this;
         }
 
-        /** @var SplFileInfo $migrationPath */
-        $migrationPath = collect($this->packager->migrationFiles())->first();
+        if ($this->packager->shouldPrependTimestamp()) {
+            $this->publishes(
+                paths: $this->packager->getMigrationPublishMapping(),
+                groups: $this->publishTagFormat('migrations')
+            );
+        } else {
+            /** @var SplFileInfo $migrationPath */
+            $migrationPath = collect($this->packager->migrationFiles())->first();
 
-        $this->publishes(
-            paths: [
-                $migrationPath->getPath() => database_path('migrations'),
-            ],
-            groups: $this->publishTagFormat('migrations')
-        );
+            $this->publishes(
+                paths: [
+                    $migrationPath->getPath() => database_path('migrations'),
+                ],
+                groups: $this->publishTagFormat('migrations')
+            );
+        }
 
         return $this;
     }

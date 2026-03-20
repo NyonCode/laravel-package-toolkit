@@ -18,10 +18,13 @@ developers to focus on building features rather than boilerplate code.
 
 ## Support Laravel
 
-- **Laravel 9.x**
 - **Laravel 10.x**
 - **Laravel 11.x**
 - **Laravel 12.x**
+- **Laravel 13.x**
+
+> **Note:** Laravel 9.x support was removed in v2.0 due to its end-of-life security status. If you need Laravel 9
+> support, use the `^1.0` release.
 
 ## Table of Contents
 
@@ -49,6 +52,7 @@ developers to focus on building features rather than boilerplate code.
 - [About Command](#about-command)
 - [Publishing](#publishing)
 - [Testing](#testing)
+- [Upgrading from v1.x](#upgrading-from-v1x)
 - [Versioning](#versioning)
 - [License](#license)
 
@@ -158,6 +162,7 @@ class ConditionalPackageServiceProvider extends PackageServiceProvider implement
     }
 }
 ```
+
 Local and production resources will be registered when the `isInLocal()` and `isInProduction()` methods return `true`.
 
 #### Additional Conditional Methods
@@ -195,10 +200,11 @@ $packager
 
 ## Lifecycle Hooks
 
-The package provides lifecycle hooks that allow you to execute custom logic at specific points during package registration and booting:
+The package provides lifecycle hooks that allow you to execute custom logic at specific points during package
+registration and booting:
 
 | **Hook Method**        | **Description**                      |
-| ---------------------- | ------------------------------------ |
+|------------------------|--------------------------------------|
 | `registeringPackage()` | Called before `register()` is called |
 | `registeredPackage()`  | Called after `register()` is called  |
 | `bootingPackage()`     | Called before `boot()` is called     |
@@ -238,6 +244,7 @@ Define a name for the package:
 ```php
 $packager->name('Package name');
 ```
+
 ---
 
 ## Short name
@@ -253,6 +260,7 @@ $packager->hasShortName('custom-short-name');
 The short name must be in kebab-case format and contain only lowercase letters, numbers, and hyphens.
 
 ---
+
 ## Config
 
 To enable configuration in your package:
@@ -260,6 +268,7 @@ To enable configuration in your package:
 ```php
 $packager->hasConfig();
 ```
+
 ---
 By default, this will load configuration from the `config` directory. For custom config files:
 
@@ -281,6 +290,7 @@ To use an alternative directory for config files.
 ```php
 $package->hasConfig(directory: 'customConfig');
 ```
+
 ---
 
 ## Routing
@@ -308,6 +318,7 @@ To use an alternative directory for route files.
 ```php
 $package->hasRoute(directory: 'webRouter');
 ```
+
 ---
 
 ## Middlewares
@@ -324,6 +335,7 @@ $packager->hasMiddlewareAliases([
     'auth.custom' => \Vendor\Package\Http\Middleware\CustomAuthMiddleware::class,
 ]);
 ```
+
 This allows you to assign the middleware to routes using its alias:
 
 ```php
@@ -345,6 +357,7 @@ $packager->hasMiddlewareGroups([
     ],
 ]);
 ```
+
 This will automatically add your middleware to the specified groups (e.g. web, api).
 
 ### Register Middleware Globally
@@ -358,9 +371,23 @@ $packager->hasMiddlewareGlobals([
 ]);
 ```
 
-This middleware will be added to the middleware stack and is useful for applying middleware to all routes regardless of their group.
+This middleware will be added to the middleware stack and is useful for applying middleware to all routes regardless of
+their group.
 
 ## Migrations
+
+The toolkit supports both **timestamped** and **timeless** migration files. Detection is automatic — simply call
+`hasMigrations()` and the toolkit will handle both formats correctly.
+
+### Timestamped migrations
+
+Standard Laravel migration files with a date prefix:
+
+```
+database/migrations/
+├── 2025_01_01_000000_create_users_table.php
+└── 2025_01_01_000001_create_roles_table.php
+```
 
 To enable migrations:
 
@@ -368,14 +395,47 @@ To enable migrations:
 $packager->hasMigrations();
 ```
 
-Or for specific file paths:
+### Timeless migrations
+
+Migration files without a date prefix. When published, the toolkit automatically prepends a sequential timestamp to
+ensure correct execution order:
+
+```
+database/migrations/
+├── create_posts_table.php
+└── create_comments_table.php
+```
+
+Usage is identical — no extra configuration is needed:
+
+```php
+$packager->hasMigrations();
+```
+
+When a user runs `vendor:publish`, timeless files are published with a generated timestamp prefix (e.g.
+`2025_03_20_143022_create_posts_table.php`). The original file names are preserved as the suffix.
+
+### Mixed migrations
+
+You can freely combine both formats in the same directory. Timestamped files keep their original prefix, and timeless
+files receive an auto-generated one:
+
+```
+database/migrations/
+├── 2025_01_01_000000_create_users_table.php   ← keeps original timestamp
+├── create_posts_table.php                      ← gets timestamp on publish
+└── create_comments_table.php                   ← gets timestamp on publish
+```
+
+### Specifying migration files
+
+For specific file paths:
 
 ```php
 $packager->hasMigrations([
     '../www/database/migrations/2023_01_01_000000_create_users_table.php',
     '../api/database/migrations/2023_01_01_000001_create_roles_table.php',
 ]);
-
 ```
 
 This loads migrations from the `database/migrations` directory. For a custom directory:
@@ -384,7 +444,7 @@ This loads migrations from the `database/migrations` directory. For a custom dir
 $packager->hasMigrations(directory: 'custom-migrations');
 ```
 
-To use an alternative directory for migration files.
+To use an alternative directory for migration files:
 
 ```php
 $package->hasMigrations(
@@ -395,13 +455,14 @@ $package->hasMigrations(
 
 For more information about migrations, see [Laravel migrations](https://laravel.com/docs/9.x/migrations).
 
-### Use migration without publishing
+### Loading migrations without publishing
 
 ```php
 $packager->canLoadMigrations();
 ```
 
-This will load migrations directly when the package is registered, without requiring them to be published first.
+This will load migrations directly when the package is registered, without requiring them to be published first. Works
+with both timestamped and timeless migration files.
 
 ---
 
@@ -421,7 +482,8 @@ For a custom directory:
 $packager->hasTranslations('custom-lang-directory');
 ```
 
-The package automatically validates language directory names against supported language codes and detects JSON translation files.
+The package automatically validates language directory names against supported language codes and detects JSON
+translation files.
 
 ---
 
@@ -482,13 +544,11 @@ $packager->hasViews(
 );
 ```
 
-or 
+or
 
 ```php
 $packager->hasViews(__DIR__.'/../resources/views/admin', 'admin', 'mypackage-admin');
 ```
-
-
 
 ---
 
@@ -523,6 +583,7 @@ You can then use these components in your Blade templates:
 <x-nyon-sidebar id="sidebar"/>
 <x-nyon-custom-alert type="warning" message="This is a warning!"/>
 ```
+
 ---
 
 ## View Component Namespaces
@@ -552,6 +613,7 @@ You can then use these namespaces in your Blade templates:
     <!-- Modal content -->
 </x-admin-modal>
 ```
+
 ---
 
 ## View Composers
@@ -587,7 +649,8 @@ To add shared data to views:
 $packager->hasSharedDataForAllViews(['key' => 'value', 'user' => 'john']);
 ```
 
-This adds key-value pairs to the shared data array in the view. The shared data must have string keys and values must be scalar, array, null, or implement the `Arrayable` interface.
+This adds key-value pairs to the shared data array in the view. The shared data must have string keys and values must be
+scalar, array, null, or implement the `Arrayable` interface.
 
 For more information about shared data, see [Laravel shared data](https://laravel.com/docs/12.x/views#shared-data).
 
@@ -618,6 +681,7 @@ To enable service providers:
 ```php
 $packager->hasProvider('../stubs/MyProvider.stub');
 ```
+
 Support for multiple service providers:
 
 ```php
@@ -808,6 +872,7 @@ For publishing, you can use the following commands:
 ```bash
 php artisan vendor:publish
 ```
+
 `vendor:publish` show all the tags that can be used for publishing.
 
 ### Available Publishing Tags
@@ -838,6 +903,17 @@ php artisan vendor:publish --tag=my-package::assets
 php artisan vendor:publish --tag=my-package::config --force
 ```
 
+### Migration publishing behavior
+
+When publishing migrations, the behavior depends on the file format:
+
+- **Timestamped migrations** (e.g. `2025_01_01_000000_create_users_table.php`) are published as-is with their original
+  filename.
+- **Timeless migrations** (e.g. `create_posts_table.php`) automatically receive a timestamp prefix at the time of
+  publishing to ensure correct execution order.
+- **Mixed directories** are handled per-file — each file is treated individually based on whether it has a date prefix
+  or not.
+
 ---
 
 ## Testing
@@ -851,13 +927,39 @@ The package includes comprehensive tests for all features including:
 - Configuration loading and publishing
 - Route registration
 - Middleware registration
-- Migration handling
+- Migration handling (timestamped, timeless, and mixed)
 - Translation loading
 - View and component registration
 - Command registration
 - Install command functionality
 - Lifecycle hooks
 - Conditional loading
+
+---
+
+## Upgrading from v1.x
+
+Version 2.0 introduces the following breaking changes:
+
+- **Dropped Laravel 9.x support** — Laravel 9 reached end-of-life and no longer receives security updates. If your
+  project still depends on Laravel 9, continue using `^1.0`.
+- **Minimum PHP version raised to 8.2** — Aligning with Laravel 11+ requirements.
+- **Added Laravel 13.x support** — Full compatibility with the latest Laravel release.
+- **Timeless migrations** — Migrations without a date prefix are now supported. This is a non-breaking addition but
+  changes the internal publishing behavior when timeless files are detected. Existing timestamped migrations are
+  unaffected.
+
+To upgrade, update your `composer.json`:
+
+```json
+{
+	"require": {
+		"nyoncode/laravel-package-toolkit": "^2.0"
+	}
+}
+```
+
+Then run `composer update`. No code changes are required unless your package explicitly depends on Laravel 9 or PHP 8.1.
 
 ---
 
@@ -879,12 +981,13 @@ Additional labels for pre-release and build metadata are available as extensions
 - **Minor versions** will maintain backward compatibility within the same major version
 - **Patch versions** will only contain bug fixes and security updates
 
-We recommend using version constraints in your `composer.json` that allow for minor and patch updates but protect against major version changes:
+We recommend using version constraints in your `composer.json` that allow for minor and patch updates but protect
+against major version changes:
 
 ```json
 {
 	"require": {
-		"nyoncode/laravel-package-toolkit": "^1.0"
+		"nyoncode/laravel-package-toolkit": "^2.0"
 	}
 }
 ```
