@@ -10,6 +10,7 @@ use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
 use NyonCode\LaravelPackageToolkit\Tests\TestCase;
 use NyonCode\LaravelPackageToolkit\Tests\TestPackageData\src\TestServiceProvider;
 use ReflectionClass;
+use ReflectionException;
 
 abstract class PackageServiceProviderTestCase extends TestCase
 {
@@ -75,15 +76,33 @@ abstract class PackageServiceProviderTestCase extends TestCase
 
     protected function resetServiceProviderState(): void
     {
-        ServiceProvider::$publishes = [];
-        ServiceProvider::$publishGroups = [];
+        $this->resetStaticProperty(ServiceProvider::class, 'publishes', []);
+        $this->resetStaticProperty(ServiceProvider::class, 'publishGroups', []);
+        $this->resetStaticProperty(ServiceProvider::class, 'publishableMigrationPaths', []);
+        $this->resetStaticProperty(PackageServiceProvider::class, 'isPackageAboutRegistered', false);
+    }
 
-        $laravelProviderReflection = new ReflectionClass(ServiceProvider::class);
-        $publishableMigrationsProperty = $laravelProviderReflection->getProperty('publishableMigrationPaths');
-        $publishableMigrationsProperty->setValue(null, []);
+    /**
+     * Reset static property when available (Laravel version compatible).
+     *
+     * @param  class-string  $class
+     *
+     * @throws ReflectionException
+     */
+    private function resetStaticProperty(string $class, string $property, mixed $value): void
+    {
+        $reflection = new ReflectionClass($class);
 
-        $toolkitProviderReflection = new ReflectionClass(PackageServiceProvider::class);
-        $aboutRegisteredProperty = $toolkitProviderReflection->getProperty('isPackageAboutRegistered');
-        $aboutRegisteredProperty->setValue(null, false);
+        if (! $reflection->hasProperty($property)) {
+            return;
+        }
+
+        $propertyReflection = $reflection->getProperty($property);
+
+        if (! $propertyReflection->isStatic()) {
+            return;
+        }
+
+        $propertyReflection->setValue(null, $value);
     }
 }
