@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\File;
 use NyonCode\LaravelPackageToolkit\Commands\Concerns\PublishableResources;
 use NyonCode\LaravelPackageToolkit\Packager;
 
-use function Laravel\Prompts\confirm as promptConfirm;
-
 class InstallCommand extends Command
 {
     use PublishableResources;
@@ -420,35 +418,5 @@ class InstallCommand extends Command
         }
 
         return null;
-    }
-
-    /**
-     * Check if Laravel Prompts is available.
-     */
-    private function hasLaravelPrompts(): bool
-    {
-        return function_exists('Laravel\Prompts\confirm') ||
-            class_exists('Laravel\Prompts\Prompt');
-    }
-
-    /**
-     * Confirm with Laravel Prompts fallback.
-     *
-     * @param  string  $question
-     */
-    /**
-     * Confirm with Laravel Prompts fallback.
-     *
-     * @param  string  $question
-     * @param  bool  $default
-     */
-    public function confirm($question, $default = false)
-    {
-        if ($this->hasLaravelPrompts()) {
-            return promptConfirm($question, $default);
-        }
-
-        // Fallback pro Laravel 9
-        return parent::confirm($question, $default);
     }
 }
