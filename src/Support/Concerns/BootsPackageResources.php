@@ -65,7 +65,7 @@ trait BootsPackageResources
      */
     public function bootMigrations(): static
     {
-        if (! $this->packager->isMigratable() and $this->packager->hasMigrationsOnRun) {
+        if (! $this->packager->isMigratable() || ! $this->packager->hasMigrationsOnRun) {
             return $this;
         }
 
