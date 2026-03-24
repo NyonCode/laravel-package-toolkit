@@ -80,12 +80,10 @@ abstract class PackageServiceProviderTestCase extends TestCase
 
         $laravelProviderReflection = new ReflectionClass(ServiceProvider::class);
         $publishableMigrationsProperty = $laravelProviderReflection->getProperty('publishableMigrationPaths');
-        $publishableMigrationsProperty->setAccessible(true);
         $publishableMigrationsProperty->setValue(null, []);
 
         $toolkitProviderReflection = new ReflectionClass(PackageServiceProvider::class);
         $aboutRegisteredProperty = $toolkitProviderReflection->getProperty('isPackageAboutRegistered');
-        $aboutRegisteredProperty->setAccessible(true);
         $aboutRegisteredProperty->setValue(null, false);
     }
 }
