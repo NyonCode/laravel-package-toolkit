@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\File;
 use NyonCode\LaravelPackageToolkit\Commands\Concerns\PublishableResources;
 use NyonCode\LaravelPackageToolkit\Packager;
 
-use function Laravel\Prompts\confirm as promptConfirm;
-
 class InstallCommand extends Command
 {
     use PublishableResources;
