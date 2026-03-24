@@ -2,8 +2,8 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use NyonCode\LaravelPackageToolkit\Packager;
 use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
