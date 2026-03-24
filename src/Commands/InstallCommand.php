@@ -113,7 +113,7 @@ class InstallCommand extends Command
             return;
         }
 
-        if ($this->shouldShowProgress && $this->hasLaravelPrompts()) {
+        if ($this->shouldShowProgress) {
             $this->info("⚙️ $phase hooks...");
         }
 
@@ -140,9 +140,7 @@ class InstallCommand extends Command
         foreach ($steps as $step => $tags) {
             $currentStep++;
 
-            if ($this->shouldShowProgress && $this->hasLaravelPrompts()) {
-                $this->showProgress($step, $currentStep, $totalSteps);
-            }
+            $this->line("($currentStep/$totalSteps) $step...");
 
             $this->publishTags($tags);
         }
@@ -202,25 +200,6 @@ class InstallCommand extends Command
     }
 
     /**
-     * Show progress for current step.
-     *
-     * @param  string  $step  The step name
-     * @param  int  $current  The current step number
-     * @param  int  $total  The total number of steps
-     */
-    private function showProgress(string $step, int $current, int $total): void
-    {
-        if ($this->hasLaravelPrompts()) {
-            // Laravel 10+ with Prompts
-            $this->line("($current/$total) $step...");
-        } else {
-            // Laravel 9 fallback
-            $percentage = round(($current / $total) * 100);
-            $this->line("[$percentage%] $step...");
-        }
-    }
-
-    /**
      * Show welcome message.
      */
     private function showWelcomeMessage(): void
@@ -235,11 +214,6 @@ class InstallCommand extends Command
 
         // Environment check
         if (app()->environment('production') && ! $this->option('force')) {
-            if (! $this->hasLaravelPrompts()) {
-                $this->error('Cannot install in production without --force flag');
-                exit(1);
-            }
-
             $confirmed = $this->confirm(
                 '⚠️  You are in production environment. Are you sure you want to continue?',
                 false
@@ -370,7 +344,7 @@ class InstallCommand extends Command
                 $repoUrl = $this->getRepositoryFromComposer();
             }
 
-            if ($repoUrl && $this->hasLaravelPrompts()) {
+            if ($repoUrl) {
                 $this->line('');
                 $shouldStar = $this->confirm(
                     '⭐ Would you like to star this package on GitHub?',
