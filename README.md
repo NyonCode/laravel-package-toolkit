@@ -18,13 +18,13 @@ developers to focus on building features rather than boilerplate code.
 
 ## Support Laravel
 
-- **Laravel 10.x**
 - **Laravel 11.x**
 - **Laravel 12.x**
 - **Laravel 13.x**
 
-> **Note:** Laravel 9.x support was removed in v2.0 due to its end-of-life security status. If you need Laravel 9
-> support, use the `^1.0` release.
+> **Note:** Laravel 10.x support was removed in v2.1 because Laravel 10 reached end-of-life and no longer receives
+> security updates. If you need Laravel 10 support, use the `~2.0.0` release. Laravel 9.x support was removed earlier in
+> v2.0 — use the `^1.0` release for Laravel 9.
 
 ## Table of Contents
 
@@ -934,6 +934,22 @@ The package includes comprehensive tests for all features including:
 - Install command functionality
 - Lifecycle hooks
 - Conditional loading
+
+---
+
+## Upgrading to v2.1
+
+Version 2.1 drops support for **Laravel 10.x**, which has reached end-of-life and no longer receives security updates.
+If your project still depends on Laravel 10, stay on the `~2.0.0` release. Otherwise no code changes are required —
+update the constraint and run `composer update`:
+
+```json
+{
+	"require": {
+		"nyoncode/laravel-package-toolkit": "^2.1"
+	}
+}
+```
 
 ---
 
