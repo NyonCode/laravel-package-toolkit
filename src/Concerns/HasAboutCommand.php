@@ -26,6 +26,11 @@ trait HasAboutCommand
     private bool $isAboutable = false;
 
     /**
+     * @var array<string, string|Closure> Additional data for the AboutCommand
+     */
+    private array $aboutData = [];
+
+    /**
      * Retrieves a specific value from the composer.json file by key name.
      *
      * @param  string  $keyName  The key to retrieve from composer.json.
@@ -76,11 +81,23 @@ trait HasAboutCommand
     /**
      * Returns additional data for AboutCommand.
      *
-     * @return array<string|Closure>
+     * @return array<string, string|Closure>
      */
     public function aboutData(): array
     {
-        return [];
+        return $this->aboutData;
+    }
+
+    /**
+     * Sets the additional data to be displayed in the AboutCommand.
+     *
+     * @param  array<string, string|Closure>  $data  The additional about data.
+     */
+    public function setAboutData(array $data): static
+    {
+        $this->aboutData = $data;
+
+        return $this;
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
+use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -18,6 +19,7 @@ abstract class PackageServiceProviderTestCase extends TestCase
     {
         $this->resetServiceProviderState();
         TestServiceProvider::$providerUsing = fn (Packager $packager) => $this->configure($packager);
+        TestServiceProvider::$aboutDataUsing = null;
         parent::setUp();
 
         $this->clear();
@@ -80,6 +82,7 @@ abstract class PackageServiceProviderTestCase extends TestCase
         $this->resetStaticProperty(ServiceProvider::class, 'publishGroups', []);
         $this->resetStaticProperty(ServiceProvider::class, 'publishableMigrationPaths', []);
         $this->resetStaticProperty(PackageServiceProvider::class, 'isPackageAboutRegistered', false);
+        AboutCommand::flushState();
     }
 
     /**
