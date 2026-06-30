@@ -18,13 +18,13 @@ developers to focus on building features rather than boilerplate code.
 
 ## Support Laravel
 
-- **Laravel 11.x**
-- **Laravel 12.x**
-- **Laravel 13.x**
+- **Laravel 12.x** (>= 12.61.1)
+- **Laravel 13.x** (>= 13.12.0)
 
-> **Note:** Laravel 10.x support was removed in v2.1 because Laravel 10 reached end-of-life and no longer receives
-> security updates. If you need Laravel 10 support, use the `~2.0.0` release. Laravel 9.x support was removed earlier in
-> v2.0 — use the `^1.0` release for Laravel 9.
+> **Note:** Laravel 10.x and 11.x support was removed in v2.1. Both branches have passed their security-support
+> end-of-life and the June 2026 advisories (including a High-severity CRLF injection, CVE-2026-48019) were only patched
+> in Laravel 12.60+/13.9+, never backported to 10.x or 11.x. The minimum supported versions are pinned to the first
+> patched releases. If you still need Laravel 10/11, use the `~2.0.0` release; for Laravel 9, use `^1.0`.
 
 ## Table of Contents
 
@@ -939,8 +939,11 @@ The package includes comprehensive tests for all features including:
 
 ## Upgrading to v2.1
 
-Version 2.1 drops support for **Laravel 10.x**, which has reached end-of-life and no longer receives security updates.
-If your project still depends on Laravel 10, stay on the `~2.0.0` release. Otherwise no code changes are required —
+Version 2.1 drops support for **Laravel 10.x and 11.x**. Both have reached security-support end-of-life, and the
+June 2026 security advisories were only patched in Laravel 12.60+/13.9+ — never backported to 10.x or 11.x — so there is
+no secure release on those branches. The package now requires **Laravel 12 (>= 12.61.1) or 13 (>= 13.12.0)**.
+
+If your project still depends on Laravel 10 or 11, stay on the `~2.0.0` release. Otherwise no code changes are required —
 update the constraint and run `composer update`:
 
 ```json
