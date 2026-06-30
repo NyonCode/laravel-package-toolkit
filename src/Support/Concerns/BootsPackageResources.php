@@ -12,6 +12,13 @@ trait BootsPackageResources
     use BladeComponentLoader;
 
     /**
+     * Get the additional data for the AboutCommand.
+     *
+     * @return array<string, string|\Closure>
+     */
+    abstract public function aboutData(): array;
+
+    /**
      * Boot the package resources.
      *
      * This method boots the package by calling other methods that
@@ -51,6 +58,7 @@ trait BootsPackageResources
             return $this;
         }
 
+        $this->packager->setAboutData($this->aboutData());
         $this->packager->bootAboutCommand();
 
         return $this;

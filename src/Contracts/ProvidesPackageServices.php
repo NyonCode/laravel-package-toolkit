@@ -65,4 +65,14 @@ interface ProvidesPackageServices
      * @return array<string|object> List of command classes.
      */
     public function packageCommands(): array;
+
+    /**
+     * Get the additional data for the AboutCommand.
+     *
+     * Override this method to add custom key-value pairs to the package's
+     * section in the `php artisan about` command output.
+     *
+     * @return array<string, string|\Closure> Custom about data.
+     */
+    public function aboutData(): array;
 }

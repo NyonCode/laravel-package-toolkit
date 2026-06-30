@@ -214,6 +214,19 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     }
 
     /**
+     * Get the additional data for the AboutCommand.
+     *
+     * Override this method to add custom key-value pairs to your package's
+     * section in the `php artisan about` command output.
+     *
+     * @return array<string, string|\Closure> Custom about data
+     */
+    public function aboutData(): array
+    {
+        return [];
+    }
+
+    /**
      * Validate the packager instance.
      *
      * @throws PackageConfigurationException When packager is invalid
