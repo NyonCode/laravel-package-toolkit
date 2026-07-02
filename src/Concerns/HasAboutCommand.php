@@ -7,6 +7,7 @@ use Composer\InstalledVersions;
 use Composer\Json\JsonFile;
 use Illuminate\Foundation\Console\AboutCommand;
 use Seld\JsonLint\ParsingException;
+use Throwable;
 
 trait HasAboutCommand
 {
@@ -61,9 +62,17 @@ trait HasAboutCommand
             return $this->version;
         }
 
-        return InstalledVersions::getPrettyVersion(
-            $this->getComposerValue('name')
-        );
+        $packageName = $this->getComposerValue('name');
+
+        if ($packageName === null) {
+            return null;
+        }
+
+        try {
+            return InstalledVersions::getPrettyVersion($packageName);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**

@@ -72,12 +72,12 @@ trait HasNamespaceResolver
     {
         $normalizedFilePath = realpath($filePath);
         if (! $normalizedFilePath) {
-            throw new RuntimeException("Soubor nebyl nalezen: $filePath");
+            throw new RuntimeException("File not found: $filePath");
         }
 
         $composerAutoload = require $this->getPackageBasePath().'/vendor/autoload.php';
         if (! $composerAutoload instanceof ClassLoader) {
-            throw new RuntimeException('Composer autoloader nebyl nalezen.');
+            throw new RuntimeException('Composer autoloader not found.');
         }
 
         $psr4Mappings = $composerAutoload->getPrefixesPsr4();

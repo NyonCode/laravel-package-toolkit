@@ -38,13 +38,7 @@ jobs:
             pest_plugin_laravel: '>=4.0.0 <5.0.0'
 
         exclude:
-          # ── Laravel 12: requires PHP >= 8.2 ─────────
-          - laravel: '12.*'
-            php: '8.1'
-
           # ── Laravel 13: requires PHP >= 8.3 ─────────
-          - laravel: '13.*'
-            php: '8.1'
           - laravel: '13.*'
             php: '8.2'
 

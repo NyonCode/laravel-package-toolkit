@@ -2,7 +2,7 @@
 
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
-use File;
+use Illuminate\Support\Facades\File;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 
 trait HasAssets
@@ -48,7 +48,7 @@ trait HasAssets
                 "Directory [$path] does not exist"
             );
         }
-        $this->assetDirectory = $this->path($directory);
+        $this->assetDirectory = $path;
         $this->isAssetable = true;
 
         return $this;

@@ -66,13 +66,11 @@ trait HasViewComponents
      */
     public function hasComponent(string $prefix, string $componentClass, string $alias = ''): static
     {
-        $this->hasComponents($prefix, $componentClass);
-
         if (! empty($alias)) {
-            $this->hasComponents($prefix, [$alias => $componentClass]);
+            return $this->hasComponents($prefix, [$alias => $componentClass]);
         }
 
-        return $this;
+        return $this->hasComponents($prefix, $componentClass);
     }
 
     /**
@@ -99,7 +97,8 @@ trait HasViewComponents
                 'prefix' => $prefix,
             ];
 
-            if (! empty($alias)) {
+            // Only string keys are aliases; numeric keys come from list-style arrays
+            if (is_string($alias) && $alias !== '') {
                 $this->viewComponents[] = [
                     'component' => $component,
                     'alias' => $alias,

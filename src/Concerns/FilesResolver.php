@@ -61,6 +61,16 @@ trait FilesResolver
     }
 
     /**
+     * Determine if the given path is absolute.
+     */
+    private function isAbsolutePath(string $path): bool
+    {
+        return str_starts_with($path, '/')
+            || str_starts_with($path, DIRECTORY_SEPARATOR)
+            || preg_match('/^[A-Za-z]:/', $path) === 1;
+    }
+
+    /**
      * Join path components with proper separators.
      */
     private function joinPaths(string ...$parts): string

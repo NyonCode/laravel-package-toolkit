@@ -28,7 +28,7 @@ trait HasProviders
     /**
      * Adds a service provider to the package.
      *
-     * @param  string  $providerPath  The name of the service provider.
+     * @param  string  $provider  The name of the service provider.
      *
      * @throws FileNotFoundException
      */

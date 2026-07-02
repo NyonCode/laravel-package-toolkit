@@ -4,7 +4,7 @@ namespace NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests;
 
 use NyonCode\LaravelPackageToolkit\Packager;
 
-trait PackageConfigWithFileNames
+trait PackageConfigWithFileNamesTest
 {
     public function configure(Packager $packager): void
     {
@@ -13,7 +13,7 @@ trait PackageConfigWithFileNames
     }
 }
 
-uses(PackageConfigWithFileNames::class);
+uses(PackageConfigWithFileNamesTest::class);
 
 test('can access to config file', function () {
     expect(config('test-config.key1'))->not->toBeNull()->toBe('value1');

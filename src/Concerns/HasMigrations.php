@@ -149,7 +149,7 @@ trait HasMigrations
             if ($this->hasDatePrefix($basename)) {
                 $mapping[$file->getPathname()] = database_path('migrations/'.$basename);
             } else {
-                $datePrefix = $timestamp->addSeconds($index)->format('Y_m_d_His');
+                $datePrefix = $timestamp->copy()->addSeconds($index)->format('Y_m_d_His');
                 $mapping[$file->getPathname()] = database_path(
                     'migrations/'.$datePrefix.'_'.$basename
                 );

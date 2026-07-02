@@ -30,6 +30,11 @@ class InstallCommand extends Command
     private bool $shouldShowProgress = true;
 
     /**
+     * @var string The separator between the package short name and the tag group
+     */
+    private string $tagSeparator = '::';
+
+    /**
      * Create a new command instance.
      *
      * @param  Packager  $packager  The packager instance
@@ -38,7 +43,7 @@ class InstallCommand extends Command
     {
         $this->packager = $packager;
 
-        // Odstraněn --no-interaction, protože je nativně přítomen v každém příkazu
+        // --no-interaction is omitted because it is natively available on every command
         $this->signature = $this->packager->shortName().':install
                            {--force : Force the operation to run when in production}';
 
@@ -51,9 +56,11 @@ class InstallCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle(): void
+    public function handle(): int
     {
-        $this->showWelcomeMessage();
+        if (! $this->showWelcomeMessage()) {
+            return self::SUCCESS;
+        }
 
         // Execute before hooks
         $this->executeHooks($this->beforeHooks, 'Before Installation');
@@ -65,6 +72,8 @@ class InstallCommand extends Command
         $this->executeHooks($this->afterHooks, 'After Installation');
 
         $this->showCompletionMessage();
+
+        return self::SUCCESS;
     }
 
     /**
@@ -97,6 +106,20 @@ class InstallCommand extends Command
     public function silent(): static
     {
         $this->shouldShowProgress = false;
+
+        return $this;
+    }
+
+    /**
+     * Set the separator used when building publish tags.
+     *
+     * Keeps the command in sync with the provider's publishing tag format.
+     *
+     * @param  string  $separator  The tag separator
+     */
+    public function setTagSeparator(string $separator): static
+    {
+        $this->tagSeparator = $separator;
 
         return $this;
     }
@@ -180,7 +203,7 @@ class InstallCommand extends Command
     private function publishTags(array $tags): void
     {
         foreach ($tags as $tag) {
-            $publishTag = $this->packager->shortName()."::$tag";
+            $publishTag = $this->packager->shortName().$this->tagSeparator.$tag;
 
             try {
                 $exitCode = Artisan::call('vendor:publish', [
@@ -201,11 +224,13 @@ class InstallCommand extends Command
 
     /**
      * Show welcome message.
+     *
+     * @return bool Whether the installation should proceed
      */
-    private function showWelcomeMessage(): void
+    private function showWelcomeMessage(): bool
     {
         if ($this->option('no-interaction')) {
-            return;
+            return true;
         }
 
         $this->line('');
@@ -221,9 +246,12 @@ class InstallCommand extends Command
 
             if (! $confirmed) {
                 $this->warn('Installation cancelled.');
-                exit(0);
+
+                return false;
             }
         }
+
+        return true;
     }
 
     /**
@@ -330,7 +358,6 @@ class InstallCommand extends Command
      * Ask to star repository on GitHub.
      *
      * @param  string|null  $repoUrl  The URL of the repository on GitHub.
-     * @return InstallCommand
      */
     public function askToStarRepoOnGitHub(?string $repoUrl = null): static
     {

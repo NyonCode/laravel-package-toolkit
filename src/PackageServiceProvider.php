@@ -186,14 +186,14 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     public function registerPackageCommands(): void
     {
-        if (
-            ! $this->app->runningInConsole() ||
-            ! $this->packager?->isCommandable()
-        ) {
+        if (! $this->app->runningInConsole()) {
             return;
         }
 
-        $commands = $this->packager->commands ?? [];
+        $commands = array_merge(
+            $this->packageCommands(),
+            $this->packager?->isCommandable() ? $this->packager->commands : []
+        );
 
         if (! empty($commands)) {
             $this->commands($commands);
@@ -293,6 +293,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         }
 
         $installCommand = $this->packager->createInstallCommand();
+        $installCommand->setTagSeparator($this->tagSeparator());
         $this->commands([$installCommand]);
     }
 
@@ -322,6 +323,8 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         if ($installCommand === null) {
             return;
         }
+
+        $installCommand->setTagSeparator($this->tagSeparator());
 
         $input = new ArrayInput(['--no-interaction' => true]);
         $output = new NullOutput();
