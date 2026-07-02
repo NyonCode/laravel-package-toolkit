@@ -62,13 +62,17 @@ trait HasViews
         ?string $namespace = null
     ): static {
         if (! empty($viewsPath)) {
-            if (! is_dir($this->path($viewsPath))) {
+            $resolvedPath = $this->isAbsolutePath($viewsPath)
+                ? $this->normalizePath($viewsPath)
+                : $this->path($viewsPath);
+
+            if (! is_dir($resolvedPath)) {
                 throw new DirectoryNotFoundException(
                     "Directory [$viewsPath] does not exist"
                 );
             }
 
-            $this->viewsPath = $viewsPath;
+            $this->viewsPath = $resolvedPath;
         } else {
             $this->viewsPath = $this->path($directory);
         }

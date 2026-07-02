@@ -5,6 +5,44 @@ All notable changes to `laravel-package-toolkit` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.1] - 2026-07-02
+
+### Fixed
+
+- **`hasAssets()` stored a wrong path** — the directory was validated as `../<dir>` but stored without the `../`
+  prefix, so `vendor:publish --tag=<name>::assets` silently published nothing.
+- **`hasTranslations()` rejected valid languages** — the language-directory check used `Collection::search()`,
+  whose `0` index for the first supported language was treated as a failure. Region locales
+  (e.g. `pt_BR`, `en-US`) are now accepted as well.
+- **`hasViews()` broke with a custom path** — a relative path was passed unresolved to `loadViewsFrom()` and an
+  absolute path (as documented) failed validation. Both are now resolved correctly.
+- **`routes`, `view-components` and `view-component-namespaces` publish tags did nothing** — the corresponding
+  publish registrations were missing or never called. Route files are published to
+  `routes/vendor/<package-short-name>/`.
+- **`publishMigrations()` ignored an explicit file selection** — publishing the whole directory of the first
+  migration file instead of the configured files.
+- **View components with list-style arrays received numeric aliases** — a component at index 1+ of a
+  non-associative array was registered under the alias `1`; `hasComponent()` also registered the component twice.
+- **`packageCommands()` was never called** — commands returned from the documented override are now registered.
+- **Install command no longer calls `exit(0)`** — cancelling the production confirmation returns a proper exit
+  code instead of terminating the process.
+- **`getVersion()` no longer throws** for packages without a composer `name` or not installed via Composer.
+- Test suite: `PackageConfigWithFileNames` was missing the `Test` suffix and never ran.
+
+### Changed
+
+- `bootVewComposers()` was renamed to `bootViewComposers()`; the misspelled method is kept as a deprecated alias.
+- PHPStan configuration added (`phpstan.neon`, level 5) so `composer lint` works.
+- **Install command respects the provider's `$tagSeparator`** — the tag separator is passed to the install
+  command instead of being hardcoded to `::`.
+- **`Packable` is now part of the contract hierarchy** — `ProvidesPackageServices` extends `Packable`, so
+  providers following the documented `implements Packable` pattern are covered by the toolkit itself.
+
+### Deprecated
+
+- The `HasAbout` contract — unused by the toolkit; `Packable` already declares `aboutData()`. Will be removed
+  in 3.0.
+
 ## [2.1.0] - 2026-06-30
 
 ### Removed

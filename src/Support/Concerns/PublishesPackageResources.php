@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace NyonCode\LaravelPackageToolkit\Support\Concerns;
 
-use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
-
 trait PublishesPackageResources
 {
     /**
@@ -18,7 +16,10 @@ trait PublishesPackageResources
                 ->publishConfig()
                 ->publishMigrations()
                 ->publishProvider()
+                ->publishRoutes()
                 ->publishTranslations()
+                ->publishViewComponentNamespaces()
+                ->publishViewComponents()
                 ->publishViews();
         }
     }
@@ -82,22 +83,37 @@ trait PublishesPackageResources
             return $this;
         }
 
-        if ($this->packager->shouldPrependTimestamp()) {
-            $this->publishes(
-                paths: $this->packager->getMigrationPublishMapping(),
-                groups: $this->publishTagFormat('migrations')
-            );
-        } else {
-            /** @var SplFileInfo $migrationPath */
-            $migrationPath = collect($this->packager->migrationFiles())->first();
+        $this->publishes(
+            paths: $this->packager->getMigrationPublishMapping(),
+            groups: $this->publishTagFormat('migrations')
+        );
 
-            $this->publishes(
-                paths: [
-                    $migrationPath->getPath() => database_path('migrations'),
-                ],
-                groups: $this->publishTagFormat('migrations')
+        return $this;
+    }
+
+    /**
+     * Publish the route files for the package.
+     *
+     * The route files are published to the `routes/vendor/<package-short-name>` directory.
+     */
+    public function publishRoutes(): static
+    {
+        if (! $this->packager->isRoutable()) {
+            return $this;
+        }
+
+        $routes = [];
+
+        foreach ($this->packager->routeFiles() as $routeFile) {
+            $routes[$routeFile->getPathname()] = base_path(
+                "routes/vendor/{$this->packager->shortName()}/{$routeFile->getBasename()}"
             );
         }
+
+        $this->publishes(
+            paths: $routes,
+            groups: $this->publishTagFormat('routes')
+        );
 
         return $this;
     }
@@ -172,7 +188,7 @@ trait PublishesPackageResources
      * If the `$publishPaths` array is not empty, the view components are published
      * using the `publishes` method, with the `view-components` group.
      */
-    protected function publishViewComponentNamespaces(): static
+    public function publishViewComponentNamespaces(): static
     {
         if (! $this->packager->isViewComponentNamespaceConfigured()) {
             return $this;
@@ -223,7 +239,7 @@ trait PublishesPackageResources
      * If the `$publishPaths` array is not empty, the view components are published
      * using the `publishes` method, with the `view-components` group.
      */
-    protected function publishViewComponents(): static
+    public function publishViewComponents(): static
     {
         if (! $this->packager->isViewComponentized()) {
             return $this;

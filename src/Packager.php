@@ -107,7 +107,7 @@ class Packager
     {
         $trimmed = trim($shortName);
 
-        if ($shortName !== Str::kebab($trimmed)) {
+        if ($trimmed !== Str::kebab($trimmed)) {
             throw new InvalidArgumentException(
                 "The given short name [$shortName] does not match the expected kebab-case format"
             );
@@ -120,7 +120,7 @@ class Packager
             );
         }
 
-        $this->shortName = $shortName;
+        $this->shortName = $trimmed;
 
         return $this;
     }

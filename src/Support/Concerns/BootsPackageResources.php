@@ -4,8 +4,8 @@ namespace NyonCode\LaravelPackageToolkit\Support\Concerns;
 
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\View;
 use Seld\JsonLint\ParsingException;
-use View;
 
 trait BootsPackageResources
 {
@@ -38,7 +38,7 @@ trait BootsPackageResources
             ->bootMiddleware()
             ->bootSharedViewData()
             ->bootTranslations()
-            ->bootVewComposers()
+            ->bootViewComposers()
             ->bootViewComponentNamespaces()
             ->bootViewComponents()
             ->bootViews();
@@ -110,6 +110,8 @@ trait BootsPackageResources
     public function bootMiddleware(): static
     {
         $router = resolve(Router::class);
+
+        /** @var \Illuminate\Foundation\Http\Kernel $kernel */
         $kernel = resolve(Kernel::class);
 
         if ($this->packager->isSetMiddlewareAliases()) {
@@ -186,7 +188,7 @@ trait BootsPackageResources
      * and registers them with the View facade. This allows the package to
      * bind data to views when they are rendered.
      */
-    public function bootVewComposers(): static
+    public function bootViewComposers(): static
     {
         if (! $this->packager->isViewComposable()) {
             return $this;
@@ -197,6 +199,16 @@ trait BootsPackageResources
         }
 
         return $this;
+    }
+
+    /**
+     * Boot the view composers for the package.
+     *
+     * @deprecated Use bootViewComposers() instead. Kept for backward compatibility.
+     */
+    public function bootVewComposers(): static
+    {
+        return $this->bootViewComposers();
     }
 
     /**

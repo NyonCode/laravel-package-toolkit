@@ -3,3 +3,9 @@ bin/
 .idea/
 composer.lock
 /cov.html/
+build/
+node_modules/
+package-lock.json
+.DS_Store
+--cache-directory/
+.claude/settings.local.json

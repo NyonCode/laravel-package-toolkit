@@ -57,7 +57,11 @@ trait HasConditionalLoading
                 $callback($this);
             } catch (Throwable $e) {
                 // Log error but continue with other callbacks
-                error_log('Error in conditional callback: '.$e->getMessage());
+                if (function_exists('report')) {
+                    report($e);
+                } else {
+                    error_log('Error in conditional callback: '.$e->getMessage());
+                }
             }
         }
 
