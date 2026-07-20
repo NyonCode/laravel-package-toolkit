@@ -2,8 +2,8 @@
 
 //namespace {{namespace }}
 
-use NyonCode\LaravelPackageBuilder\Packager;
-use NyonCode\LaravelPackageBuilder\PackageServiceProvider;
+use NyonCode\LaravelPackageToolkit\Packager;
+use NyonCode\LaravelPackageToolkit\PackageServiceProvider;
 use NyonCode\LaravelPackageToolkit\Contracts\Packable;
 
 class {{ class }} extends PackageServiceProvider implements Packable

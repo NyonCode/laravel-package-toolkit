@@ -81,6 +81,8 @@ abstract class PackageServiceProviderTestCase extends TestCase
         $this->resetStaticProperty(ServiceProvider::class, 'publishes', []);
         $this->resetStaticProperty(ServiceProvider::class, 'publishGroups', []);
         $this->resetStaticProperty(ServiceProvider::class, 'publishableMigrationPaths', []);
+        $this->resetStaticProperty(ServiceProvider::class, 'optimizeCommands', []);
+        $this->resetStaticProperty(ServiceProvider::class, 'optimizeClearCommands', []);
         $this->resetStaticProperty(PackageServiceProvider::class, 'isPackageAboutRegistered', false);
         AboutCommand::flushState();
     }

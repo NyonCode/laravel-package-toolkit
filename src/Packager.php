@@ -10,10 +10,13 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasAssets;
 use NyonCode\LaravelPackageToolkit\Concerns\HasCommands;
 use NyonCode\LaravelPackageToolkit\Concerns\HasConditionalLoading;
 use NyonCode\LaravelPackageToolkit\Concerns\HasConfig;
+use NyonCode\LaravelPackageToolkit\Concerns\HasEvents;
 use NyonCode\LaravelPackageToolkit\Concerns\HasInstallation;
 use NyonCode\LaravelPackageToolkit\Concerns\HasMiddleware;
 use NyonCode\LaravelPackageToolkit\Concerns\HasMigrations;
+use NyonCode\LaravelPackageToolkit\Concerns\HasOptimize;
 use NyonCode\LaravelPackageToolkit\Concerns\HasProviders;
+use NyonCode\LaravelPackageToolkit\Concerns\HasPublishTagSeparator;
 use NyonCode\LaravelPackageToolkit\Concerns\HasRoutes;
 use NyonCode\LaravelPackageToolkit\Concerns\HasTranslate;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponentNamespaces;
@@ -31,11 +34,14 @@ class Packager
         HasCommands,
         HasConditionalLoading,
         HasConfig,
+        HasEvents,
         HasInstallation,
         HasLifecycleHooks,
         HasMiddleware,
         HasMigrations,
+        HasOptimize,
         HasProviders,
+        HasPublishTagSeparator,
         HasRoutes,
         HasTranslate,
         HasViewComponentNamespaces,
