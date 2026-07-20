@@ -15,6 +15,8 @@ developers to focus on building features rather than boilerplate code.
 - Conditional resource loading based on environment
 - Lifecycle hooks for advanced customization
 - Middleware registration and management
+- Event listener and subscriber registration
+- Optimize command registration (`php artisan optimize` / `optimize:clear`)
 
 ## Support Laravel
 
@@ -38,6 +40,8 @@ developers to focus on building features rather than boilerplate code.
 - [Config](#config)
 - [Routing](#routing)
 - [Middlewares](#middlewares)
+- [Events](#events)
+- [Optimize](#optimize)
 - [Migrations](#migrations)
 - [Translations](#translations)
 - [Commands](#commands)
@@ -373,6 +377,67 @@ $packager->hasMiddlewareGlobals([
 
 This middleware will be added to the middleware stack and is useful for applying middleware to all routes regardless of
 their group.
+
+## Events
+
+Register event listeners and subscribers for your package. Bindings are applied during `boot()` via the `Event` facade.
+
+### Register Event Listeners
+
+Provide a map of event class to listener(s). A value may be a single listener, a closure, or an array of listeners:
+
+```php
+$packager->hasEvents([
+    \Vendor\Package\Events\OrderPlaced::class => [
+        \Vendor\Package\Listeners\SendOrderConfirmation::class,
+        \Vendor\Package\Listeners\LogOrder::class,
+    ],
+    \Vendor\Package\Events\OrderShipped::class => \Vendor\Package\Listeners\NotifyCustomer::class,
+]);
+```
+
+To register a single event, use `hasEvent()`:
+
+```php
+$packager->hasEvent(
+    \Vendor\Package\Events\OrderPlaced::class,
+    \Vendor\Package\Listeners\SendOrderConfirmation::class
+);
+```
+
+### Register Event Subscribers
+
+Subscriber classes (with a `subscribe()` method) are registered via `Event::subscribe()`:
+
+```php
+$packager
+    ->hasSubscriber(\Vendor\Package\Listeners\OrderEventSubscriber::class)
+    ->hasSubscribers([
+        \Vendor\Package\Listeners\UserEventSubscriber::class,
+        \Vendor\Package\Listeners\PaymentEventSubscriber::class,
+    ]);
+```
+
+## Optimize
+
+Register artisan commands that run with `php artisan optimize` (cache warmup) and `php artisan optimize:clear`. The
+toolkit forwards these to Laravel's `ServiceProvider::optimizes()`.
+
+```php
+$packager->hasOptimizeCommands(
+    optimize: 'my-package:cache',
+    clear: 'my-package:clear',
+);
+```
+
+At least one of `optimize` or `clear` must be provided. The cache key defaults to the package short name; when registering
+more than one entry, pass a distinct `key` for each, since Laravel keys optimize commands by provider:
+
+```php
+$packager
+    ->hasOptimizeCommands(optimize: 'my-package:cache-config', clear: 'my-package:clear-config', key: 'my-package-config')
+    ->hasOptimizeCommands(optimize: 'my-package:cache-routes', clear: 'my-package:clear-routes', key: 'my-package-routes');
+```
 
 ## Migrations
 
@@ -901,6 +966,38 @@ php artisan vendor:publish --tag=my-package::assets
 
 # Publish with force (overwrite existing files)
 php artisan vendor:publish --tag=my-package::config --force
+```
+
+### Custom tag separator (classic flat format)
+
+By default tags use the `::` separator (`my-package::config`). If you prefer the classic flat format that many packages
+use (`my-package-config`), set a custom separator with `hasPublishTagSeparator()`:
+
+```php
+$packager
+    ->name('Backup Manager')
+    ->hasPublishTagSeparator('-')   // tags become {short-name}-{resource}
+    ->hasConfig();
+```
+
+The separator applies to **every** publish tag and to the install command consistently:
+
+```bash
+php artisan vendor:publish --tag="backup-manager-config"
+php artisan vendor:publish --tag="backup-manager-migrations"
+```
+
+To register every group under **multiple** tag forms at once — so consumers can publish with either — pass an array.
+The first separator is treated as primary (used by the install command):
+
+```php
+$packager->hasPublishTagSeparator(['::', '-']);
+```
+
+```bash
+# both work and publish the same resource
+php artisan vendor:publish --tag="backup-manager::config"
+php artisan vendor:publish --tag="backup-manager-config"
 ```
 
 ### Migration publishing behavior

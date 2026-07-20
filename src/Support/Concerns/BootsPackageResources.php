@@ -4,6 +4,7 @@ namespace NyonCode\LaravelPackageToolkit\Support\Concerns;
 
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Seld\JsonLint\ParsingException;
 
@@ -36,6 +37,8 @@ trait BootsPackageResources
             ->bootMigrations()
             ->bootRoutes()
             ->bootMiddleware()
+            ->bootEvents()
+            ->bootOptimizes()
             ->bootSharedViewData()
             ->bootTranslations()
             ->bootViewComposers()
@@ -132,6 +135,55 @@ trait BootsPackageResources
             foreach ($this->packager->getMiddlewareGlobals() as $middleware) {
                 $kernel->pushMiddleware($middleware);
             }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Boot the events for the package.
+     *
+     * Registers each event => listener binding via the Event facade and
+     * subscribes any registered event subscriber classes.
+     */
+    public function bootEvents(): static
+    {
+        if (! $this->packager->isEventable()) {
+            return $this;
+        }
+
+        foreach ($this->packager->events() as $event => $listeners) {
+            foreach ($listeners as $listener) {
+                Event::listen($event, $listener);
+            }
+        }
+
+        foreach ($this->packager->subscribers() as $subscriber) {
+            Event::subscribe($subscriber);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Boot the optimize commands for the package.
+     *
+     * Registers the package's optimize/optimize:clear commands so they run
+     * with `php artisan optimize` and `php artisan optimize:clear`. Defaults
+     * the cache key to the package short name when none is provided.
+     */
+    public function bootOptimizes(): static
+    {
+        if (! $this->packager->isOptimizable()) {
+            return $this;
+        }
+
+        foreach ($this->packager->optimizeCommands() as $command) {
+            $this->optimizes(
+                optimize: $command['optimize'],
+                clear: $command['clear'],
+                key: $command['key'] ?? $this->packager->shortName()
+            );
         }
 
         return $this;
