@@ -13,6 +13,7 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\BootsPackageResources;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\HasEnvironmentChecks;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\HasNamespaceResolver;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\HasPublishingTag;
+use NyonCode\LaravelPackageToolkit\Support\Concerns\MirrorsPackageAssets;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\PublishesPackageResources;
 use NyonCode\LaravelPackageToolkit\Support\Enums\LifecycleHook;
 use ReflectionClass;
@@ -27,6 +28,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     use HasEnvironmentChecks;
     use HasNamespaceResolver;
     use HasPublishingTag;
+    use MirrorsPackageAssets;
     use PublishesPackageResources;
 
     /**
@@ -122,6 +124,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         $this->registeringPackage();
 
         $this->registerConfig();
+        $this->registerAssetMirror();
         $this->registerInstallCommand();
         $this->performAutoInstall();
 

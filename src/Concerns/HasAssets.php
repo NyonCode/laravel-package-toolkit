@@ -20,6 +20,11 @@ trait HasAssets
     private string $assetDirectory = '';
 
     /**
+     * @var bool Whether the assets are mirrored into `public/vendor/<short-name>`
+     */
+    private bool $mirrorsAssets = true;
+
+    /**
      * Whether the package has assets.
      */
     public function isAssetable(): bool
@@ -33,13 +38,22 @@ trait HasAssets
     }
 
     /**
+     * Whether the package's assets are kept mirrored under `public/`.
+     */
+    public function mirrorsAssets(): bool
+    {
+        return $this->mirrorsAssets;
+    }
+
+    /**
      * Enable the package's assets.
      *
      * @param  string  $directory  The directory name where the assets are located
+     * @param  bool  $mirror  Whether to keep the assets mirrored into `public/vendor/<short-name>`
      *
      * @throws DirectoryNotFoundException if the directory does not exist
      */
-    public function hasAssets(string $directory = 'dist'): static
+    public function hasAssets(string $directory = 'dist', bool $mirror = true): static
     {
         $path = $this->path("../$directory");
 
@@ -50,6 +64,7 @@ trait HasAssets
         }
         $this->assetDirectory = $path;
         $this->isAssetable = true;
+        $this->mirrorsAssets = $mirror;
 
         return $this;
     }

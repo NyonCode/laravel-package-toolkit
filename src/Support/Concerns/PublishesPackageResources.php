@@ -27,7 +27,16 @@ trait PublishesPackageResources
     /**
      * Publish the package assets.
      *
-     * The assets are published to the `public/vendor/<package-short-name>` directory.
+     * The assets are published to the `public/vendor/<package-short-name>` directory,
+     * under the package's own `assets` tag *and* Laravel's conventional
+     * `laravel-assets` tag.
+     *
+     * The second tag earns its place because it is what the Laravel application
+     * skeleton runs from composer's `post-update-cmd`
+     * (`vendor:publish --tag=laravel-assets --ansi --force`) — the same hook Horizon,
+     * Telescope and Nova rely on. One command covers every installed package, which
+     * the per-package tag cannot express. Laravel accumulates groups per path, so both
+     * tags publish the same files and an untagged `vendor:publish` is unaffected.
      */
     public function publishAssets(): static
     {
@@ -35,13 +44,16 @@ trait PublishesPackageResources
             return $this;
         }
 
+        $groups = (array) $this->publishTagFormat('assets');
+        $groups[] = 'laravel-assets';
+
         $this->publishes(
             paths: [
                 $this->packager->assetDirectory() => public_path(
                     path: 'vendor/'.$this->packager->shortName()
                 ),
             ],
-            groups: $this->publishTagFormat('assets')
+            groups: $groups
         );
 
         return $this;

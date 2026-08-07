@@ -5,6 +5,30 @@ All notable changes to `laravel-package-toolkit` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.3.0] - 2026-08-07
+
+### Added
+
+- **Asset mirror** — `Support\PublishedAssets`, a container singleton shared by every package, keeps
+  `public/vendor/<package-short-name>` in step with the directory named by `hasAssets()` without anyone running a
+  command. Ask it for a URL with `app(PublishedAssets::class)->url($shortName, $absolutePath)`: the first asset of a
+  package to resolve one in a request compares each shipped file against its published counterpart and copies only
+  what is missing or older, so in steady state it is a handful of `stat` calls and no writes. Copies land through a
+  temporary file and `rename()`, so a concurrent request never sees a half-written file. The returned URL is
+  cache-busted by the published copy's mtime, which is what keeps Livewire's `data-navigate-track` meaningful across
+  an upgrade. Where `public/` cannot be written — a read-only container, Vapor — nothing throws: `url()` returns
+  `null` and `isStale()` reports a copy left behind, so the caller can fall back and warn.
+- **`hasAssets(string $directory = 'dist', bool $mirror = true)`** — the new second argument opts a package out of the
+  mirror while keeping its publish tags.
+
+### Changed
+
+- **Assets also publish under `laravel-assets`** — in addition to `<package-short-name>::assets`. That tag is what the
+  Laravel application skeleton already runs from composer's `post-update-cmd`
+  (`vendor:publish --tag=laravel-assets --ansi --force`), the same hook Horizon, Telescope and Nova rely on, so one
+  command covers every installed package. Laravel accumulates groups per path, so both tags publish the same files and
+  an untagged `vendor:publish` is unaffected.
+
 ## [2.2.0] - 2026-07-20
 
 ### Added
