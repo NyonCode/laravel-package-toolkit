@@ -43,6 +43,11 @@ abstract class PackageServiceProviderTestCase extends TestCase
 
     protected function clear(): void
     {
+        // The asset mirror writes into the workbench's `public/`, which — unlike the
+        // container — is shared by every test, so a run that published or mirrored
+        // assets would otherwise be seen by the next one.
+        File::deleteDirectory(public_path('vendor/test-package'));
+
         foreach (File::files(__DIR__.'/../TestPackageData/config') as $file) {
             $configPath = config_path($file->getFilename());
 

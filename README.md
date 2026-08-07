@@ -735,7 +735,35 @@ This loads assets from the `dist` directory by default. For a custom directory:
 $packager->hasAssets('public');
 ```
 
-Assets will be published to `public/vendor/{package-short-name}` when using the publish command.
+Assets will be published to `public/vendor/{package-short-name}` when using the publish command, under both the
+package's own `{package-short-name}::assets` tag and Laravel's conventional `laravel-assets` tag — the latter is what
+the application skeleton already runs from composer's `post-update-cmd`
+(`vendor:publish --tag=laravel-assets --ansi --force`), so one command covers every installed package.
+
+### The asset mirror
+
+Publishing is an optimisation, not a requirement. The toolkit registers a shared `PublishedAssets` resolver in the
+container that keeps `public/vendor/{package-short-name}` in step with your asset directory by itself:
+
+```php
+use NyonCode\LaravelPackageToolkit\Support\PublishedAssets;
+
+$url = app(PublishedAssets::class)->url('my-package', __DIR__.'/../dist/js/index.js');
+// => http://example.test/vendor/my-package/js/index.js?id=1730000000
+```
+
+The sync is lazy, incremental and self-correcting: the first asset of a package to resolve a URL in a request compares
+each shipped file against its published counterpart and copies only what is missing or older, so in steady state it is
+a handful of `stat` calls and no writes. Copies land through a temporary file and `rename()`, so a concurrent request
+never sees a half-written file. Where `public/` cannot be written — a read-only container, Vapor — nothing throws:
+`url()` returns `null` and you fall back to however you served the asset before. The returned URL is cache-busted by
+the published copy's mtime, which is what makes Livewire's `data-navigate-track` pick up an upgrade.
+
+To opt out and rely on `vendor:publish` alone:
+
+```php
+$packager->hasAssets(mirror: false);
+```
 
 ---
 
