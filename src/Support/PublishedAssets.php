@@ -48,7 +48,8 @@ use RecursiveIteratorIterator;
  *
  * Registered by {@see MirrorsPackageAssets}
  * as a container singleton, so a package is examined at most once per request however
- * many surfaces ask for its URLs.
+ * many surfaces ask for its URLs. Where the container itself outlives the request —
+ * a long-lived worker — {@see self::flush()} puts that memo back to per-request.
  */
 class PublishedAssets
 {
@@ -118,6 +119,27 @@ class PublishedAssets
         $published = @filemtime(public_path($this->relativeUrl($package, $path)));
 
         return $published !== false && $published < (@filemtime($path) ?: 0);
+    }
+
+    /**
+     * Forget the resolved URLs and the per-request sync marks.
+     *
+     * For a long-lived worker, where this singleton outlives the request it was scoped
+     * to: `$synced` would limit the mirror to one attempt per worker lifetime, so a
+     * published copy deleted under a running worker would never be put back, and
+     * `$urls` would keep emitting the `?id=<mtime>` of the release the worker booted
+     * on — the very query string Livewire's `data-navigate-track` watches to notice a
+     * deploy. Call it from the framework's request-terminated hook.
+     *
+     * The declared directories are deliberately kept: providers register those from
+     * `register()`, once per worker boot and not per request, so clearing them would
+     * drop {@see self::assetRoot()} to its `/dist/` inference — which only holds for a
+     * package whose asset directory happens to be named `dist`.
+     */
+    public function flush(): void
+    {
+        $this->urls = [];
+        $this->synced = [];
     }
 
     /**

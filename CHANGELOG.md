@@ -5,6 +5,17 @@ All notable changes to `laravel-package-toolkit` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.4.0] - 2026-08-07
+
+### Added
+
+- **`PublishedAssets::flush()`** — forgets the resolved URLs and the per-request sync marks, for a long-lived worker
+  where the singleton outlives the request it was scoped to. Without it the mirror is attempted at most once per
+  worker boot, so a published copy deleted underneath a running worker is never put back, and every URL keeps
+  emitting the `?id=<mtime>` of the release the worker started on — the query string Livewire's
+  `data-navigate-track` watches to notice a deploy. Call it from the framework's request-terminated hook. The
+  directories declared by `hasAssets()` are kept: providers register those once per worker boot, not per request.
+
 ## [2.3.0] - 2026-08-07
 
 ### Added
