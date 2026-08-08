@@ -14,9 +14,12 @@ trait PublishesPackageResources
         if ($this->app->runningInConsole()) {
             $this->publishAssets()
                 ->publishConfig()
+                ->publishFactories()
                 ->publishMigrations()
                 ->publishProvider()
                 ->publishRoutes()
+                ->publishSeeders()
+                ->publishStubs()
                 ->publishTranslations()
                 ->publishViewComponentNamespaces()
                 ->publishViewComponents()
@@ -149,6 +152,96 @@ trait PublishesPackageResources
         $this->publishes(
             paths: $providers,
             groups: $this->publishTagFormat('providers')
+        );
+
+        return $this;
+    }
+
+    /**
+     * Publish the seeder files for the package.
+     *
+     * Published flat into `database/seeders`, not into a `vendor/<short-name>`
+     * subdirectory: that is where the application's own `Database\Seeders` namespace
+     * resolves, so `db:seed --class=Database\Seeders\<Name>` works on a published file
+     * without the consumer rewriting a sub-namespace first.
+     *
+     * A `.stub` source is published as `.php`, the same convention `publishProvider()`
+     * follows, so seeders can ship as inert stubs.
+     */
+    public function publishSeeders(): static
+    {
+        if (! $this->packager->isSeedable()) {
+            return $this;
+        }
+
+        $seeders = [];
+
+        foreach ($this->packager->seederFiles() as $seederFile) {
+            $seeders[$seederFile->getPathname()] = database_path(
+                'seeders/'.$seederFile->getBaseFileName().'.php'
+            );
+        }
+
+        $this->publishes(
+            paths: $seeders,
+            groups: $this->publishTagFormat('seeders')
+        );
+
+        return $this;
+    }
+
+    /**
+     * Publish the factory files for the package.
+     *
+     * Published flat into `database/factories` for the same reason seeders are: the
+     * application's `Database\Factories` namespace resolves that directory.
+     */
+    public function publishFactories(): static
+    {
+        if (! $this->packager->isFactorable()) {
+            return $this;
+        }
+
+        $factories = [];
+
+        foreach ($this->packager->factoryFiles() as $factoryFile) {
+            $factories[$factoryFile->getPathname()] = database_path(
+                'factories/'.$factoryFile->getBaseFileName().'.php'
+            );
+        }
+
+        $this->publishes(
+            paths: $factories,
+            groups: $this->publishTagFormat('factories')
+        );
+
+        return $this;
+    }
+
+    /**
+     * Publish the stub files for the package.
+     *
+     * Published to `stubs/<package-short-name>`, keeping the original extension. The
+     * subdirectory matters because `stubs/` is a single flat directory shared with
+     * `php artisan stub:publish` and with every other package.
+     */
+    public function publishStubs(): static
+    {
+        if (! $this->packager->isStubbable()) {
+            return $this;
+        }
+
+        $stubs = [];
+
+        foreach ($this->packager->stubFiles() as $stubFile) {
+            $stubs[$stubFile->getPathname()] = base_path(
+                "stubs/{$this->packager->shortName()}/{$stubFile->getBasename()}"
+            );
+        }
+
+        $this->publishes(
+            paths: $stubs,
+            groups: $this->publishTagFormat('stubs')
         );
 
         return $this;

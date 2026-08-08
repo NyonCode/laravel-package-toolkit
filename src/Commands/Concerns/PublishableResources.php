@@ -51,6 +51,30 @@ trait PublishableResources
     }
 
     /**
+     * Publish database seeders.
+     */
+    public function publishSeeders(): static
+    {
+        return $this->publish('seeders');
+    }
+
+    /**
+     * Publish model factories.
+     */
+    public function publishFactories(): static
+    {
+        return $this->publish('factories');
+    }
+
+    /**
+     * Publish stub files.
+     */
+    public function publishStubs(): static
+    {
+        return $this->publish('stubs');
+    }
+
+    /**
      * Publish route files.
      */
     public function publishRoutes(): static
@@ -178,11 +202,14 @@ trait PublishableResources
         return $this->publish(
             'config',
             'migrations',
+            'seeders',
+            'factories',
             'routes',
             'translations',
             'assets',
             'views',
             'providers',
+            'stubs',
             'view-components',
             'view-component-namespaces'
         );

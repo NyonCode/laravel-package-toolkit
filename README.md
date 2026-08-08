@@ -17,6 +17,8 @@ developers to focus on building features rather than boilerplate code.
 - Middleware registration and management
 - Event listener and subscriber registration
 - Optimize command registration (`php artisan optimize` / `optimize:clear`)
+- Broadcast channel registration
+- Publishable seeders, factories and generator stubs
 
 ## Support Laravel
 
@@ -41,8 +43,11 @@ developers to focus on building features rather than boilerplate code.
 - [Routing](#routing)
 - [Middlewares](#middlewares)
 - [Events](#events)
+- [Broadcast Channels](#broadcast-channels)
 - [Optimize](#optimize)
 - [Migrations](#migrations)
+- [Seeders](#seeders)
+- [Factories](#factories)
 - [Translations](#translations)
 - [Commands](#commands)
 - [Views](#views)
@@ -51,6 +56,7 @@ developers to focus on building features rather than boilerplate code.
 - [View Composers](#view-composers)
 - [Shared Data](#view-shared-data)
 - [Assets](#assets)
+- [Stubs](#stubs)
 - [Providers](#providers)
 - [Install Command](#install-command)
 - [About Command](#about-command)
@@ -418,6 +424,49 @@ $packager
     ]);
 ```
 
+## Broadcast Channels
+
+Channel authorization callbacks (`Broadcast::channel()`) live in their own file, loaded straight into the broadcaster.
+By default the toolkit looks in the package's `routes` directory:
+
+```php
+$packager->hasBroadcastChannels();
+```
+
+Specify files explicitly, or point at another directory:
+
+```php
+$packager->hasBroadcastChannels(['channels.php']);
+
+$packager->hasBroadcastChannels(
+    channelFiles: ['channels.php', 'presence-channels.php'],
+    directory: '../broadcasting'
+);
+```
+
+A channel file looks exactly like an application's `routes/channels.php`:
+
+```php
+use Illuminate\Support\Facades\Broadcast;
+
+Broadcast::channel('blog.post.{postId}', function ($user, string $postId) {
+    return $user->canRead($postId);
+});
+```
+
+Two things to know:
+
+- **Do not use `hasRoutes()` for channel files.** That loads them into the router inside a route group, which is not
+  where a channel authorization callback belongs.
+- **Channels are not publishable.** An application does not load `routes/channels.php` unless its own bootstrap asks
+  for it, so a published copy would look authoritative while the package kept using its own. A consumer overrides
+  authorization by re-registering the same channel name from their application — the last registration wins.
+
+Registration is skipped silently when `illuminate/broadcasting` is not installed, so the call is safe in a package that
+only optionally broadcasts.
+
+---
+
 ## Optimize
 
 Register artisan commands that run with `php artisan optimize` (cache warmup) and `php artisan optimize:clear`. The
@@ -528,6 +577,59 @@ $packager->canLoadMigrations();
 
 This will load migrations directly when the package is registered, without requiring them to be published first. Works
 with both timestamped and timeless migration files.
+
+---
+
+## Seeders
+
+Seeders are a publish-only resource. By default all files in the package's `database/seeders` directory are registered:
+
+```php
+$packager->hasSeeders();
+```
+
+Or name them explicitly:
+
+```php
+$packager->hasSeeders(['BlogSeeder.php', 'BlogCategorySeeder.php']);
+
+$packager->hasSeeders(
+    seederFiles: ['BlogSeeder.php'],
+    directory: '../database/seed'
+);
+```
+
+Seeders publish **flat** into the application's `database/seeders` directory — not into a `vendor/{package}`
+subdirectory — because that is where the application's own `Database\Seeders` namespace resolves. A published seeder is
+therefore immediately runnable:
+
+```bash
+php artisan vendor:publish --tag=my-package::seeders
+php artisan db:seed --class=Database\Seeders\BlogSeeder
+```
+
+A seeder may ship as an inert `.stub` file; it is published as `.php`, the same convention `hasProvider()` follows:
+
+```php
+$packager->hasSeeders(['../stubs/BlogSeeder.stub']);   // published as BlogSeeder.php
+```
+
+---
+
+## Factories
+
+Model factories work the same way and publish flat into `database/factories`, where the application's
+`Database\Factories` namespace resolves them:
+
+```php
+$packager->hasFactories();
+
+$packager->hasFactories(['PostFactory.php']);
+```
+
+> **Note:** Laravel has no framework hook for loading factories out of a package — `loadFactoriesFrom()` was removed in
+> Laravel 8. A package that wants its factories used without publishing them must point at them from its model's
+> `newFactory()` method; the toolkit cannot do that on the model's behalf.
 
 ---
 
@@ -767,6 +869,33 @@ $packager->hasAssets(mirror: false);
 
 ---
 
+## Stubs
+
+Stubs are the templates a package's generator commands scaffold from, published so a consumer can customise them:
+
+```php
+$packager->hasStubs();
+
+$packager->hasStubs(['command.stub', 'model.stub']);
+
+$packager->hasStubs(
+    stubFiles: ['command.stub'],
+    directory: '../resources/stubs'
+);
+```
+
+They are published to `stubs/{package-short-name}/`, keeping their original extension:
+
+```bash
+php artisan vendor:publish --tag=my-package::stubs
+# → stubs/my-package/command.stub
+```
+
+The short-name subdirectory matters: `stubs/` is a single flat directory shared with `php artisan stub:publish` and with
+every other installed package, so publishing there directly invites collisions.
+
+---
+
 ## Providers
 
 To enable service providers:
@@ -888,11 +1017,14 @@ The install command supports the following publishing methods:
 
 - `publishConfig()` / `publishConfigFile()` / `publishConfigFiles()`
 - `publishMigrations()`
+- `publishSeeders()`
+- `publishFactories()`
 - `publishRoutes()` / `publishRouteFiles()`
 - `publishTranslations()` / `publishTranslationFiles()` / `publishLanguageFiles()`
 - `publishAssets()` / `publishPublicAssets()`
 - `publishViews()` / `publishViewFiles()`
 - `publishProviders()` / `publishServiceProviders()`
+- `publishStubs()`
 - `publishComponents()` / `publishViewComponents()`
 - `publishComponentNamespaces()` / `publishViewComponentNamespaces()`
 - `publishEverything()` / `publishAll()`
@@ -974,11 +1106,14 @@ Each resource type has its own publishing tag in the format `{package-short-name
 
 - `{package-name}::config` - Configuration files
 - `{package-name}::migrations` - Database migrations
+- `{package-name}::seeders` - Database seeders
+- `{package-name}::factories` - Model factories
 - `{package-name}::routes` - Route files
 - `{package-name}::translations` - Translation files
 - `{package-name}::assets` - Public assets
 - `{package-name}::views` - View files
 - `{package-name}::providers` - Service providers
+- `{package-name}::stubs` - Generator stubs
 - `{package-name}::view-components` - View components
 - `{package-name}::view-component-namespaces` - View component namespaces
 

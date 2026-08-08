@@ -177,11 +177,14 @@ class InstallCommand extends Command
         $stepOrder = [
             'Publishing configuration' => ['config'],
             'Publishing migrations' => ['migrations'],
+            'Publishing seeders' => ['seeders'],
+            'Publishing factories' => ['factories'],
             'Publishing assets' => ['assets'],
             'Publishing translations' => ['translations'],
             'Publishing views' => ['views'],
             'Publishing service providers' => ['providers'],
             'Publishing routes' => ['routes'],
+            'Publishing stubs' => ['stubs'],
         ];
 
         $steps = [];
@@ -294,6 +297,10 @@ class InstallCommand extends Command
 
         if (in_array('migrations', $this->installCommandTags)) {
             $steps[] = 'Run: php artisan migrate';
+        }
+
+        if (in_array('seeders', $this->installCommandTags)) {
+            $steps[] = 'Run: php artisan db:seed --class=<published seeder>';
         }
 
         return $steps;

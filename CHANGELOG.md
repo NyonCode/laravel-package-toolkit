@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`hasBroadcastChannels()`** — registers channel authorization files (`Broadcast::channel()`) with the broadcaster.
+  Until now a channel file had to be smuggled through `hasRoutes()`, which loads it into the router inside a route
+  group — the wrong destination for an authorization callback. Discovers the package's `routes` directory by default,
+  or takes explicit files and a directory. Channels are load-only and deliberately not publishable: an application does
+  not load `routes/channels.php` unless its own bootstrap asks for it, so a published copy would look authoritative
+  while the package kept using its own. Skipped silently when `illuminate/broadcasting` is absent.
+- **`hasSeeders()`** — publishes database seeders under `<package-short-name>::seeders`, flat into the application's
+  `database/seeders` directory rather than a `vendor/<package>` subdirectory, because that is where the application's
+  own `Database\Seeders` namespace resolves — a published seeder is immediately runnable with
+  `db:seed --class=Database\Seeders\<Name>`. A seeder shipped as `.stub` is published as `.php`.
+- **`hasFactories()`** — publishes model factories under `<package-short-name>::factories`, flat into
+  `database/factories` for the same reason. Publishing is the only mechanism offered on purpose: Laravel removed
+  `loadFactoriesFrom()` in version 8, so a package that wants unpublished factories used must point at them from its
+  model's `newFactory()`.
+- **`hasStubs()`** — publishes generator stubs under `<package-short-name>::stubs` to `stubs/<package-short-name>/`,
+  keeping the original extension. The subdirectory is not decoration: `stubs/` is one flat directory shared with
+  `php artisan stub:publish` and with every other installed package.
+- **Install command** — `publishSeeders()`, `publishFactories()` and `publishStubs()`, all three included in
+  `publishEverything()`, each with its own progress step. Note that `getInstallationSteps()` only runs tags it knows
+  about, so a new publishable resource has to be listed there or the install command silently skips it.
 - **`PublishedAssets::flush()`** — forgets the resolved URLs and the per-request sync marks, for a long-lived worker
   where the singleton outlives the request it was scoped to. Without it the mirror is attempted at most once per
   worker boot, so a published copy deleted underneath a running worker is never put back, and every URL keeps
