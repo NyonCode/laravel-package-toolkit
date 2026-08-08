@@ -1,0 +1,2649 @@
+/* =============================================================================
+   Laravel Package Toolkit — documentation
+   -----------------------------------------------------------------------------
+   Mobile first. Every layout rule below starts from a phone and widens: the
+   sidebar is an off-canvas drawer until 768px (portrait tablet) and permanent
+   from there, the on-this-page rail appears at 1152px (landscape tablet), and
+   nothing in the document is ever allowed to scroll the page sideways — wide
+   things (code, tables) scroll inside their own box.
+
+   Two surfaces, not one. Documentation pages follow the reader's theme; the
+   landing page's hero, provider card and footer are a fixed dark band in both
+   themes (the --ink-* tokens). Everything landing-only is prefixed .lp-.
+   ========================================================================== */
+
+/* ------------------------------------------------------------------- tokens */
+
+:root {
+  /* Display is Inter Tight at 700–800 with the tracking pulled in: flat-cut
+     terminals, high x-height, no flourish — sharp rather than characterful. It
+     also keeps the site in the same family as the brand lockups, which are set
+     in Inter Display (see art/fonts). Body is Inter because 31 pages of
+     reference prose need a workhorse. Both degrade to the system stack if the
+     font request never arrives. */
+  --font-display: 'Inter Tight', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', SFMono-Regular, 'Fira Code', Menlo,
+    Consolas, 'Liberation Mono', monospace;
+
+  --masthead-height: 3.5rem;
+  --sidebar-width: 15rem;
+  --rail-width: 14rem;
+  --content-max: 48rem;
+  --shell-max: 100rem;
+  /* Tight geometry on purpose. Full pills and 20px corners read as marketing;
+     a developer tool reads as drawn with a ruler. */
+  --radius: 0.55rem;
+  --radius-sm: 0.35rem;
+  --radius-lg: 0.75rem;
+
+  /* Light — Laravel-docs calm: near-white paper, warm grey ink. */
+  --bg: #ffffff;
+  --bg-sunken: #f7f7f6;
+  --surface: #ffffff;
+  --surface-raised: #fbfbfa;
+  --border: #e7e6e2;
+  --border-strong: #d6d5cf;
+  --text: #1a1a17;
+  --text-muted: #5f5e57;
+  --text-faint: #86857c;
+
+  /* Accent — the red of the mark, darkened for type on paper: #dc2626 clears
+     4.5:1 on white, which the mark's own lit face (#f87171) does not. */
+  --accent: #dc2626;
+  --accent-hover: #b91c1c;
+  --accent-soft: rgba(220, 38, 38, 0.09);
+  --accent-ring: rgba(220, 38, 38, 0.35);
+  --accent-gradient: linear-gradient(120deg, #ef4444, #dc2626);
+  /* Filled surfaces need a red that white type survives on: #dc2626 clears
+     4.5:1 against white, the lighter link red does not. Kept the same in both
+     themes, because a button's contrast is with its own label, not the page. */
+  --accent-solid: #dc2626;
+  --accent-solid-hover: #b91c1c;
+
+  /* One counter-accent, and it means one thing: this worked. Mint is the green
+     the diff renderer already uses for added lines, and it only ever appears on
+     the dark band or on the code surface, so it needs no light variant. The
+     hand-written state deliberately gets no colour of its own — red is the
+     brand here, and using it to mean "the bad way" would spend it twice. */
+  --mint: #6ee7b7;
+
+  /* The dark band. Identical in light and dark mode: the hero, the provider
+     card and the footer are one continuous night-time surface in both themes,
+     which is what keeps the landing page recognisable when a reader flips the
+     switch. */
+  --ink: #0a0a0c;
+  --ink-raised: #121215;
+  --ink-line: rgba(255, 255, 255, 0.1);
+  /* The blueprint: hairlines and joint marks carry the structure that a gradient
+     bloom was carrying before. */
+  --ink-grid: rgba(255, 255, 255, 0.045);
+  --cross: rgba(220, 38, 38, 0.75);
+  --ink-text: #f2f2f5;
+  --ink-muted: #a9a9b4;
+  --ink-faint: #7c7c88;
+
+  /* Code surface is dark in both themes, the way Laravel's docs do it. */
+  --code-bg: #292d3e;
+  --code-fg: #a6accd;
+  --code-border: rgba(255, 255, 255, 0.08);
+
+  --tok-com: #676e95;
+  --tok-str: #c3e88d;
+  --tok-key: #c792ea;
+  --tok-var: #f07178;
+  --tok-fn: #82aaff;
+  --tok-num: #f78c6c;
+  --tok-cls: #ffcb6b;
+  --tok-pun: #89ddff;
+  --tok-op: #89ddff;
+  --tok-attr: #ffcb6b;
+  --tok-tag: #f07178;
+  --tok-dir: #c792ea;
+
+  --add-bg: rgba(115, 201, 145, 0.14);
+  --add-fg: #73c991;
+  --remove-bg: rgba(240, 113, 120, 0.14);
+  --remove-fg: #f07178;
+
+  --shadow-sm: 0 1px 2px rgba(20, 20, 25, 0.06);
+  --shadow-md: 0 8px 24px -8px rgba(20, 20, 25, 0.18);
+  --shadow-lg: 0 24px 60px -20px rgba(20, 20, 25, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    /* Neutral greys, not blue-violet ones: these were tuned under a violet
+       accent, and beside red the same greys read cold. */
+    --bg: #0c0c0e;
+    --bg-sunken: #101013;
+    --surface: #131317;
+    --surface-raised: #18181d;
+    --border: #26262c;
+    --border-strong: #34343c;
+    --text: #eeeef1;
+    --text-muted: #a4a4ad;
+    --text-faint: #7d7d87;
+
+    --accent: #f87171;
+    --accent-hover: #fca5a5;
+    --accent-soft: rgba(248, 113, 113, 0.14);
+    --accent-ring: rgba(248, 113, 113, 0.4);
+    --accent-gradient: linear-gradient(120deg, #f87171, #ef4444);
+    --accent-solid: #dc2626;
+    --accent-solid-hover: #ef4444;
+    --cross: rgba(248, 113, 113, 0.8);
+
+    --code-bg: #1c1f2e;
+    --code-border: rgba(255, 255, 255, 0.06);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0c0c0e;
+  --bg-sunken: #101013;
+  --surface: #131317;
+  --surface-raised: #18181d;
+  --border: #26262c;
+  --border-strong: #34343c;
+  --text: #eeeef1;
+  --text-muted: #a4a4ad;
+  --text-faint: #7d7d87;
+
+  --accent: #f87171;
+  --accent-hover: #fca5a5;
+  --accent-soft: rgba(248, 113, 113, 0.14);
+  --accent-ring: rgba(248, 113, 113, 0.4);
+  --accent-gradient: linear-gradient(120deg, #f87171, #ef4444);
+  --accent-solid: #dc2626;
+  --accent-solid-hover: #ef4444;
+  --cross: rgba(248, 113, 113, 0.8);
+
+  --code-bg: #1c1f2e;
+  --code-border: rgba(255, 255, 255, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+}
+
+/* -------------------------------------------------------------------- reset */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--masthead-height) + 1rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--accent-hover);
+  text-decoration-color: currentColor;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  background: var(--accent-solid);
+  color: #fff;
+  border-radius: 0 0 var(--radius-sm) 0;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+/* ----------------------------------------------------------------- masthead */
+
+/* Above the drawer, not below it: the button that closes the drawer lives in
+   here, and a drawer that covers its own close button is a trap. */
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding-top: env(safe-area-inset-top);
+}
+
+.masthead__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: var(--masthead-height);
+  padding: 0 max(0.75rem, env(safe-area-inset-left)) 0 max(0.75rem, env(safe-area-inset-right));
+  margin: 0 auto;
+  max-width: var(--shell-max);
+}
+
+.masthead__spacer {
+  flex: 1;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--text);
+  text-decoration: none;
+  min-width: 0;
+}
+
+.brand svg {
+  flex: none;
+}
+
+.brand__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+
+.brand__name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.032em;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand__meta {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+
+/* On a narrow phone the header has to hold a menu button, the brand, a version,
+   search and two icons. The tagline is the first thing that can go. */
+@media (max-width: 30rem) {
+  .brand__meta {
+    display: none;
+  }
+
+  .masthead__inner {
+    gap: 0.25rem;
+  }
+}
+
+/* The version badge is the first thing to go: the wordmark being ellipsised to
+   "Package …" costs more than the version being one tap away in the footer. */
+@media (max-width: 34rem) {
+  .version-badge {
+    display: none;
+  }
+}
+
+.version-badge {
+  flex: none;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.icon-button:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.icon-button__close,
+.icon-button__dark {
+  display: none;
+}
+
+:root[data-theme='dark'] .icon-button__light,
+:root[data-theme='light'] .icon-button__dark {
+  display: none;
+}
+
+:root[data-theme='dark'] .icon-button__dark,
+:root[data-theme='light'] .icon-button__light {
+  display: inline-flex;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .icon-button__light {
+    display: none;
+  }
+
+  :root:not([data-theme='light']) .icon-button__dark {
+    display: inline-flex;
+  }
+}
+
+/* From 48rem the sidebar is permanent, so the button that opens the drawer has
+   nothing left to open. */
+@media (min-width: 48rem) {
+  .masthead__menu {
+    display: none;
+  }
+}
+
+body.drawer-open .masthead__menu .icon-button__open {
+  display: none;
+}
+
+body.drawer-open .masthead__menu .icon-button__close {
+  display: inline-flex;
+}
+
+.search-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 2.25rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.search-trigger:hover {
+  border-color: var(--border-strong);
+  color: var(--text-muted);
+}
+
+.search-trigger__label {
+  display: none;
+}
+
+.search-trigger__kbd {
+  display: none;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 0.3rem;
+  background: var(--bg);
+}
+
+@media (min-width: 40rem) {
+  .search-trigger {
+    min-width: 12rem;
+    justify-content: flex-start;
+  }
+
+  .search-trigger__label {
+    display: inline;
+  }
+
+  .search-trigger__kbd {
+    display: inline;
+    margin-left: auto;
+  }
+}
+
+/* -------------------------------------------------------------------- shell */
+
+.shell {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+/* 48rem is portrait-tablet width. Below it the navigation is a drawer; from it
+   the sidebar is permanent, because an iPad in portrait has room for one and
+   the drawer was the only way to see where you were. */
+@media (min-width: 48rem) {
+  .shell {
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  }
+}
+
+/* The on-this-page rail arrives at 72rem, which is landscape-tablet width, so
+   1024px gets all three columns instead of two and a lot of empty paper. */
+@media (min-width: 72rem) {
+  .shell {
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--rail-width);
+  }
+}
+
+/* ------------------------------------------------------------------ sidebar */
+
+.sidebar {
+  position: fixed;
+  top: calc(var(--masthead-height) + env(safe-area-inset-top));
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  width: min(20rem, 84vw);
+  padding: 0 0.75rem calc(3rem + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translateX(-102%);
+  transition: transform 0.22s ease;
+}
+
+body.drawer-open .sidebar {
+  transform: translateX(0);
+  box-shadow: var(--shadow-lg);
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: calc(var(--masthead-height) + env(safe-area-inset-top)) 0 0 0;
+  z-index: 45;
+  background: rgba(8, 8, 14, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+@media (min-width: 48rem) and (max-width: 60rem) {
+  :root {
+    --sidebar-width: 12.75rem;
+  }
+}
+
+@media (min-width: 48rem) {
+  .sidebar {
+    position: sticky;
+    inset: auto;
+    top: var(--masthead-height);
+    height: calc(100vh - var(--masthead-height));
+    width: auto;
+    transform: none;
+    box-shadow: none;
+    background: transparent;
+    padding-top: 0;
+    padding-left: 1rem;
+  }
+
+  .drawer-backdrop {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------- nav: filter */
+
+/* With 31 pages, the fastest route to one of them is typing three letters of its
+   name. The search dialog searches the *text* of every page, which is a
+   different job and a heavier one — this only filters the titles in the list. */
+
+.nav-filter {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 1rem 0.7rem 0.7rem;
+  background: var(--surface);
+}
+
+@media (min-width: 48rem) {
+  .nav-filter {
+    background: var(--bg);
+  }
+
+  .nav-filter::after {
+    background: linear-gradient(var(--bg), transparent);
+  }
+}
+
+/* A short fade under it, so a row scrolling out does not stop dead on a hard
+   edge. */
+.nav-filter::after {
+  content: '';
+  position: absolute;
+  inset: 100% 0 auto 0;
+  height: 0.75rem;
+  pointer-events: none;
+  background: linear-gradient(var(--surface), transparent);
+}
+
+.nav-filter__input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.nav-filter__input::placeholder {
+  color: var(--text-faint);
+}
+
+.nav-filter__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.nav-empty {
+  margin: 0.5rem 0.7rem;
+  font-size: 0.84rem;
+  color: var(--text-faint);
+}
+
+.nav-empty button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+/* -------------------------------------------------------------- nav: groups */
+
+.nav-group {
+  border-top: 1px solid var(--border);
+}
+
+.nav-group:last-of-type {
+  border-bottom: 1px solid var(--border);
+}
+
+/* The group title is the row you scroll past, so it stays put while its own
+   pages scroll under it and is pushed out by the next one. */
+.nav-group__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  cursor: pointer;
+  list-style: none;
+}
+
+.nav-group__title::-webkit-details-marker {
+  display: none;
+}
+
+.nav-group__title::before {
+  content: '//';
+  color: var(--accent);
+}
+
+.nav-group__title:hover {
+  color: var(--text);
+}
+
+/* The disclosure arrow, drawn rather than typed so it can rotate. */
+.nav-group__title::after {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-left: auto;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg) translateY(-0.06rem);
+  transition: transform 0.15s ease;
+}
+
+.nav-group[open] > .nav-group__title::after {
+  transform: rotate(45deg) translateY(-0.06rem);
+}
+
+/* The group you are reading keeps its title lit even when scrolled to. */
+.nav-group[data-current] > .nav-group__title {
+  color: var(--text);
+}
+
+.nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0.6rem;
+}
+
+.nav-link {
+  display: block;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  border-left: 2px solid transparent;
+}
+
+.nav-link:hover {
+  background: var(--bg-sunken);
+  color: var(--text);
+}
+
+/* A filled pill is a button's shape. The active page is a place, so it is marked
+   the way the on-this-page rail marks one: a rule and the accent colour. */
+.nav-link.is-active {
+  color: var(--accent);
+  background: transparent;
+  font-weight: 600;
+  border-left-color: var(--accent);
+}
+
+.nav-link mark {
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ content */
+
+.content {
+  min-width: 0;
+  padding: 2rem max(1rem, env(safe-area-inset-left)) 4rem;
+}
+
+@media (min-width: 48rem) {
+  .content {
+    padding: 2.25rem 2rem 4.5rem;
+  }
+}
+
+@media (min-width: 72rem) {
+  .content {
+    padding: 2.75rem 3rem 5rem;
+  }
+}
+
+.prose {
+  max-width: var(--content-max);
+}
+
+/* The breadcrumb row: where this page sits, and the way out to GitHub, on one
+   line above the title. Written as a path because that is what it is. */
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.75rem;
+  max-width: var(--content-max);
+  margin: 0 0 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--text-faint);
+}
+
+.crumbs__path {
+  display: flex;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.crumbs__path::before {
+  content: '//';
+  color: var(--accent);
+}
+
+.crumbs__sep {
+  color: var(--border-strong);
+}
+
+.crumbs__here {
+  color: var(--text-muted);
+}
+
+.crumbs__edit {
+  margin-left: auto;
+  color: var(--text-faint);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.crumbs__edit:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 34rem) {
+  .crumbs__edit {
+    display: none;
+  }
+}
+
+.prose h1 {
+  font-family: var(--font-display);
+  margin: 0 0 0.75rem;
+  font-size: clamp(2rem, 1.4rem + 2.6vw, 2.9rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+
+.prose h2 {
+  font-family: var(--font-display);
+  position: relative;
+  margin: 3.25rem 0 1rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border);
+  font-size: clamp(1.42rem, 1.1rem + 1vw, 1.75rem);
+  line-height: 1.18;
+  letter-spacing: -0.032em;
+  font-weight: 800;
+}
+
+/* A short violet tick sitting on the section rule — the same mark the active
+   sidebar item and the active on-this-page item use, so a reader's eye learns
+   one shape for "you are here". */
+.prose h2::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 2.25rem;
+  height: 2px;
+  background: var(--accent-gradient);
+  border-radius: 2px;
+}
+
+.prose h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 2.25rem 0 0.75rem;
+  font-size: clamp(1.1rem, 1rem + 0.4vw, 1.22rem);
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  font-weight: 640;
+}
+
+.prose h4 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 640;
+}
+
+.prose > p:first-of-type {
+  font-size: 1.075rem;
+  color: var(--text-muted);
+}
+
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 0 0 1.15rem;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.35rem;
+}
+
+.prose li {
+  margin: 0.35rem 0;
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin: 0.35rem 0;
+}
+
+.prose hr {
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.prose strong {
+  font-weight: 640;
+  color: var(--text);
+}
+
+.heading-anchor {
+  margin-left: 0.4rem;
+  color: var(--text-faint);
+  text-decoration: none;
+  opacity: 0;
+  font-weight: 400;
+  transition: opacity 0.15s ease;
+}
+
+.prose h2:hover .heading-anchor,
+.prose h3:hover .heading-anchor,
+.heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+/* Inline code */
+/* Inline code is neutral. Painting it in the accent put a dozen red badges on a
+   reference page, where they read as warnings; red is kept for links, labels and
+   the active page. */
+.prose :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 0.15em 0.36em;
+  border-radius: 5px;
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text);
+  word-break: break-word;
+}
+
+.page-head h1 code,
+.prose h2 code,
+.prose h3 code,
+.prose h4 code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font-size: 0.94em;
+  font-weight: inherit;
+}
+
+.prose a > code {
+  color: inherit;
+}
+
+/* Blockquote */
+.prose blockquote {
+  margin: 1.5rem 0;
+  padding: 0.1rem 0 0.1rem 1rem;
+  border-left: 3px solid var(--border-strong);
+  color: var(--text-muted);
+}
+
+/* Tables */
+.table-scroll {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 34rem;
+  font-size: 0.9rem;
+}
+
+.table-scroll th,
+.table-scroll td {
+  text-align: left;
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.table-scroll th {
+  background: var(--bg-sunken);
+  font-weight: 640;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.table-scroll tr:last-child td {
+  border-bottom: 0;
+}
+
+.table-scroll td code {
+  white-space: nowrap;
+}
+
+/* Callouts */
+.callout {
+  margin: 1.5rem 0;
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  background: var(--surface-raised);
+  font-size: 0.95rem;
+}
+
+.callout > :last-child {
+  margin-bottom: 0;
+}
+
+/* Not uppercased: a title is allowed to name a method, and
+   `HASMIGRATIONS()` is not the method's name. */
+.callout__title {
+  margin: 0 0 0.4rem;
+  font-weight: 660;
+  font-size: 0.95rem;
+  letter-spacing: -0.005em;
+  color: var(--accent);
+}
+
+.callout__title code {
+  font-size: 0.86em;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.callout--warning {
+  border-left-color: #d99323;
+}
+
+.callout--warning .callout__title {
+  color: #b6771a;
+}
+
+.callout--danger {
+  border-left-color: #dc5a5a;
+}
+
+.callout--danger .callout__title {
+  color: #c94a4a;
+}
+
+.callout--tip {
+  border-left-color: #38a880;
+}
+
+.callout--tip .callout__title {
+  color: #2f8f6d;
+}
+
+:root[data-theme='dark'] .callout--warning .callout__title {
+  color: #e8b25a;
+}
+
+:root[data-theme='dark'] .callout--danger .callout__title {
+  color: #f08a8a;
+}
+
+:root[data-theme='dark'] .callout--tip .callout__title {
+  color: #5ecfa3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .callout--warning .callout__title {
+    color: #e8b25a;
+  }
+
+  :root:not([data-theme='light']) .callout--danger .callout__title {
+    color: #f08a8a;
+  }
+
+  :root:not([data-theme='light']) .callout--tip .callout__title {
+    color: #5ecfa3;
+  }
+}
+
+/* --------------------------------------------------------------- code blocks */
+
+.code-block {
+  position: relative;
+  margin: 1.5rem 0;
+  border-radius: var(--radius);
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.code-block__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.code-block__file {
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.code-block__lang {
+  margin-left: auto;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.code-copy {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.5rem;
+  z-index: 2;
+  padding: 0.28rem 0.55rem;
+  font: inherit;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.code-block:hover .code-copy,
+.code-copy:focus-visible {
+  opacity: 1;
+}
+
+.code-copy:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.code-copy.is-copied {
+  color: var(--add-fg);
+  border-color: color-mix(in srgb, var(--add-fg) 45%, transparent);
+}
+
+/* Touch devices have no hover, so the button just stays visible. */
+@media (hover: none) {
+  .code-copy {
+    opacity: 1;
+  }
+}
+
+.code-block pre {
+  margin: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: transparent;
+}
+
+.code-block pre code {
+  display: block;
+  min-width: max-content;
+  padding: 0.9rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: var(--code-fg);
+  tab-size: 4;
+  /* Ligatures off: these blocks are full of shell flags, and a `--tag` that
+     renders as `–tag` is a flag somebody retypes wrongly. */
+  font-variant-ligatures: none;
+}
+
+@media (min-width: 40rem) {
+  .code-block pre code {
+    font-size: 0.875rem;
+  }
+}
+
+/* Horizontal padding lives on the line so the diff and focus backgrounds
+   run edge to edge. */
+.code-block pre code .line {
+  display: block;
+  padding: 0 1rem 0 1.1rem;
+  min-height: 1.65em;
+}
+
+.code-block pre code .line-number,
+.code-block pre code .summary-caret {
+  margin-right: 1rem;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* Focus lines — the unfocused ones blur until the block is hovered.
+   On touch, where there is no hover, they stay dimmed but unblurred so the
+   code is still readable. */
+.torchlight.has-focus-lines .line:not(.line-focus) {
+  transition: filter 0.35s, opacity 0.35s;
+  filter: blur(0.095rem);
+  opacity: 0.6;
+}
+
+.torchlight.has-focus-lines:hover .line:not(.line-focus),
+.code-block:focus-within .torchlight.has-focus-lines .line:not(.line-focus) {
+  filter: blur(0);
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .torchlight.has-focus-lines .line:not(.line-focus) {
+    filter: none;
+    opacity: 0.55;
+  }
+}
+
+.torchlight .line-focus {
+  background: rgba(167, 139, 250, 0.1);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* Git diffs */
+.torchlight .line-add {
+  background: var(--add-bg);
+}
+
+.torchlight .line-remove {
+  background: var(--remove-bg);
+}
+
+.torchlight.has-diff-lines .line {
+  position: relative;
+  padding-left: 2.1rem;
+}
+
+.torchlight.has-diff-lines .line::before {
+  position: absolute;
+  left: 0.75rem;
+  color: rgba(255, 255, 255, 0.25);
+  content: ' ';
+}
+
+.torchlight.has-diff-lines .line-add::before {
+  content: '+';
+  color: var(--add-fg);
+  font-weight: 700;
+}
+
+.torchlight.has-diff-lines .line-remove::before {
+  content: '−';
+  color: var(--remove-fg);
+  font-weight: 700;
+}
+
+/* Fallback highlighter tokens. Torchlight ships inline colours instead, so
+   these only apply on the no-token build. */
+.tok-com {
+  color: var(--tok-com);
+  font-style: italic;
+}
+.tok-str {
+  color: var(--tok-str);
+}
+.tok-key {
+  color: var(--tok-key);
+}
+.tok-var {
+  color: var(--tok-var);
+}
+.tok-fn {
+  color: var(--tok-fn);
+}
+.tok-num {
+  color: var(--tok-num);
+}
+.tok-cls {
+  color: var(--tok-cls);
+}
+.tok-pun,
+.tok-op {
+  color: var(--tok-pun);
+}
+.tok-attr {
+  color: var(--tok-attr);
+}
+.tok-tag {
+  color: var(--tok-tag);
+}
+.tok-dir {
+  color: var(--tok-dir);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------- rail */
+
+.rail {
+  display: none;
+}
+
+@media (min-width: 72rem) {
+  .rail {
+    display: block;
+  }
+}
+
+.toc {
+  position: sticky;
+  top: calc(var(--masthead-height) + 2.75rem);
+  max-height: calc(100vh - var(--masthead-height) - 5rem);
+  overflow-y: auto;
+  padding: 0 1.25rem 2rem 0;
+  font-size: 0.83rem;
+}
+
+.toc__title {
+  margin: 0 0 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.toc__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--border);
+}
+
+.toc-item a {
+  display: block;
+  padding: 0.28rem 0 0.28rem 0.8rem;
+  margin-left: -1px;
+  border-left: 1px solid transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  line-height: 1.4;
+  /* Headings here are frequently method names with no break opportunity. */
+  overflow-wrap: anywhere;
+}
+
+.toc-item--h3 a {
+  padding-left: 1.6rem;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+.toc-item a:hover {
+  color: var(--text);
+}
+
+.toc-item.is-active > a {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------------------- pager */
+
+.pager {
+  display: grid;
+  gap: 0.75rem;
+  max-width: var(--content-max);
+  margin-top: 3.5rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border);
+}
+
+@media (min-width: 40rem) {
+  .pager {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.pager__link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pager__link:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.pager__link--next {
+  text-align: right;
+  grid-column: 2;
+}
+
+.pager__direction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.pager__link--next .pager__direction {
+  justify-content: flex-end;
+}
+
+.pager__title {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.page-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  justify-content: space-between;
+  max-width: var(--content-max);
+  margin-top: 2.5rem;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+}
+
+/* ------------------------------------------------------------------- search */
+
+.search-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: max(3rem, env(safe-area-inset-top)) 1rem 1rem;
+}
+
+.search-dialog[hidden] {
+  display: none;
+}
+
+.search-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 14, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.search-dialog__panel {
+  position: relative;
+  width: min(38rem, 100%);
+  max-height: min(32rem, calc(100vh - 6rem));
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.search-dialog__field {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 0.6rem 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-faint);
+}
+
+.search-dialog__field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  padding: 0.35rem 0;
+}
+
+.search-dialog__field input:focus {
+  outline: none;
+}
+
+.search-dialog__results {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.4rem;
+}
+
+.search-result {
+  display: block;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.search-result:hover,
+.search-result.is-active {
+  background: var(--accent-soft);
+}
+
+.search-result__section {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.search-result__title {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.search-result__snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.search-result mark {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 0.1em;
+}
+
+.search-empty {
+  padding: 1.5rem 0.75rem;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+}
+
+.search-dialog__hint {
+  display: none;
+  margin: 0;
+  padding: 0.5rem 0.9rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+
+.search-dialog__hint kbd {
+  font-family: var(--font-mono);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 0.28rem;
+  margin-right: 0.15rem;
+}
+
+@media (min-width: 40rem) {
+  .search-dialog__hint {
+    display: block;
+  }
+}
+
+/* ------------------------------------------------------------ call to action */
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.05rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-solid);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.cta:hover {
+  color: #fff;
+  background: var(--accent-solid-hover);
+}
+
+/* ---------------------------------------------------------------- page head */
+
+/* The title block is rendered by the template, not by the Markdown, so every
+   page opens the same way: section, title, and the one-sentence description that
+   until now only existed in the <head>. */
+
+.page-head {
+  max-width: var(--content-max);
+  margin-bottom: 2rem;
+}
+
+.page-head h1 {
+  font-family: var(--font-display);
+  margin: 0.15rem 0 0;
+  font-size: clamp(2.05rem, 1.4rem + 2.7vw, 3rem);
+  line-height: 1.02;
+  letter-spacing: -0.042em;
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+.page-head__lead {
+  margin: 0.85rem 0 0;
+  font-size: 1.075rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+/* The first paragraph of the prose is no longer the page's opening line — the
+   description above it is — so it goes back to body size. */
+.prose > p:first-of-type {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+/* ------------------------------------------------------- inline on-this-page */
+
+/* Below 72rem the rail is not rendered; these are the same links, collapsed. */
+
+.toc-inline {
+  max-width: var(--content-max);
+  margin: 0 0 2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+@media (min-width: 72rem) {
+  .toc-inline {
+    display: none;
+  }
+}
+
+.toc-inline__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0.95rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.toc-inline__summary::marker,
+.toc-inline__summary::-webkit-details-marker {
+  color: var(--text-faint);
+}
+
+.toc-inline__count {
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.7rem;
+  letter-spacing: 0;
+}
+
+.toc-inline__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.95rem 0.85rem;
+}
+
+.toc-inline__list .toc-item a {
+  padding-left: 0;
+  border-left: 0;
+  margin-left: 0;
+}
+
+.toc-inline__list .toc-item--h3 a {
+  padding-left: 1rem;
+}
+
+/* ============================================================================
+   Landing page
+   ----------------------------------------------------------------------------
+   Everything below is `.lp-` prefixed and only rendered on `/`. The hero, the
+   closing call to action and the footer share one dark surface in both themes;
+   the sections between them follow the reader's theme like the documentation.
+   ========================================================================= */
+
+.masthead--over-ink {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: transparent;
+  color: var(--ink-text);
+}
+
+.masthead--over-ink .brand,
+.masthead--over-ink .icon-button,
+.masthead--over-ink .masthead__link {
+  color: var(--ink-text);
+}
+
+.masthead--over-ink .brand__meta {
+  color: var(--ink-faint);
+}
+
+.masthead--over-ink .icon-button:hover,
+.masthead--over-ink .search-trigger:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.masthead--over-ink .search-trigger {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--ink-line);
+  color: var(--ink-muted);
+}
+
+.masthead--over-ink .version-badge {
+  border-color: var(--ink-line);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink-muted);
+}
+
+/* Once the reader is past the hero the header needs its own ground again. */
+.masthead--over-ink.is-scrolled {
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  border-bottom-color: var(--ink-line);
+}
+
+.masthead__link {
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.masthead__link:hover {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.masthead__link-short {
+  display: none;
+}
+
+@media (max-width: 34rem) {
+  .masthead__link-long {
+    display: none;
+  }
+
+  .masthead__link-short {
+    display: inline;
+  }
+}
+
+
+/* --------------------------------------------------------------- the frame */
+
+/* Every landing section is drawn inside the same bounded frame: two vertical
+   hairlines running the height of the page, crossed by each section's own
+   horizontal rule. The small marks sit on those crossings — a section's top
+   marks land on the previous section's bottom rule, so stacking the sections
+   draws a continuous blueprint without any element having to know its
+   neighbours. */
+
+.lp-frame {
+  position: relative;
+  max-width: 82rem;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.lp-hero .lp-frame {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+@media (min-width: 48rem) {
+  .lp-frame {
+    padding: 0 2.5rem;
+  }
+}
+
+.lp-frame::before,
+.lp-frame::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 7px;
+  height: 7px;
+  color: var(--cross);
+  background-image: linear-gradient(currentColor, currentColor),
+    linear-gradient(currentColor, currentColor);
+  background-size: 7px 1px, 1px 7px;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  transform: translate(-50%, -50%);
+}
+
+.lp-frame::before {
+  left: 0;
+}
+
+.lp-frame::after {
+  left: 100%;
+}
+
+/* The mark belongs to a crossing, and the first section has no rule above it. */
+.lp-hero .lp-frame::before,
+.lp-hero .lp-frame::after {
+  display: none;
+}
+
+/* ------------------------------------------------------------------- lp hero */
+
+.lp-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--ink-text);
+  padding: calc(var(--masthead-height) + 2.5rem) 0 3rem;
+  margin-top: calc((var(--masthead-height) + env(safe-area-inset-top)) * -1);
+}
+
+/* One ambient layer: a drafting grid, flat and unanimated. No bloom, no mesh
+   gradient — the depth in this page comes from hairlines and from the code. */
+.lp-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, var(--ink-grid) 1px, transparent 1px),
+    linear-gradient(180deg, var(--ink-grid) 1px, transparent 1px);
+  background-size: 4.5rem 4.5rem;
+  mask-image: linear-gradient(180deg, #000, transparent 78%);
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 78%);
+}
+
+@media (min-width: 48rem) {
+  .lp-hero {
+    padding: calc(var(--masthead-height) + 3.5rem) 0 4rem;
+  }
+}
+
+@media (min-width: 72rem) {
+  .lp-hero {
+    padding: calc(var(--masthead-height) + 4.5rem) 0 5rem;
+  }
+}
+
+.lp-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.lp-hero__copy,
+.lp-hero__demo {
+  min-width: 0;
+}
+
+@media (min-width: 72rem) {
+  .lp-hero__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+    gap: 3rem;
+  }
+}
+
+/* A section label written the way a PHP file writes one. The `//` is generated
+   rather than typed into the markup, so it cannot end up in the page title, the
+   search index or a screen reader's reading of the heading. */
+.lp-eyebrow,
+.lp-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink-muted);
+}
+
+.lp-eyebrow::before,
+.lp-kicker::before {
+  content: '//';
+  color: var(--accent);
+}
+
+
+.lp-pill {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--ink-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink-muted);
+  letter-spacing: 0.06em;
+}
+
+.lp-title {
+  font-family: var(--font-display);
+  margin: 0 0 1.25rem;
+  font-size: clamp(2.45rem, 1.5rem + 5.4vw, 4.3rem);
+  line-height: 0.96;
+  letter-spacing: -0.05em;
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+/* `has` is the word the documentation itself emphasises — it is what the
+   Packager records. Bricolage has no italic, so the emphasis is colour. */
+.lp-title em {
+  font-style: normal;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.14em;
+  text-decoration-color: var(--accent);
+}
+
+/* One accent, stated plainly. Gradient-filled text is the house style of every
+   framework landing page built since 2021. This is the mark's own red — the
+   brighter UI tone goes pastel at four rem. */
+.lp-title__accent {
+  display: block;
+  color: #ef4444;
+}
+
+.lp-lead {
+  max-width: 34rem;
+  margin: 0 0 1.9rem;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+.lp-lead code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink-text);
+}
+
+.lp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.lp-actions--centred {
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+.cta--ink {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--ink-line);
+  color: var(--ink-text);
+}
+
+.cta--ink:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.26);
+  color: var(--ink-text);
+}
+
+.lp-install {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  gap: 0.85rem;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0.55rem 0.6rem 0.55rem 0.85rem;
+  border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-text);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.lp-install:hover {
+  border-color: rgba(167, 139, 250, 0.6);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.lp-install code {
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 34rem) {
+  .lp-install code {
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.lp-install__prompt {
+  color: var(--mint);
+  margin-right: 0.4rem;
+}
+
+.lp-install__action {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ink-muted);
+}
+
+.lp-install__action svg + svg {
+  display: none;
+}
+
+.lp-install.is-copied .lp-install__action {
+  background: rgba(110, 231, 183, 0.16);
+  color: var(--mint);
+}
+
+.lp-install.is-copied .lp-install__action svg:first-child {
+  display: none;
+}
+
+.lp-install.is-copied .lp-install__action svg + svg {
+  display: block;
+}
+
+.lp-meta {
+  margin: 1.1rem 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+/* --------------------------------------------------------- provider card */
+
+/* The signature element: one frame, two providers. The frame keeps its height
+   when the panes swap, which is the point — the declaration has to be seen
+   filling a fraction of the space the hand-written version needed. */
+
+.provider {
+  border: 1px solid var(--ink-line);
+  border-radius: var(--radius);
+  background: var(--ink-raised);
+  overflow: hidden;
+}
+
+/* Editor tabs, because that is what the two states are: the same file, written
+   two ways. Flat, underlined when current — no segmented pill. */
+.provider__head {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--ink-line);
+}
+
+.provider__tabs {
+  display: flex;
+}
+
+.provider__tab {
+  padding: 0.7rem 0.95rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.provider__tab:hover {
+  color: var(--ink-text);
+}
+
+.provider__tab[aria-selected='true'] {
+  color: var(--ink-text);
+  border-bottom-color: var(--accent);
+}
+
+.provider__count {
+  margin: 0 0.95rem 0 auto;
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.25s ease;
+}
+
+[data-provider][data-state='toolkit'] .provider__count {
+  color: var(--mint);
+}
+
+.provider__body {
+  position: relative;
+  height: 20rem;
+  background: var(--code-bg);
+}
+
+.provider__body::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2.5rem;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, var(--code-bg));
+}
+
+@media (min-width: 48rem) {
+  .provider__body {
+    height: 24rem;
+  }
+}
+
+/* Tall enough for the declared provider to be read in full without scrolling —
+   the hand-written one scrolls, which is the comparison making itself. */
+@media (min-width: 64rem) {
+  .provider__body {
+    height: 27.5rem;
+  }
+}
+
+.provider__pane {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  animation: provider-in 0.28s ease both;
+}
+
+.provider__pane[hidden] {
+  display: none;
+}
+
+@keyframes provider-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* The panes borrow the documentation's code styling, minus its own frame. */
+.provider .code-block {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.provider .code-block pre {
+  padding: 0.85rem 0.25rem 1.25rem;
+}
+
+.provider .code-block pre code {
+  font-size: 0.735rem;
+  line-height: 1.62;
+}
+
+@media (min-width: 64rem) {
+  .provider .code-block pre code {
+    font-size: 0.76rem;
+  }
+}
+
+.provider__note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  align-items: baseline;
+  margin: 0;
+  padding: 0.7rem 0.95rem;
+  border-top: 1px solid var(--ink-line);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.provider__file {
+  font-family: var(--font-mono);
+  color: var(--ink-muted);
+}
+
+
+/* ----------------------------------------------------------------- terminal */
+
+/* The other half of the argument. The provider card shows what an author writes;
+   this shows what their users get for it — a real transcript of the installer
+   that the last line of that provider registers. */
+
+.terminal {
+  max-width: 40rem;
+  border: 1px solid var(--ink-line);
+  border-radius: var(--radius);
+  background: var(--ink);
+  overflow: hidden;
+}
+
+.lp-section--install {
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--border);
+}
+
+.lp-section--install .lp-section__inner {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (min-width: 62rem) {
+  .lp-section--install .lp-section__inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 3rem;
+  }
+
+  .lp-section--install .lp-section__head {
+    margin-bottom: 0;
+  }
+}
+
+.terminal__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--ink-line);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+
+.terminal__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.terminal__label {
+  margin-left: 0.35rem;
+}
+
+.terminal pre {
+  margin: 0;
+  padding: 0.9rem 1rem 1.1rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.75;
+  color: var(--ink-muted);
+  tab-size: 4;
+}
+
+.terminal .t-cmd {
+  color: var(--ink-text);
+}
+
+.terminal .t-prompt {
+  color: var(--mint);
+}
+
+.terminal .t-ok {
+  color: var(--mint);
+}
+
+.terminal .t-step {
+  color: var(--ink-faint);
+}
+
+.terminal .t-done {
+  color: var(--mint);
+}
+
+/* ---------------------------------------------------------------- lp section */
+
+.lp-section {
+  padding: 3.5rem 0;
+}
+
+@media (min-width: 48rem) {
+  .lp-section {
+    padding: 4.5rem 0;
+  }
+}
+
+.lp-section--resources {
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--border);
+}
+
+.lp-section__inner {
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.lp-final,
+.lp-footer {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.lp-section__head {
+  max-width: 44rem;
+  margin-bottom: 2rem;
+}
+
+.lp-kicker {
+  margin: 0 0 0.7rem;
+  color: var(--text-muted);
+}
+
+.lp-section h2 {
+  font-family: var(--font-display);
+  margin: 0;
+  font-size: clamp(1.7rem, 1.2rem + 1.9vw, 2.45rem);
+  line-height: 1.06;
+  letter-spacing: -0.042em;
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+/* Landing copy keeps inline code plain: the violet chip the documentation prose
+   uses would put four badges in a two-line sentence. */
+.lp-section__lead code,
+.lp-card p code,
+.lp-final p code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  color: var(--text);
+}
+
+.lp-final p code {
+  color: var(--ink-text);
+}
+
+.lp-section__lead {
+  margin: 0.9rem 0 0;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+/* ------------------------------------------------------------------- chips */
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chip {
+  display: block;
+  max-width: 100%;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+}
+
+.chip code {
+  font-family: var(--font-mono);
+  font-size: 0.775rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.chip:hover code {
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------- cards */
+
+.lp-cards {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 42rem) {
+  .lp-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.lp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.4rem 1.35rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lp-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+}
+
+.lp-card h3 {
+  font-family: var(--font-display);
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: -0.028em;
+}
+
+.lp-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.lp-card__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.lp-card:hover .lp-card__more svg {
+  transform: translateX(2px);
+}
+
+.lp-card__more svg {
+  transition: transform 0.15s ease;
+}
+
+/* ------------------------------------------------------------- prose block */
+
+.lp-section--prose {
+  border-top: 1px solid var(--border);
+}
+
+.lp-section--prose .prose {
+  max-width: var(--content-max);
+  margin: 0;
+}
+
+.lp-section--prose .prose > h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.lp-section--prose .prose > h2:first-child::before {
+  display: none;
+}
+
+/* ------------------------------------------------------------ closing + foot */
+
+.lp-final {
+  padding: 4rem 1.25rem;
+  background: var(--ink);
+  color: var(--ink-text);
+  text-align: center;
+}
+
+.lp-final__inner {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.lp-final h2 {
+  font-family: var(--font-display);
+  margin: 0 0 0.8rem;
+  font-size: clamp(1.75rem, 1.2rem + 2vw, 2.5rem);
+  line-height: 1.06;
+  letter-spacing: -0.042em;
+  font-weight: 800;
+}
+
+.lp-final p {
+  margin: 0 0 1.75rem;
+  color: var(--ink-muted);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.lp-final code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  padding: 0.1em 0.35em;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink-text);
+}
+
+.lp-footer {
+  padding: 3rem 1.25rem 2rem;
+  background: var(--ink);
+  color: var(--ink-muted);
+  border-top: 1px solid var(--ink-line);
+}
+
+.lp-footer__inner {
+  display: grid;
+  gap: 2.25rem;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 48rem) {
+  .lp-footer {
+    padding: 3.5rem 2rem 2rem;
+  }
+
+  .lp-footer__inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+    gap: 3rem;
+  }
+}
+
+.lp-footer__name {
+  font-family: var(--font-display);
+  margin: 0.6rem 0 0.3rem;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ink-text);
+}
+
+.lp-footer__tag {
+  margin: 0;
+  max-width: 20rem;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--ink-faint);
+}
+
+.lp-footer__nav {
+  display: grid;
+  gap: 1.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.lp-footer__title {
+  margin: 0 0 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.lp-footer__nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.lp-footer__nav a {
+  color: var(--ink-muted);
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+
+.lp-footer__nav a:hover {
+  color: var(--ink-text);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.lp-footer__legal {
+  max-width: 72rem;
+  margin: 2.5rem auto 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ink-line);
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------ touch targets */
+
+/* A finger needs roughly 44px of target; a mouse pointer does not, and the
+   header is tight on a phone — so the larger sizes apply only where they are
+   actually needed. Last in the file so they win over the base rules. */
+@media (pointer: coarse) {
+  .icon-button {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .search-trigger {
+    height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  .nav-link {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+
+  .toc-item a {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .search-result {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .code-copy {
+    padding: 0.5rem 0.7rem;
+  }
+}

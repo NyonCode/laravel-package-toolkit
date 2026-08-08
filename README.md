@@ -4,6 +4,10 @@ Laravel Package toolkit is a powerful tool designed to streamline the process of
 Laravel. It provides a set of intuitive abstractions and helper methods for common package development tasks, enabling
 developers to focus on building features rather than boilerplate code.
 
+**📖 [Read the documentation](https://nyoncode.github.io/laravel-package-toolkit/)** — a page per resource type, with
+extended examples, gotchas and a full API reference. The Markdown lives in [`docs/`](./docs); the site that renders it
+lives in [`site/`](./site).
+
 ## Features
 
 - Simple and expressive package configuration

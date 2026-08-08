@@ -9,3 +9,10 @@ package-lock.json
 .DS_Store
 --cache-directory/
 .claude/settings.local.json
+
+# Documentation site
+# The lockfile is kept so the Pages workflow can `npm ci` against pinned versions.
+!site/package-lock.json
+site/dist/
+site/.torchlight-cache/
+.playwright-mcp/
