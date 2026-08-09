@@ -22,9 +22,9 @@ Each is independent; none is required.
 
 Adding a resource type to the toolkit touches four places in `src` — a `Concerns/HasX` declaration
 trait, a `bootX()` in `Support/Concerns/BootsPackageResources`, a `publishX()` in
-`Support/Concerns/PublishesPackageResources`, and the install-command entry (all four described in
-[`../.ai/architecture.md`](../.ai/architecture.md), which is also where the rules about which of
-them a given resource actually needs live).
+`Support/Concerns/PublishesPackageResources`, and the install-command entry — not all four every
+time, though: a register-only resource such as events has nothing on disk to copy, so it gets no
+`publishX()` and no install-command entry.
 
 **Documenting it is the fifth place, and it is not optional.**
 

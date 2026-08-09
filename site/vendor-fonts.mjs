@@ -91,8 +91,14 @@ async function main() {
     existing.weights.push(face.weight)
   }
 
-  fs.rmSync(fontsDir, { recursive: true, force: true })
+  // Clear out the previous vendoring, but only the font files. The OFL requires
+  // its text to travel with the binaries it covers, so `LICENSE-*.txt` sits in
+  // this directory on purpose — wiping the directory wholesale would drop them
+  // and leave the site redistributing fonts with no licence beside them.
   fs.mkdirSync(fontsDir, { recursive: true })
+  for (const entry of fs.readdirSync(fontsDir)) {
+    if (entry.endsWith('.woff2')) fs.rmSync(path.join(fontsDir, entry))
+  }
 
   const rules = []
 

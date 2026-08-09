@@ -1,1 +1,12 @@
 __pycache__/
+
+# The render chain stays on the maintainer's machine — the artboard sources, the
+# script that drives them, the vendored fonts they read, the intermediate SVGs
+# they emit, and the README that documents all of it. What this directory
+# publishes is the finished output: `logo/` and `favicon/`. Regenerating them
+# needs the sources; using them does not.
+/artboards/
+/fonts/
+/src/
+/render.sh
+/README.md

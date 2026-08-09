@@ -11,7 +11,7 @@ Requires PHP ^8.2 and Laravel 12.x (>= 12.61.1) or 13.x (>= 13.12.0). Laravel 10
 ## Which doc do you need?
 
 - **Using the toolkit** to build a package in another project → [ai/AGENTS.md](./ai/AGENTS.md) — the complete public fluent API, extracted from source, with examples and gotchas. This one **ships with the package**, so it is also what an agent in a consuming project reads out of `vendor/`; keep it accurate when you change the public API.
-- **Working on the toolkit itself** (changing/extending it) → [.ai/architecture.md](./.ai/architecture.md) — internal architecture, the trait split, how to add a resource type, test patterns.
+- **Working on the toolkit itself** (changing/extending it) → ["Orientation"](#orientation-the-one-thing-to-know) and ["Conventions"](#conventions) below for the trait split and the house rules; [ai/README.md](./ai/README.md) for what adding a resource type touches.
 
 ## Agent support the package ships
 
@@ -50,7 +50,7 @@ The library has two collaborators, and traits are split by which one they belong
 - `src/Concerns/` → mixed into **`Packager`** — *declare* what the package has (`hasConfig()`, `hasRoutes()`, …).
 - `src/Support/Concerns/` → mixed into **`PackageServiceProvider`** — *act on* that declaration at register/boot time (`bootRoutes()`, `publishConfig()`, …).
 
-So each feature spans both sides. Full detail — including how to add a new resource type and the test-state reset pattern — is in [.ai/architecture.md](./.ai/architecture.md).
+So each feature spans both sides. Which of the two a new resource actually needs — and the fourth and fifth places it touches — is in [ai/README.md](./ai/README.md).
 
 ## Conventions
 

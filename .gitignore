@@ -13,6 +13,13 @@ package-lock.json
 --cache-directory/
 .claude/settings.local.json
 
+# Local agent scratch. `.ai/` is maintainer notes that stay on this machine —
+# not to be confused with `ai/`, which ships with the package. `.mcp.json` here
+# is a dev-machine config (it pins a running IDE's localhost port), unlike the
+# one `bin/package-toolkit-ai install` writes into a consuming project.
+/.ai/
+/.mcp.json
+
 # Documentation site
 # The lockfile is kept so the Pages workflow can `npm ci` against pinned versions.
 !site/package-lock.json

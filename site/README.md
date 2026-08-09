@@ -150,7 +150,9 @@ node vendor-fonts.mjs
 
 They used to be requested from `fonts.googleapis.com`. Vendoring them means the site makes no
 third-party request, renders identically offline, and never puts a reader's IP in front of Google on
-the way to reading documentation. All three are SIL OFL 1.1, so hosting them is permitted.
+the way to reading documentation. All three are SIL OFL 1.1, so hosting them is permitted — on the
+condition that the licence travels with the files, which is why `assets/fonts/LICENSE-*.txt` sit
+beside the `.woff2` and why the vendoring script deletes only `*.woff2` rather than the directory.
 
 Only the `latin` and `latin-ext` subsets are kept — 6 files, about 300KB total, cached after the
 first page. Re-run the script only to change families or weights; the output is committed. Its `SOURCE` has to
@@ -168,15 +170,18 @@ cp art/favicon/favicon-180.png  site/assets/favicon-180.png
 cp art/favicon/favicon-512.png  site/assets/favicon-512.png
 ```
 
-`assets/og-image.png` is the exception: `art/` was reduced to the logo set and the artboard that
-built the Open Graph card went with it. The file still works and is still referenced by `og:image`
-in `templates/chrome.mjs`, but it can no longer be regenerated — treat it as a static asset, or drop
-the `og:image` / `twitter:image` tags if it ever goes stale.
+`assets/og-image.png` is generated rather than copied: the brand render chain rasterises its own
+artboard straight into this directory. The card repeats the landing page's own eyebrow, headline,
+accent line and declaration, so the two cannot drift; change the copy there and re-render. It is
+referenced by `og:image` and `twitter:image` in `templates/chrome.mjs`.
 
 The masthead and footer mark is the same geometry, inlined in `templates/chrome.mjs` as
 `icon.logo(key)`. It takes a key because SVG gradient ids are document-global and the page renders
-the mark twice. If the mark changes in `art/artboards/mark.py`, re-run `art/render.sh` and paste the
-new paths from `art/logo/mark.svg`.
+the mark twice. If the mark ever changes, paste the new paths out of `art/logo/mark.svg`.
+
+That render chain — the Python artboards, the script and the font subsets they read — is
+deliberately kept out of the repository. The committed output under `art/logo/` and
+`art/favicon/` is all a site build needs.
 
 ## Deployment
 

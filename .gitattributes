@@ -1,0 +1,49 @@
+# What a `composer require` actually needs.
+#
+# Everything below is excluded from the dist archive Packagist builds from a tag.
+# The test of what stays is not "is it useful to a reader" — GitHub is there for
+# that — but "does something read it out of vendor/ at runtime". Three things do:
+# the agent guide and MCP server under ai/, the documentation pages the server
+# serves from docs/, and src/ itself, which the server parses for signatures.
+#
+# NOTE: git does not descend into a directory it has already excluded, so a
+# blanket `site/ export-ignore` could not be walked back with `-export-ignore`
+# on a single file inside it. site/ is therefore listed child by child, and a
+# new top-level entry there has to be added here by hand.
+
+# Tests, tooling and CI — no runtime role.
+/tests/            export-ignore
+/.github/          export-ignore
+/phpunit.xml       export-ignore
+/phpstan.neon      export-ignore
+/testbench.yaml    export-ignore
+/pint.json         export-ignore
+/prettier.config.js export-ignore
+/package.json      export-ignore
+/package-lock.json export-ignore
+/.gitignore        export-ignore
+/.gitattributes    export-ignore
+
+# Contributor guidance. The consumer-facing guide is ai/AGENTS.md, which ships;
+# these two are about working on the toolkit and have no audience in vendor/.
+/AGENTS.md         export-ignore
+/CLAUDE.md         export-ignore
+
+# Brand assets. Logos and favicons are for the README and the site, and the
+# fonts they were outlined from are not in the repository at all.
+/art/              export-ignore
+
+# The documentation site. Only nav.mjs stays: ai/mcp/server.mjs reads it to
+# learn which pages under docs/ are real, because docs/ also holds planning
+# documents for unreleased versions. The server degrades to a directory listing
+# without it, so this is a quality choice rather than a hard dependency.
+/site/assets/      export-ignore
+/site/lib/         export-ignore
+/site/templates/   export-ignore
+/site/README.md    export-ignore
+/site/build.mjs    export-ignore
+/site/llms.mjs     export-ignore
+/site/vendor-fonts.mjs export-ignore
+/site/torchlight.config.cjs export-ignore
+/site/package.json export-ignore
+/site/package-lock.json export-ignore
