@@ -28,7 +28,8 @@ import { fileURLToPath } from 'node:url'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const fontsDir = path.join(here, 'assets', 'fonts')
 
-/** Exactly the families and weights `assets/docs.css` asks for. */
+/** Exactly the families and weights `assets/tailwind.css` asks for — the three
+ *  `--font-*` tokens in its `@theme`, at the weights its utilities use. */
 const SOURCE =
   'https://fonts.googleapis.com/css2' +
   '?family=Inter+Tight:wght@600..800' +
