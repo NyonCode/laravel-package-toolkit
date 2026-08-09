@@ -11,7 +11,8 @@ uses(TestCase::class);
 
 /**
  * Discovery is meant to survive a file it cannot read rather than take the whole
- * package down with it. Root ignores the permission bits, so these are skipped there.
+ * package down with it. Where the permission bits are not enforced — root, Windows —
+ * there is nothing to survive, so these are skipped.
  */
 beforeEach(function () {
     $this->root = sys_get_temp_dir().'/lpt-unreadable-'.getmypid();
@@ -37,7 +38,7 @@ test('an unreadable file is skipped rather than failing the discovery', function
 
     expect($files)->toHaveCount(1)
         ->and($files[0]->getBaseFileName())->toBe('visible');
-})->skip(fn () => is_readable('/etc/sudoers'), 'Running as root: permission bits are ignored.');
+})->skip(fn () => ! permissionsAreEnforced(), 'Permission bits are not enforced here.');
 
 test('an unreadable directory is reported', function () {
     File::put($this->root.'/files/visible.php', '<?php return [];');
@@ -45,4 +46,4 @@ test('an unreadable directory is reported', function () {
 
     expect(fn () => $this->packager->resolveFiles(null, 'files'))
         ->toThrow(DirectoryNotFoundException::class, 'does not exist or is not readable');
-})->skip(fn () => is_readable('/etc/sudoers'), 'Running as root: permission bits are ignored.');
+})->skip(fn () => ! permissionsAreEnforced(), 'Permission bits are not enforced here.');

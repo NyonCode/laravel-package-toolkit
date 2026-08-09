@@ -3,7 +3,7 @@ name: Documentation
 on:
   push:
     # Adjust to whichever branch you release the current docs from.
-    branches: [main, 2.x]
+    branches: [2.x]
     paths:
       - 'docs/**'
       - 'site/**'
