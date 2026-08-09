@@ -47,6 +47,37 @@ test('a missing asset directory is rejected', function () {
         ->toThrow(DirectoryNotFoundException::class, 'does not exist');
 });
 
+// Discovery
+test('naming no entries discovers them from the asset directory', function () {
+    $this->packager->hasAssets();
+
+    expect($this->packager->hasAssetEntries())->toBeTrue()
+        ->and(collect($this->packager->assetEntries())->map->key()->all())
+        ->toBe(['css/index.css', 'js/index.js', 'js/legacy.js']);
+});
+
+test('discovery follows the directory hasAssets was given, not dist', function () {
+    $this->packager->hasAssets('assets');
+
+    expect(collect($this->packager->assetEntries())->map->key()->all())
+        ->toBe(['js/index.js']);
+});
+
+test('a discovered script is a module, since nothing on disk says otherwise', function () {
+    $this->packager->hasAssets();
+
+    $legacy = collect($this->packager->assetEntries())->firstWhere(fn (Asset $asset) => $asset->key() === 'js/legacy.js');
+
+    expect($legacy->isModule())->toBeTrue();
+});
+
+test('naming entries replaces discovery rather than adding to it', function () {
+    $this->packager->hasAssets(entries: ['css/index.css']);
+
+    expect(collect($this->packager->assetEntries())->map->key()->all())
+        ->toBe(['css/index.css']);
+});
+
 test('entries are kept in declaration order', function () {
     $this->packager->hasAssets(entries: ['css/index.css', 'js/index.js']);
 
@@ -94,7 +125,10 @@ test('an Asset instance passes through hasViteAssets untouched', function () {
     $this->packager->hasAssets();
     $this->packager->hasViteAssets([Asset::vite('resources/js/index.js')->fallback('js/index.js')]);
 
-    expect($this->packager->assetEntries()[0]->key())->toBe('js/index.js');
+    $entry = collect($this->packager->assetEntries())->firstWhere(fn (Asset $asset) => $asset->key() === 'js/index.js');
+
+    expect($entry)->not->toBeNull()
+        ->and($entry->source())->toBe('resources/js/index.js');
 });
 
 test('a vite source that does not exist is rejected', function () {
@@ -111,6 +145,47 @@ test('a vite entry replaces the shipped entry for the same file, keeping its pos
     expect($entries)->toHaveCount(2)
         ->and(collect($entries)->map->key()->all())->toBe(['css/index.css', 'js/index.js'])
         ->and($entries[1]->source())->toBe('resources/js/index.js');
+});
+
+// Presentation survives the replacement
+test('a vite entry inherits the classic flag of the shipped file it replaces', function () {
+    $this->packager->hasAssets(entries: [Asset::make('js/legacy.js')->classic()]);
+    $this->packager->hasViteAssets(['resources/js/index.js' => 'js/legacy.js']);
+
+    $entry = $this->packager->assetEntries()[0];
+
+    expect($entry->isModule())->toBeFalse()
+        ->and($entry->source())->toBe('resources/js/index.js')
+        ->and($entry->tagAttributes())->toHaveKey('defer');
+});
+
+test('declared attributes survive the replacement, the newer one winning a collision', function () {
+    $this->packager->hasAssets(entries: [
+        Asset::make('js/legacy.js')->attributes(['data-legacy' => true, 'data-kind' => 'shipped']),
+    ]);
+    $this->packager->hasViteAssets([
+        Asset::vite('resources/js/index.js')->fallback('js/legacy.js')->attributes(['data-kind' => 'vite']),
+    ]);
+
+    expect($this->packager->assetEntries()[0]->tagAttributes())
+        ->toHaveKey('data-legacy', true)
+        ->toHaveKey('data-kind', 'vite');
+});
+
+test('an explicit kind on the replacement stands, since only it could have said so', function () {
+    $this->packager->hasAssets(entries: [Asset::make('css/index.css')]);
+    $this->packager->hasViteAssets([
+        Asset::vite('resources/css/index.css')->fallback('css/index.css')->asScript(),
+    ]);
+
+    expect($this->packager->assetEntries()[0]->isStylesheet())->toBeFalse();
+});
+
+test('an explicit kind is inherited when the replacement says nothing about it', function () {
+    $this->packager->hasAssets(entries: [Asset::make('js/legacy.js')->asStylesheet()]);
+    $this->packager->hasViteAssets(['resources/js/index.js' => 'js/legacy.js']);
+
+    expect($this->packager->assetEntries()[0]->isStylesheet())->toBeTrue();
 });
 
 // viteBase

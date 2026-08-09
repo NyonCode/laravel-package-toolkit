@@ -73,9 +73,9 @@ same files and leaves an untagged `vendor:publish` unaffected.
 
 ## The asset mirror
 
-Added in **2.3.0**. Publishing solves the deploy case. The mirror solves the case where nobody
-published — which, for a package whose CSS is not optional, is the difference between working and
-not.
+Added in 2.3.0, which has since been withdrawn — in practice, available from **2.4**. Publishing
+solves the deploy case. The mirror solves the case where nobody published — which, for a package
+whose CSS is not optional, is the difference between working and not.
 
 `Support\PublishedAssets` is a container singleton shared by every package in the application. Ask
 it for a URL and it returns one, mirroring the package's directory first if anything is missing or
@@ -84,13 +84,28 @@ out of date:
 ```php
 use NyonCode\LaravelPackageToolkit\Support\PublishedAssets;
 
+// An og:image the layout composes itself — not a stylesheet or a script, so not
+// something a directive renders, and the mirror is how it reaches `public/`.
 $url = app(PublishedAssets::class)->url(
     'blog',
-    __DIR__.'/../dist/css/blog.css',
+    __DIR__.'/../dist/img/og.png',
 );
 
-// https://example.test/vendor/blog/css/blog.css?id=1754640000
+// https://example.test/vendor/blog/img/og.png?id=1754640000
 ```
+
+:::note That example is deliberately not a stylesheet
+This is the layer, not the way to reach it. A file a template renders as a `<link>` or a `<script>`
+belongs in [`hasAssets(entries: [...])`](#rendering-them-in-a-template) and is asked for by its key —
+`@packageAssetUrl('blog', 'css/blog.css')`, or `app(PackageAssets::class)->url('blog', 'css/blog.css')`.
+That resolves the same mirror underneath and additionally goes through the
+[application's Vite build](#vite-in-the-application) when that build covers the entry.
+
+`PublishedAssets` directly is for what a directive cannot render: an image or font the template
+composes itself, an asset registered by an application rather than a package, and `isStale()`, which
+has no counterpart on `PackageAssets`. Building a tag around it is
+[a pattern with no remaining use](#what-the-hand-written-tag-misses).
+:::
 
 ### Why files, not a route
 
@@ -204,8 +219,9 @@ consumer committed to one, not because the toolkit targets them.
 
 ## Rendering them in a template
 
-Added in **2.4.0**. Name the files a template renders and the toolkit registers the directives
-that render them:
+Added in **2.4.0**; discovery in **2.4.1**. Name the files a template renders — or
+[name nothing and let them be discovered](#naming-nothing-discovers-them) — and the toolkit
+registers the directives that render them:
 
 ```php
 $packager->hasAssets(entries: ['css/blog.css', 'js/blog.js']);
@@ -228,6 +244,64 @@ Every path is relative to the asset directory and is checked at registration —
 where it was declared, not as a 404 in the browser six screens later. A path that does not exist
 throws `FileNotFoundException`, naming both the entry and the directory it was looked for in.
 
+### Naming nothing discovers them
+
+Name no entries and the asset directory answers for itself, the way `hasRoutes()` and `hasViews()`
+already discover theirs:
+
+```php
+$packager->hasAssets();
+```
+
+```text
+dist/
+├── css/blog.css      → <link rel="stylesheet">
+└── js/blog.js        → <script type="module">
+```
+
+Discovery looks in the directory `hasAssets()` was given — `hasAssets('public')` discovers
+`public/`, not `dist/` — at its root and in its `css/` and `js/` subdirectories, and registers the
+stylesheets and scripts it finds there, alphabetically. Extensions are an allowlist
+(`css`, `scss`, `sass`, `less`, `styl`, `pcss`, `js`, `mjs`, `cjs`), so the source maps, fonts,
+images and `manifest.json` sharing that directory are passed over rather than turned into `<script>`
+tags.
+
+**It is not a recursive walk, and that is the point.** A code-split build writes its chunks to a
+subdirectory of its own — `assets/` by default — and a chunk is imported *by* an entry point, not
+loaded beside it. Giving one its own `<script>` runs the module a second time, in the wrong order,
+for no benefit. Stopping at three directories leaves such a build alone:
+
+```text
+dist/
+├── assets/blog-DkS9x2.js     ✗ a chunk, and not discovered
+├── assets/vendor-a91f3c.js   ✗
+├── css/blog.css              ✓
+└── js/blog.js                ✓
+```
+
+Naming any entry replaces discovery outright — the two do not merge — which is also how the two
+things a directory listing cannot answer get said:
+
+```php
+// A code-split build: name the entry points, leave the chunks to the bundler.
+$packager->hasAssets(entries: ['css/blog.css', 'js/blog.js']);
+
+// A discovered script is a module, because that is what a build produces. An IIFE says so.
+$packager->hasAssets(entries: [
+    'css/blog.css',
+    Asset::make('js/blog-legacy.js')->classic(),
+]);
+```
+
+:::note What it costs
+Discovery runs where `hasAssets()` is called — while the packager is being configured, so once per
+boot, alongside the eager validation an explicit list already gets. That is up to three directory
+listings and no file reads, but unlike [the mirror](#how-the-sync-behaves) it is not deferred until
+something renders: a queue worker that will never emit a `<script>` still pays for it. Naming the
+entries explicitly is the way to skip it, and for a package whose `dist/` is large that is the
+better declaration anyway.
+:::
+
 Order matters, and the error says so. `hasAssets()` is what establishes the asset directory, so a
 shipped file declared before it has nowhere to be resolved against and throws
 `PackageConfigurationException`:
@@ -246,6 +320,51 @@ The directives take the short name rather than being generated per package (`@bl
 generated name exists only when that package is installed, cannot be grepped for, and collides
 silently with another package's; the short name is already how the toolkit namespaces views,
 translations and publish tags.
+
+### What the hand-written tag misses
+
+On 2.3.0 the mirror existed and the directives did not, so a package's layout had one way to reach a
+URL and built the tag around it:
+
+```blade
+<script src="{{ app(PublishedAssets::class)->url('blog', $js) }}"></script>
+```
+
+That release has been withdrawn, which retires the pattern with it: from 2.4 there is no version
+where this is the only option, so it is not a trade-off to weigh — it is code to replace. It is
+written up here because it renders fine, which is what keeps it in codebases, and because it is what
+a search engine or a model trained on the 2.3 documentation will still hand you.
+
+What it leaves out is the part nobody notices until it matters, and almost all of it fails silently:
+
+- **`$js` has to come from somewhere.** `PublishedAssets::url()` takes an absolute filesystem path,
+  so the package needs a class or a view composer holding `__DIR__.'/../dist/js/blog.js'` and
+  handing it to the view — the boilerplate `hasAssets(entries: [...])` exists to remove.
+- **`url()` returns `?string`.** Where `public/` cannot be written and nothing was published
+  before, this renders `src=""`. A browser resolves that against the current page and fetches the
+  HTML as a script. Nothing throws, nothing 404s, and the page is broken. The directives emit no
+  tag at all in that situation.
+- **No `type="module"`.** A Vite bundle has top-level `import`, which is a syntax error in a
+  classic script.
+- **No `data-navigate-track="reload"`.** The `?id=<mtime>` is then a query string nobody reads:
+  Livewire has no reason to full-page-reload a `wire:navigate` visit, so an upgrade lands as new
+  markup running against the JavaScript the browser already cached — the exact failure the mirror's
+  cache busting was for.
+- **No CSP nonce.** Under `Vite::useCspNonce()` a strict policy blocks the tag.
+- **No Vite resolution.** An application that compiles this entry into its own build still gets the
+  shipped `dist/` copy here, while every directive on the same page serves the built one.
+- **The path is unchecked.** A typo resolves to `null`, which is the second point again.
+- **`defer`, and stylesheets before scripts**, are then also yours to remember.
+
+The declaration knows every one of these, which is why it is the declaration that renders:
+
+```blade
+@packageScripts('blog')
+```
+
+For markup the toolkit does not render — an `<img>`, a `<link rel="preload">`, an inline
+`import()` — `@packageAssetUrl('blog', 'js/blog.js')` gives the bare URL with the same resolution
+behind it.
 
 ### Scripts are modules
 
@@ -326,6 +445,31 @@ Declaring the same shipped file in both calls is not a mistake and not a duplica
 for a file already declared **replaces** the earlier one, and renders once, in the position it was
 first declared — which is exactly what makes the `hasAssets(entries: …)` list above and the
 `hasViteAssets()` map naming the same files add up to two tags rather than four.
+
+Replacing is about the tag count, not about starting over. The replacement inherits what the entry
+it replaces said about the tag itself, so the shorthand does not have to repeat a `classic()` it has
+no way to express:
+
+```php
+$packager
+    ->hasAssets(entries: [Asset::make('js/blog.js')->classic()])
+    ->hasViteAssets(['resources/js/blog.js' => 'js/blog.js']);
+
+// Built by the application → its hashed module.
+// Not built → the shipped IIFE, still classic, still deferred.
+```
+
+`classic()` is sticky: nothing declares "explicitly a module", so a module cannot be told apart from
+the default, and the direction that keeps a working bundle working is the one that survives.
+Attributes merge, with the newer declaration winning a collision, and an explicit `asStylesheet()`
+or `asScript()` on the replacement stands — the replacement can only have said either deliberately.
+
+:::note Fixed in 2.4.1
+Before 2.4.1 the replacement was a blank entry: the pairing above lost its `classic()` and served the
+shipped IIFE as `type="module"`, whose top-level declarations never reach `window`. It only showed on
+the fallback path — an application that built the entry never saw it — which is what made it worth
+naming here.
+:::
 
 An application that wants in adds the package's sources to its own config — the path it writes
 there is exactly the declared source prefixed with where the package lives:

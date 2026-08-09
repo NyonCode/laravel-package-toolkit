@@ -5,6 +5,62 @@ All notable changes to `laravel-package-toolkit` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.4.1] - Unreleased
+
+### Added
+
+- **`hasAssets()` discovers its entries when none are named** — every other resource in the toolkit
+  finds its own files (`hasRoutes()`, `hasViews()`, `hasBroadcastChannels()`), and assets were the
+  exception: a directory was declared, and then every file in it had to be named again before a
+  template could render one. Naming nothing now registers the stylesheets and scripts directly
+  inside the asset directory and its `css/` and `js/` subdirectories, alphabetically, following
+  whatever directory `hasAssets()` was given rather than `dist` literally. Extensions are an
+  allowlist, because an asset directory holds more than tags — source maps, fonts, images and a
+  `manifest.json` would otherwise each be classed as a script, since `Asset` infers "script" from
+  "not a stylesheet".
+  **It is deliberately not a recursive walk.** A code-split build writes its chunks to a
+  subdirectory of its own, and a chunk is imported *by* an entry point rather than loaded beside
+  it — giving one its own `<script>` runs the module a second time, in the wrong order, for no
+  benefit. Discovery that stops at three directories leaves such a build alone rather than breaking
+  it quietly, and a package shipping one names its entry points, which it had to do anyway. Naming
+  any entry replaces discovery outright; the two do not merge, which is also how the second thing a
+  directory listing cannot answer gets said — a discovered script is emitted as a module, so an IIFE
+  or UMD bundle still needs `Asset::make(…)->classic()`. Discovery runs where `hasAssets()` is
+  called, so unlike the mirror it is not deferred until something renders; naming the entries is how
+  a package with a large `dist/` skips the listing.
+
+### Fixed
+
+- **`hasViteAssets()` no longer discards what `hasAssets()` said about the tag.** Two declarations
+  naming the same shipped file are one entry, and the second replaces the first so the file renders
+  once — but the replacement was a blank `Asset`, so `->classic()` and every declared attribute went
+  with it. The shorthand form is where it hurt, because it carries no presentation to repeat: the
+  ordinary pairing of `Asset::make('js/blog.js')->classic()` with
+  `hasViteAssets(['resources/js/blog.js' => 'js/blog.js'])` silently turned the bundle back into a
+  module. An application that built the entry never saw it; one that did not — the case the fallback
+  exists for — served the shipped IIFE as `type="module"`, whose top-level declarations never reach
+  `window`, so the bundle stopped working with nothing logged and nothing 404ing. The replacement now
+  inherits the earlier entry's presentation: `classic()` is sticky (nothing declares "explicitly a
+  module", so `true` cannot be told from the default, and the safe direction is the one that keeps a
+  working bundle working), attributes merge with the replacement winning a collision, and an explicit
+  `asStylesheet()`/`asScript()` on the replacement stands.
+
+### Changed
+
+- **2.3.0 has been withdrawn** and is no longer available to install. Everything it introduced — the
+  asset mirror and the `laravel-assets` publish tag — shipped unchanged in 2.4, so the minimum
+  supported version is now `^2.4` and a lock file still pinning 2.3.0 needs nothing but
+  `composer update`. The documentation marks the withdrawal rather than rewriting the history.
+- **The hand-written asset tag is documented as retired.** `<script src="{{ app(PublishedAssets::class)->url(…) }}">`
+  was the only way to reach a URL on 2.3.0, and withdrawing that release retires the pattern with
+  it: from 2.4 there is no version where it is the only option. It renders, which is what keeps it
+  in codebases, but `url()` is nullable — an unwritable `public/` renders `src=""`, which a browser
+  resolves against the current page and fetches the HTML as a script, with no exception and no 404 —
+  and the tag carries no `type="module"`, no `data-navigate-track`, no CSP nonce and no Vite
+  resolution. The documentation now names the eight things it drops, and `PublishedAssets` is
+  presented as what it is: the layer under `PackageAssets`, for an asset no directive renders and
+  for `isStale()`.
+
 ## [2.4.0] - 2026-08-07
 
 ### Added
