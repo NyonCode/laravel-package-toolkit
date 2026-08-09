@@ -45,10 +45,10 @@ jobs:
       - name: Build the site
         working-directory: site
         env:
-          # The repository is served from https://<owner>.github.io/<repo>/, so
-          # every asset and link needs the repository name as its prefix. On a
-          # custom domain, set this to "/".
-          BASE_URL: /${{ github.event.repository.name }}/
+          # The site is served from the root of a custom domain, so assets and
+          # links need no prefix. On a plain https://<owner>.github.io/<repo>/
+          # project page, set this to "/${{ github.event.repository.name }}/".
+          BASE_URL: /
           # Optional. Without it the build falls back to its own highlighter and
           # still succeeds — see site/README.md.
           TORCHLIGHT_TOKEN: ${{ secrets.TORCHLIGHT_TOKEN }}

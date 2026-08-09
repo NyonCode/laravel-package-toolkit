@@ -1,6 +1,6 @@
 # Documentation site
 
-The static site behind <https://nyoncode.github.io/laravel-package-toolkit/>.
+The static site behind <https://package-toolkit.nyoncode.cz/>.
 
 Content lives in [`../docs`](../docs) as Markdown. This directory holds the generator: a single
 Node script, no framework, no runtime dependencies in the output.

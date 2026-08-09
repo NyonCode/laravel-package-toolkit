@@ -299,6 +299,6 @@ docblocks straight out of `src/`, so they answer from the installed release rath
 training data.
 
 Without any of that, the documentation is also published in AI-readable form at
-<https://nyoncode.github.io/laravel-package-toolkit/llms.txt> (index) and
-<https://nyoncode.github.io/laravel-package-toolkit/llms-full.txt> (every page, one file), and
+<https://package-toolkit.nyoncode.cz/llms.txt> (index) and
+<https://package-toolkit.nyoncode.cz/llms-full.txt> (every page, one file), and
 every documentation page has a raw Markdown twin at `<page-url>.md`.
