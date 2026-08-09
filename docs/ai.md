@@ -92,9 +92,9 @@ toolkit installed yet:
 
 | URL | What |
 |---|---|
-| [`/llms.txt`](https://nyoncode.github.io/laravel-package-toolkit/llms.txt) | Index — every page as a link with its one-line description |
-| [`/llms-full.txt`](https://nyoncode.github.io/laravel-package-toolkit/llms-full.txt) | Every page concatenated, ~220 KB |
-| `<page-url>.md` | The raw Markdown of any page — [`/assets.md`](https://nyoncode.github.io/laravel-package-toolkit/assets.md), [`/publishing.md`](https://nyoncode.github.io/laravel-package-toolkit/publishing.md) |
+| [`/llms.txt`](https://package-toolkit.nyoncode.cz/llms.txt) | Index — every page as a link with its one-line description |
+| [`/llms-full.txt`](https://package-toolkit.nyoncode.cz/llms-full.txt) | Every page concatenated, ~220 KB |
+| `<page-url>.md` | The raw Markdown of any page — [`/assets.md`](https://package-toolkit.nyoncode.cz/assets.md), [`/publishing.md`](https://package-toolkit.nyoncode.cz/publishing.md) |
 
 Every HTML page links its own Markdown twin from `<head>` as
 `<link rel="alternate" type="text/markdown">`, and links inside the Markdown are absolute and point

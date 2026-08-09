@@ -4,7 +4,7 @@ Laravel Package toolkit is a powerful tool designed to streamline the process of
 Laravel. It provides a set of intuitive abstractions and helper methods for common package development tasks, enabling
 developers to focus on building features rather than boilerplate code.
 
-**📖 [Read the documentation](https://nyoncode.github.io/laravel-package-toolkit/)** — a page per resource type, with
+**📖 [Read the documentation](https://package-toolkit.nyoncode.cz/)** — a page per resource type, with
 extended examples, gotchas and a full API reference. The Markdown lives in [`docs/`](./docs); the site that renders it
 lives in [`site/`](./site).
 
@@ -1249,9 +1249,9 @@ Re-running after an upgrade refreshes what changed; `status` reports what is wir
 undoes all of it, and `--dry-run` writes nothing. Skip pieces with `--no-skill` / `--no-mcp`.
 
 The documentation site also publishes itself in machine-readable form —
-[`llms.txt`](https://nyoncode.github.io/laravel-package-toolkit/llms.txt),
-[`llms-full.txt`](https://nyoncode.github.io/laravel-package-toolkit/llms-full.txt), and a `.md`
-twin of every page. Full detail: [AI agents](https://nyoncode.github.io/laravel-package-toolkit/ai/).
+[`llms.txt`](https://package-toolkit.nyoncode.cz/llms.txt),
+[`llms-full.txt`](https://package-toolkit.nyoncode.cz/llms-full.txt), and a `.md`
+twin of every page. Full detail: [AI agents](https://package-toolkit.nyoncode.cz/ai/).
 
 ---
 

@@ -46,7 +46,7 @@ const site = {
     title: 'Laravel Package Toolkit',
     description:
         'Build Laravel packages without the boilerplate. Describe config, routes, migrations, views, assets and commands through one fluent API.',
-    origin: 'https://nyoncode.github.io',
+    origin: 'https://package-toolkit.nyoncode.cz',
     repository: 'https://github.com/NyonCode/laravel-package-toolkit',
     editBase:
         'https://github.com/NyonCode/laravel-package-toolkit/edit/2.x/docs/',
