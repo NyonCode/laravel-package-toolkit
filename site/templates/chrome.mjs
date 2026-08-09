@@ -50,7 +50,7 @@ export const icon = {
  * `vendor-fonts.mjs`), so there is nothing to preconnect to and nothing that can
  * drop the page to the system stack when a third party is slow.
  */
-export function documentHead({ title, description, canonical, base, site, bodyClass, pageId }) {
+export function documentHead({ title, description, canonical, base, site, bodyClass, pageId, markdown }) {
   return `<!doctype html>
 <html lang="en" class="no-js">
 <head>
@@ -59,7 +59,7 @@ export function documentHead({ title, description, canonical, base, site, bodyCl
 <title>${escape(title)}</title>
 <meta name="description" content="${escape(description)}">
 <link rel="canonical" href="${escape(canonical)}">
-<meta name="color-scheme" content="light dark">
+${markdown ? `<link rel="alternate" type="text/markdown" href="${escape(markdown)}" title="${escape(title)} as Markdown">\n` : ''}<meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#0a0a12">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${escape(site.title)}">

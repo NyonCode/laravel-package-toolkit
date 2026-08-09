@@ -68,10 +68,39 @@ Neutral aside.
 :::
 ```
 
+## The machine-readable build
+
+[`llms.mjs`](./llms.mjs) writes three more things out of the same page objects the HTML comes from,
+so the two halves of the site cannot describe different documentation:
+
+| Output | What |
+|---|---|
+| `/llms.txt` | The [llms.txt](https://llmstxt.org) index — every page as a link with its description |
+| `/llms-full.txt` | Every page concatenated, ~220 KB |
+| `/<page>.md` | The raw Markdown twin of each page, linked from its HTML `<head>` as `rel="alternate"` |
+
+The one transformation is link rewriting. Pages are authored with root-relative links (`/routes`)
+that the HTML build maps onto the base URL; in a text file served without that context they resolve
+to nothing, so there they become absolute — and point at the `.md` twin rather than the HTML, so an
+agent following one stays in Markdown.
+
+A page not in `nav.mjs` is absent from all of it, same as the HTML. That matters more here: `docs/`
+also holds planning documents describing releases that do not exist, and handing those to a model as
+documentation is worse than handing it nothing. The MCP server shipped in
+[`../ai/mcp`](../ai/mcp/server.mjs) reads `nav.mjs` for exactly that reason.
+
 ## Syntax highlighting
 
-Code blocks support [Torchlight](https://torchlight.dev) annotations — the two used throughout these
-docs are focus lines and git diffs:
+Code blocks support [Torchlight](https://torchlight.dev) annotations. Five are wired up here:
+
+| Annotation | Shorthand | What it does | Reach for it when |
+|---|---|---|---|
+| `[tl! focus]` | `**` | Blurs every other line until the block is hovered or focused | One line in a block you have already shown is the point |
+| `[tl! highlight]` | `~~` | Tints the line, leaves the rest readable | Several lines matter, or one matters without the rest being noise |
+| `[tl! ++]` | — | Green, with a `+` gutter | A line the reader adds |
+| `[tl! --]` | — | Red, with a `−` gutter | A line the reader removes or should not write |
+| `[tl! collapse]` | — | Folds the range into a `<details>` | Boilerplate that has to be present to be honest, but not read |
+| `[tl! .cls]` | — | Puts the classes on the line, nothing else | A one-off that does not deserve a kind of its own |
 
 ````markdown
 ```php

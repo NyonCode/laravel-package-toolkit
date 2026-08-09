@@ -35,6 +35,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   emitting the `?id=<mtime>` of the release the worker started on — the query string Livewire's
   `data-navigate-track` watches to notice a deploy. Call it from the framework's request-terminated hook. The
   directories declared by `hasAssets()` are kept: providers register those once per worker boot, not per request.
+- **Agent support shipped with the package** — `ai/AGENTS.md` is the complete public API in one file, and it now
+  travels inside the package rather than living only in this repository. That is the whole point: an agent adding a
+  resource to someone's package otherwise reconstructs this API from whatever release was in its training data, and
+  a copy pasted into their project goes stale at the next release, silently, in the one file nobody re-reads. A
+  reference into `vendor/` cannot. `vendor/bin/package-toolkit-ai install` wires it into a consuming project three
+  ways — a delimited block in the project's `AGENTS.md`, a Claude Code skill under `.claude/skills/`, and an MCP
+  server registered in `.mcp.json` — each independent, each idempotent, and all three reversible with `remove`,
+  which is what the markers and the namespaced JSON key are for.
+- **MCP server (`ai/mcp/server.mjs`)** — `search_docs`, `list_docs`, `get_doc`, `list_api` and `describe_api`.
+  The last two parse signatures and docblocks out of the installed `src/`, so a method's arguments are read rather
+  than recalled; the first three serve the pages the documentation site publishes, so a page the site does not build
+  is not offered as fact. Node 18+ and no dependencies — the MCP stdio transport is newline-delimited JSON-RPC,
+  which is less code to implement than an SDK inside `vendor/` would be to install. `--self-test` parses everything
+  and prints what it found.
+- **`llms.txt` on the documentation site** — plus `llms-full.txt` and a `.md` twin of every page, generated from the
+  same Markdown as the HTML so the two cannot disagree. Links inside them are absolute and point at other `.md`
+  files, so an agent that follows one stays in Markdown; each HTML page advertises its twin as
+  `<link rel="alternate" type="text/markdown">`.
 
 ## [2.3.0] - 2026-08-07
 

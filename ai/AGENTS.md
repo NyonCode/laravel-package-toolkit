@@ -1,6 +1,16 @@
-# Using laravel-package-toolkit (consumer reference for AI agents)
+# Using laravel-package-toolkit (agent reference)
 
-Audience: an AI agent working **in another project** that wants to build a Laravel package with `nyoncode/laravel-package-toolkit`. This is the complete public API, extracted from source. Everything is a fluent builder — every `Packager` method returns `static`, so chain freely.
+Audience: an AI agent working **in a project that builds a Laravel package** with
+`nyoncode/laravel-package-toolkit`. This is the complete public API, extracted from source.
+Everything is a fluent builder — every `Packager` method returns `static`, so chain freely.
+
+This file ships inside the package, so it is always the version that matches the installed
+release: `vendor/nyoncode/laravel-package-toolkit/ai/AGENTS.md`. Run
+`vendor/bin/package-toolkit-ai install` to wire it into the project's own `AGENTS.md`, install the
+Claude Code skill, and register the MCP server — see [Tooling for agents](#tooling-for-agents) at
+the foot of this file.
+
+Requires PHP `^8.2` and Laravel `12.x` (>= 12.61.1) or `13.x` (>= 13.12.0).
 
 ## Mental model
 
@@ -58,6 +68,19 @@ Register it in `composer.json` (`extra.laravel.providers`) as usual for a Larave
 - `hasMigrations(?array $migrationFiles = null, string $directory = '../database/migrations'): static`
 - Supports both timestamped (`2025_01_01_000000_create_x.php`) and **timeless** (`create_x.php`) migrations. Timeless ones get a sequential timestamp prefix automatically **when published** (`getMigrationPublishMapping()`).
 - `canLoadMigrations(bool $value = true): static` — when true, migrations are *loaded from the package* at boot (run without publishing). Default is off; call this to enable run-in-place.
+
+## Seeders
+
+- `hasSeeders(array|string|null $seederFiles = null, string $directory = '../database/seeders'): static`
+- `null` → all files in `../database/seeders`; or pass specific filenames.
+- **Publish-only** — nothing is loaded at boot. Published **flat** into the app's `database/seeders`, not into a `vendor/{shortName}` subdirectory, so the app's own `Database\Seeders` namespace resolves the file and `php artisan db:seed --class=Database\Seeders\MySeeder` works straight away.
+- A seeder may ship as a `.stub`; it is published as `.php` (same convention as `hasProvider()`).
+
+## Factories
+
+- `hasFactories(array|string|null $factoryFiles = null, string $directory = '../database/factories'): static`
+- Publish-only, flat into `database/factories` for the same namespace reason.
+- Laravel dropped `loadFactoriesFrom()` in v8, so there is no way to make a package's *unpublished* factories discoverable from the toolkit. If you need that, give the model a `newFactory()` returning your factory class.
 
 ## Translations
 
@@ -130,13 +153,34 @@ $packager->hasOptimizeCommands(
 
 ## Assets
 
-- `hasAssets(string $directory = 'dist'): static` — mark a directory of built assets as publishable.
+- `hasAssets(string $directory = 'dist', bool $mirror = true, array $entries = []): static` — mark a directory of built assets as publishable, and name the ones a template renders.
+- Published to `public/vendor/{shortName}` under **two** tags: `{shortName}::assets` and Laravel's conventional `laravel-assets` (what the app skeleton's `post-update-cmd` runs).
+- With `$mirror` left on, the provider registers the directory with the shared `Support\PublishedAssets` container singleton, which lazily copies missing/outdated files into `public/vendor/{shortName}` the first time an asset resolves a URL in a request. Ask it for one with `app(PublishedAssets::class)->url($shortName, $absolutePath)` — it returns an mtime-cache-busted URL, or `null` when `public/` is unwritable and nothing was published before (`isStale()` reports that case). Pass `mirror: false` to keep the publish tags but skip the mirror.
+- `entries:` are paths inside the asset directory, validated at declaration. Declaring any registers four global Blade directives taking the package short name: `@packageAssets($package, ...$only)`, `@packageStyles(…)`, `@packageScripts(…)` and `@packageAssetUrl($package, $entry)` (URL only). `.js` renders as `type="module"` with `data-navigate-track="reload"`; pass `Support\Asset::make('js/x.js')->classic()` for an IIFE/UMD bundle, or `->attributes([...])` / `->asStylesheet()` for the rest.
+- `hasViteAssets(array $entries, ?string $base = null): static` — declare sources the **consuming application's** Vite build can compile (`'resources/js/blog.js' => 'js/blog.js'` maps a source to the shipped file it stands in for; a plain list declares sources with no shipped copy). The toolkit builds nothing and ships no Vite config; this only makes the application's build a first-class way to serve the package. Each entry resolves per request: dev server while `npm run dev` runs → the application's manifest key `{base}/{source}` → the shipped file via the mirror. `$base` is derived from the package's location under `base_path()` (`vendor/acme/blog`); pass it explicitly for a symlinked path repository, where nothing can be derived. A miss falls back silently rather than throwing.
+- Diagnostics: falling back is silent by design, so `app(PackageAssets::class)->resolution($shortName)` names how each entry resolves right now (`dev server` / `application build` / `shipped` / `not published` / `unresolved`) without writing anything. A package that called `hasAbout()` and declared Vite sources also gets an `Assets` line in its `php artisan about` section. Use it when an application swears it added the input but the shipped file is still being served.
+- CSP: `Vite::useCspNonce()` nonces are carried onto the tags the toolkit renders itself, so the shipped-file path is not blocked while the application-built path loads. An entry's own `nonce` attribute wins.
+- Under a long-lived worker the singleton outlives the request it was scoped to, so call `app(PublishedAssets::class)->flush()` from the framework's request-terminated hook — otherwise the memo survives a deploy: the mirror runs at most once per worker boot, and every URL keeps the `?id=` of the release the worker started on. `flush()` keeps the declared directories; it only forgets the resolved URLs and the sync marks.
+
+## Stubs
+
+- `hasStubs(array|string|null $stubFiles = null, string $directory = '../stubs'): static`
+- Publish-only, published to `stubs/{shortName}/` with the original extension preserved (`command.stub` stays `.stub`).
+- The short-name subdirectory keeps them clear of `php artisan stub:publish` output and of other packages, which all share the flat `stubs/` directory.
 
 ## Providers (extra service providers)
 
 - `hasProvider(string $provider): static`
 - `hasProviders(array $providers): static`
 - Used with the install command to copy/register additional providers into the consuming app.
+
+## Broadcast channels
+
+- `hasBroadcastChannels(array|string|null $channelFiles = null, string $directory = '../routes'): static`
+- `null` → all files in `../routes`; or pass specific filenames (`['channels.php']`).
+- Each file is `require`d at boot so its `Broadcast::channel()` calls register with the broadcaster. Do **not** route channel files through `hasRoutes()` — that loads them into the router inside a route group.
+- **Not publishable by design.** An app does not load `routes/channels.php` unless its own bootstrap asks for it, so a published copy would look authoritative while your package kept using its own. A consumer overrides authorization by re-registering the same channel name from their app; the last registration wins.
+- Silently skipped when `illuminate/broadcasting` is not installed.
 
 ## About command
 
@@ -183,7 +227,7 @@ Toggles on `Packager`:
 - `withoutInstallCommand()` — disable.
 
 Inside the install-command callback (`InstallCommand` methods), select what to publish:
-- Per-resource: `publishConfig()`, `publishMigrations()`, `publishRoutes()`, `publishViews()`, `publishAssets()`, `publishTranslations()`, `publishProviders()`, `publishComponents()`, `publishComponentNamespaces()` (plus verbose aliases like `publishConfigFiles()`, `publishLanguageFiles()`, `publishServiceProviders()`…).
+- Per-resource: `publishConfig()`, `publishMigrations()`, `publishSeeders()`, `publishFactories()`, `publishRoutes()`, `publishViews()`, `publishAssets()`, `publishTranslations()`, `publishProviders()`, `publishStubs()`, `publishComponents()`, `publishComponentNamespaces()` (plus verbose aliases like `publishConfigFiles()`, `publishLanguageFiles()`, `publishServiceProviders()`…).
 - Bulk: `publishEverything()` / `publishAll()`, `publishEssentials()`.
 - Conditional: `publishIf(bool, ...$tags)`, `publishUnless(bool, ...$tags)`, `publishForEnvironment(string|array, ...$tags)`, `publishForProduction(...$tags)`, `publishForLocal(...$tags)`, `publishCustom(...$tags)`.
 - Hooks/UX: `beforeInstallation(Closure)`, `afterInstallation(Closure)`, `silent()`, `copyAndRegisterServiceProviderInApp(?string $providerClass = null)`, `askToStarRepoOnGitHub(?string $repoUrl = null)`.
@@ -210,7 +254,7 @@ To use the classic flat format (`my-package-config`), set the separator in `conf
 - `hasPublishTagSeparator(string|array $separator): static` — e.g. `->hasPublishTagSeparator('-')`.
 - Pass an **array** to register every group under multiple tag forms at once: `->hasPublishTagSeparator(['::', '-'])` makes both `my-package::config` and `my-package-config` publish the same resource. The first separator is primary (used by the install command).
 
-It applies to every publish tag and to the install command consistently. Groups: `config`, `migrations`, `routes`, `translations`, `assets`, `views`, `providers`, `view-components`, `view-component-namespaces`.
+It applies to every publish tag and to the install command consistently. Groups: `config`, `migrations`, `seeders`, `factories`, `routes`, `translations`, `assets`, `views`, `providers`, `stubs`, `view-components`, `view-component-namespaces`. Broadcast channels have no group — they are load-only.
 
 ## Common gotchas
 
@@ -218,4 +262,43 @@ It applies to every publish tag and to the install command consistently. Groups:
 - Forgetting `name()` → `MissingNameException` at registration.
 - A config file that doesn't `return []` → `InvalidReturnTypeException`.
 - Migrations are **not** loaded at runtime unless you call `canLoadMigrations()`; otherwise they are publish-only.
+- Seeders, factories, stubs and extra providers are publish-only with no runtime equivalent; broadcast channels are the opposite — load-only, never published.
 - `configure()` must not return a value (`void`); it mutates `$packager`.
+
+## Before you call the work done
+
+Every one of these is cheap and each one catches a class of failure the others do not.
+
+1. **The declaration matches the directory.** A `hasX()` pointing at a directory that does not exist
+   throws at registration for most resources — but an *empty* directory does not. Check that the
+   files you expect are actually there.
+2. **The package still boots.** `php artisan about` (with `hasAbout()`) or any artisan call inside
+   the consuming app exercises register + boot. A silent app is a booting app.
+3. **The publish tags exist.** `php artisan vendor:publish --list` shows every tag the provider
+   registered. A resource you declared that is missing from that list was declared but not published
+   — check whether it is a publish-only, load-only or both resource in the table above.
+4. **The install command really publishes.** `php artisan <short-name>:install --no-interaction` on
+   a scratch app, then look at what landed. A tag the install command does not know about is dropped
+   without a word.
+5. **Nothing in `configure()` closes over unserialisable state** if the app will run
+   `config:cache` / `route:cache`.
+
+## Tooling for agents
+
+Three optional pieces, all shipped in `vendor/nyoncode/laravel-package-toolkit/ai/`:
+
+| What | Where | Install |
+|---|---|---|
+| This guide, referenced from the project's own `AGENTS.md` | `ai/AGENTS.md` | `vendor/bin/package-toolkit-ai install` |
+| Claude Code skill (`/laravel-package-toolkit`) | `ai/skills/laravel-package-toolkit/SKILL.md` | same command, copies into `.claude/skills/` |
+| MCP server — searches these docs and the toolkit source | `ai/mcp/server.mjs` | same command, writes `.mcp.json` |
+
+The MCP server needs Node 18+ and has no dependencies. It exposes five tools: `list_docs`,
+`get_doc`, `search_docs`, `list_api` and `describe_api` — the last two parse signatures and
+docblocks straight out of `src/`, so they answer from the installed release rather than from
+training data.
+
+Without any of that, the documentation is also published in AI-readable form at
+<https://nyoncode.github.io/laravel-package-toolkit/llms.txt> (index) and
+<https://nyoncode.github.io/laravel-package-toolkit/llms-full.txt> (every page, one file), and
+every documentation page has a raw Markdown twin at `<page-url>.md`.

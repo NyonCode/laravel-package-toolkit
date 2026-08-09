@@ -10,8 +10,23 @@ Requires PHP ^8.2 and Laravel 12.x (>= 12.61.1) or 13.x (>= 13.12.0). Laravel 10
 
 ## Which doc do you need?
 
-- **Using the toolkit** to build a package in another project → [.ai/consuming-the-toolkit.md](./.ai/consuming-the-toolkit.md) — the complete public fluent API, extracted from source, with examples and gotchas.
+- **Using the toolkit** to build a package in another project → [ai/AGENTS.md](./ai/AGENTS.md) — the complete public fluent API, extracted from source, with examples and gotchas. This one **ships with the package**, so it is also what an agent in a consuming project reads out of `vendor/`; keep it accurate when you change the public API.
 - **Working on the toolkit itself** (changing/extending it) → [.ai/architecture.md](./.ai/architecture.md) — internal architecture, the trait split, how to add a resource type, test patterns.
+
+## Agent support the package ships
+
+`ai/` is a published part of the package, not scratch notes — [ai/README.md](./ai/README.md) is the
+map, including what maintaining it involves. Three pieces, installed into a consuming project by
+`vendor/bin/package-toolkit-ai install` (see [bin/package-toolkit-ai](./bin/package-toolkit-ai)):
+
+- `ai/AGENTS.md` — the consumer API reference above.
+- `ai/skills/laravel-package-toolkit/SKILL.md` — a Claude Code skill.
+- `ai/mcp/server.mjs` — a zero-dependency MCP server that answers from the *installed* source.
+  `node ai/mcp/server.mjs --self-test` parses everything and prints a summary; run it after any
+  change to the layout of `src/` or `docs/`.
+
+The documentation site generates the machine-readable half from the same Markdown
+([site/llms.mjs](./site/llms.mjs)): `/llms.txt`, `/llms-full.txt`, and a `.md` twin of every page.
 
 ## Commands
 

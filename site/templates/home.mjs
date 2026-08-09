@@ -246,6 +246,7 @@ export function home({ page, content, base, site, version, renderCode, editUrl }
     site,
     pageId: 'home',
     bodyClass: 'is-landing',
+    markdown: `${base}index.md`,
   })}
 ${masthead({ base, version, site, variant: 'over-ink', withDrawer: false, docsUrl: `${base}quickstart/` })}
 <main id="content">

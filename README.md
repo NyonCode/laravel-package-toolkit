@@ -65,6 +65,7 @@ lives in [`site/`](./site).
 - [Install Command](#install-command)
 - [About Command](#about-command)
 - [Publishing](#publishing)
+- [AI agents](#ai-agents)
 - [Testing](#testing)
 - [Upgrading from v1.x](#upgrading-from-v1x)
 - [Versioning](#versioning)
@@ -1177,6 +1178,34 @@ When publishing migrations, the behavior depends on the file format:
   publishing to ensure correct execution order.
 - **Mixed directories** are handled per-file — each file is treated individually based on whether it has a date prefix
   or not.
+
+---
+
+## AI agents
+
+An agent asked to add a resource to your package will otherwise guess at this API from whatever
+release was in its training data. The toolkit ships its own documentation for agents, inside the
+package, so what they read is the version in your `composer.lock`:
+
+```bash
+vendor/bin/package-toolkit-ai install
+```
+
+That does three independent things, each of which works without the others:
+
+| | |
+|---|---|
+| **`AGENTS.md`** | A delimited block referencing `vendor/nyoncode/laravel-package-toolkit/ai/AGENTS.md` — the complete public API in one file. Read by Claude Code, Cursor, Codex, Copilot, Windsurf, Zed. |
+| **Claude Code skill** | `.claude/skills/laravel-package-toolkit/SKILL.md`, loaded when the work is about the toolkit rather than on every turn. |
+| **MCP server** | `search_docs`, `list_docs`, `get_doc`, `list_api` and `describe_api` — the last two parse the installed `src/`, so signatures come from the release you have. Node 18+, no dependencies. |
+
+Re-running after an upgrade refreshes what changed; `status` reports what is wired up, `remove`
+undoes all of it, and `--dry-run` writes nothing. Skip pieces with `--no-skill` / `--no-mcp`.
+
+The documentation site also publishes itself in machine-readable form —
+[`llms.txt`](https://nyoncode.github.io/laravel-package-toolkit/llms.txt),
+[`llms-full.txt`](https://nyoncode.github.io/laravel-package-toolkit/llms-full.txt), and a `.md`
+twin of every page. Full detail: [AI agents](https://nyoncode.github.io/laravel-package-toolkit/ai/).
 
 ---
 

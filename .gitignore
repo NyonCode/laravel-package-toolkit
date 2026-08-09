@@ -1,5 +1,8 @@
 vendor/
-bin/
+# `bin/` is ignored wholesale except for what the package actually ships: the
+# entry is a directory, so a bare `!bin/x` would never be reconsidered.
+/bin/*
+!/bin/package-toolkit-ai
 .idea/
 composer.lock
 /cov.html/

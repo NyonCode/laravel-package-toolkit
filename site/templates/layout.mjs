@@ -12,6 +12,7 @@
  */
 
 import { documentHead, escape, icon, masthead, scripts, searchDialog } from './chrome.mjs'
+import { markdownPath } from '../llms.mjs'
 
 /**
  * The sidebar.
@@ -121,6 +122,9 @@ export function layout({
     base,
     site,
     pageId: page.url || 'home',
+    // The 404 page is assembled here rather than loaded from `docs/`, so it has
+    // no `file` and no Markdown twin to point at.
+    markdown: page.file ? `${base}${markdownPath(page)}` : null,
   })}
 ${masthead({ base, version, site })}
 <div class="drawer-backdrop" data-drawer-close hidden></div>

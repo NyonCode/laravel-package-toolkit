@@ -26,6 +26,7 @@ import anchor from 'markdown-it-anchor'
 import container from 'markdown-it-container'
 
 import { sections as navSections, pages as navPages } from './nav.mjs'
+import { aiEndpoints } from './llms.mjs'
 import { icon } from './templates/chrome.mjs'
 import { home } from './templates/home.mjs'
 import { layout } from './templates/layout.mjs'
@@ -386,6 +387,13 @@ function build() {
     path.join(outDir, 'robots.txt'),
     `User-agent: *\nAllow: /\nSitemap: ${site.origin}${BASE}sitemap.xml\n`,
   )
+
+  // The machine-readable half: /llms.txt, /llms-full.txt and a `.md` twin per
+  // page. Generated from the same page objects the HTML came from, so the two
+  // cannot describe different documentation.
+  for (const [file, contents] of aiEndpoints({ pages, sections, site, version, base: BASE })) {
+    write(path.join(outDir, file), contents)
+  }
 
   // GitHub Pages serves 404.html for unknown paths.
   const notFound = rendered[0]

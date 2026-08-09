@@ -31,6 +31,9 @@
         "pestphp/pest-plugin-laravel": "^3.0|^4.0",
         "phpstan/phpstan": "^1.12"
     },
+    "bin": [
+        "bin/package-toolkit-ai"
+    ],
     "autoload": {
         "psr-4": {
             "NyonCode\\LaravelPackageToolkit\\": "src"
