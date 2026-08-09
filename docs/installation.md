@@ -20,20 +20,20 @@ class from it at runtime:
     "name": "acme/blog",
     "require": {
         "php": "^8.2",
-        "nyoncode/laravel-package-toolkit": "^2.4"
+        "nyoncode/laravel-package-toolkit": "^2.4" // [tl! ++]
     },
     "autoload": {
         "psr-4": {
             "Acme\\Blog\\": "src/"
         }
     },
-    "extra": {
+    "extra": { // [tl! focus:start]
         "laravel": {
             "providers": [
                 "Acme\\Blog\\BlogServiceProvider"
             ]
         }
-    }
+    } // [tl! focus:end]
 }
 ```
 
@@ -119,11 +119,11 @@ Packagist. Add a path repository to the *application's* `composer.json`:
 
 ```json title="my-app/composer.json"
 {
-    "repositories": [
+    "repositories": [ // [tl! ++:start]
         { "type": "path", "url": "../packages/blog" }
-    ],
+    ], // [tl! ++:end]
     "require": {
-        "acme/blog": "@dev"
+        "acme/blog": "@dev" // [tl! ++]
     }
 }
 ```

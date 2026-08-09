@@ -83,8 +83,8 @@ public function aboutData(): array
 and too often to be free.
 
 ```php
-'Posts' => (string) Post::count(),         // ✗ queries on every boot
-'Posts' => fn () => (string) Post::count(), // ✓ queries only for `about`
+'Posts' => (string) Post::count(),          // queries on every boot [tl! --]
+'Posts' => fn () => (string) Post::count(), // queries only for `about` [tl! ++]
 ```
 
 Rows must be strings or closures returning strings. Return the empty string rather than `null` for

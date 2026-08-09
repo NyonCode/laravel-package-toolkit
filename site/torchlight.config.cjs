@@ -32,6 +32,11 @@ module.exports = {
     // back from the API or from the offline fallback. Letting Torchlight also
     // inject indicators would double them up on the Torchlight path only.
     diffIndicators: false,
+
+    // What a `[tl! collapse]` section shows while it is folded. Matches
+    // `COLLAPSED_INDICATOR` in `build.mjs`, so a folded block reads the same
+    // whether the API or the offline fallback rendered it.
+    summaryCollapsedIndicator: '…',
   },
 
   highlight: {

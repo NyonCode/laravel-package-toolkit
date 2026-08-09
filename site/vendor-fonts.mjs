@@ -7,8 +7,9 @@
  * The site used to pull these from `fonts.googleapis.com`, which meant every
  * page load made two third-party requests, the design silently degraded to the
  * system stack whenever that failed, and a reader's IP reached Google on the way
- * to reading documentation. All three families are SIL OFL 1.1, so hosting them
- * ourselves is both permitted and strictly better.
+ * to reading documentation. Every family in SOURCE is SIL OFL 1.1, so hosting
+ * them ourselves is both permitted and strictly better — check the licence
+ * before adding one that is not.
  *
  * Only the `latin` and `latin-ext` subsets are kept — this is an English
  * documentation site, and `latin-ext` is the cheap insurance that covers the
@@ -129,8 +130,13 @@ async function main() {
     )
   }
 
+  // Named from what was actually fetched, not from a hardcoded list — the
+  // families in SOURCE change, and a generated file that misnames its own
+  // contents is worse than one with no comment at all.
+  const families = [...new Set([...merged.values()].map((face) => face.family))]
+
   const header = [
-    '/* Self-hosted webfonts — Bricolage Grotesque, Inter, JetBrains Mono.',
+    `/* Self-hosted webfonts — ${families.join(', ')}.`,
     ' *',
     ' * All three are SIL OFL 1.1. Vendored rather than requested from Google, so',
     ' * the site makes no third-party request, renders identically offline, and',

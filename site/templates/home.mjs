@@ -90,73 +90,58 @@ const WITH_TOOLKIT = `class BlogServiceProvider extends PackageServiceProvider
 }`
 
 /**
- * Every `hasX()` a package can declare, in the order the sidebar introduces
- * them. This is the honest surface area of the library — and, because each chip
- * is a link, the fastest route into the page that documents it.
+ * The vocabulary, as a live chain.
+ *
+ * Every entry is one line of a real provider: the label a reader recognises, the
+ * page that documents it, and the call itself — with a representative argument
+ * where the builder needs one, because a chip that produces `->hasEvents()` is
+ * teaching code that does not run.
+ *
+ * The whole chain is rendered server-side and highlighted by the same path as
+ * every other code block; toggling a chip only shows or hides a line. That is
+ * what keeps this honest: there is no client-side tokenizer inventing colours,
+ * and what a reader copies is what the highlighter was given.
  */
-const RESOURCES = [
-  ['hasConfig()', 'config'],
-  ['hasRoutes()', 'routes'],
-  ['hasBroadcastChannels()', 'broadcast-channels'],
-  ['hasMigrations()', 'migrations'],
-  ['hasSeeders()', 'seeders'],
-  ['hasFactories()', 'factories'],
-  ['hasTranslations()', 'translations'],
-  ['hasViews()', 'views'],
-  ['hasComponents()', 'view-components'],
-  ['hasComponentNamespace()', 'view-components'],
-  ['hasViewComposer()', 'view-composers'],
-  ['hasSharedDataForAllViews()', 'view-composers'],
-  ['hasAssets()', 'assets'],
-  ['hasMiddlewareAliases()', 'middleware'],
-  ['hasMiddlewareGroups()', 'middleware'],
-  ['hasMiddlewareGlobals()', 'middleware'],
-  ['hasEvents()', 'events'],
-  ['hasSubscribers()', 'events'],
-  ['hasCommands()', 'commands'],
-  ['hasOptimizeCommands()', 'optimize'],
-  ['hasStubs()', 'stubs'],
-  ['hasProviders()', 'providers'],
-  ['hasInstallCommand()', 'install-command'],
-  ['hasAbout()', 'about-command'],
+const BUILDERS = [
+  ['hasConfig()', 'config', '->hasConfig()'],
+  ['hasRoutes()', 'routes', "->hasRoutes(['web.php', 'api.php'])"],
+  ['hasBroadcastChannels()', 'broadcast-channels', "->hasBroadcastChannels(['channels.php'])"],
+  ['hasMigrations()', 'migrations', '->hasMigrations()'],
+  ['hasSeeders()', 'seeders', '->hasSeeders()'],
+  ['hasFactories()', 'factories', '->hasFactories()'],
+  ['hasTranslations()', 'translations', '->hasTranslations()'],
+  ['hasViews()', 'views', '->hasViews()'],
+  ['hasComponents()', 'view-components', "->hasComponents(['alert' => Alert::class])"],
+  ['hasComponentNamespace()', 'view-components', "->hasComponentNamespace('Vendor\\\\Blog\\\\View\\\\Components')"],
+  ['hasViewComposer()', 'view-composers', "->hasViewComposer('blog::sidebar', SidebarComposer::class)"],
+  ['hasSharedDataForAllViews()', 'view-composers', "->hasSharedDataForAllViews(['brand' => 'Blog'])"],
+  ['hasAssets()', 'assets', '->hasAssets()'],
+  ['hasViteAssets()', 'assets', "->hasViteAssets(['resources/js/blog.js'])"],
+  ['hasMiddlewareAliases()', 'middleware', "->hasMiddlewareAliases(['author' => EnsureAuthor::class])"],
+  ['hasMiddlewareGroups()', 'middleware', "->hasMiddlewareGroups(['web' => [TrackReads::class]])"],
+  ['hasMiddlewareGlobals()', 'middleware', '->hasMiddlewareGlobals([TrackReads::class])'],
+  ['hasEvents()', 'events', '->hasEvents([Published::class => Notify::class])'],
+  ['hasSubscribers()', 'events', '->hasSubscribers([BlogSubscriber::class])'],
+  ['hasCommands()', 'commands', '->hasCommands()'],
+  ['hasOptimizeCommands()', 'optimize', "->hasOptimizeCommands('blog:cache', 'blog:clear')"],
+  ['hasStubs()', 'stubs', '->hasStubs()'],
+  ['hasProviders()', 'providers', "->hasProviders(['../stubs/BlogProvider.stub'])"],
+  ['hasInstallCommand()', 'install-command', '->hasInstallCommand()'],
+  ['hasAbout()', 'about-command', '->hasAbout()'],
 ]
 
-const CARDS = [
-  {
-    title: 'Publishing, solved',
-    url: 'publishing',
-    body: `Every resource lands under a predictable <code>package::group</code> tag, in the
-      directory Laravel expects to find it in. The classic flat <code>package-group</code> format
-      is one call away, and both can be registered at once.`,
-  },
-  {
-    title: 'An install command for free',
-    url: 'install-command',
-    body: `One call gives your users <code>php artisan your-package:install</code> — with
-      presets, before and after hooks, environment-aware publishing and progress output.`,
-  },
-  {
-    title: 'Assets that stay published',
-    url: 'assets',
-    body: `The asset mirror keeps <code>public/vendor/your-package</code> in step with what you
-      ship, lazily and atomically, so an upgrade takes effect without anyone running a command.`,
-  },
-]
+/** The chips a first-time reader arrives to: a package that already makes sense. */
+const PRESET = ['hasConfig()', 'hasRoutes()', 'hasMigrations()', 'hasViews()']
 
+const TAGS = `<div class="tag-grid">
+        <span><b>blog::</b>config</span><span><b>blog::</b>routes</span>
+        <span><b>blog::</b>migrations</span><span><b>blog::</b>seeders</span>
+        <span><b>blog::</b>factories</span><span><b>blog::</b>views</span>
+        <span><b>blog::</b>translations</span><span><b>blog::</b>assets</span>
+        <span><b>blog::</b>stubs</span><span><b>blog::</b>providers</span>
+      </div>`
 
-/**
- * A real transcript, not a mock-up: this is what `InstallCommand` prints for the
- * provider in the hero card — three publish steps because `hasQuickInstall()`
- * selects config, migrations and assets, then the completion notes.
- */
-const TERMINAL = `<div class="terminal">
-      <div class="terminal__bar">
-        <span class="terminal__dot"></span>
-        <span class="terminal__dot"></span>
-        <span class="terminal__dot"></span>
-        <span class="terminal__label">your user's terminal</span>
-      </div>
-      <pre><code><span class="t-prompt">$</span> <span class="t-cmd">php artisan blog:install</span>
+const INSTALL_OUTPUT = `<pre><code><span class="t-prompt">$</span> <span class="t-cmd">php artisan blog:install</span>
 
 🚀 Installing Blog
 
@@ -167,12 +152,96 @@ const TERMINAL = `<div class="terminal">
 <span class="t-step">(3/3)</span> Publishing assets...
   <span class="t-ok">✅ Published assets</span>
 
-<span class="t-done">✨ Blog installed successfully!</span>
+<span class="t-done">✨ Blog installed successfully!</span></code></pre>`
 
-📋 Next steps:
-  • Review configuration in config/blog.php
-  • Run: php artisan migrate</code></pre>
-    </div>`
+const MIRROR = `<pre><code><span class="t-step">// resources/views/layout.blade.php</span>
+&lt;script src="{{ app(PublishedAssets::class)
+    -&gt;url('blog', $js) }}"&gt;&lt;/script&gt;
+
+<span class="t-ok">→</span> /vendor/blog/app.js?id=1786230412
+<span class="t-step">   copied on first resolve, cache-busted by mtime</span></code></pre>`
+
+const CARDS = [
+  {
+    kicker: 'predictable tags',
+    title: 'Publishing, solved',
+    url: 'publishing',
+    artifact: TAGS,
+    body: `Every resource lands under <code>package::group</code>, in the directory Laravel
+      expects to find it in. The classic flat <code>package-group</code> format is one call away,
+      and both can be registered at once.`,
+  },
+  {
+    kicker: 'no publish step',
+    title: 'Assets that stay published',
+    url: 'assets',
+    artifact: MIRROR,
+    body: `The asset mirror keeps <code>public/vendor/your-package</code> in step with what you
+      ship — lazily, atomically, and cache-busted by the published copy's mtime, so an upgrade
+      takes effect without anyone running a command.`,
+  },
+  {
+    kicker: 'one call, one command',
+    title: 'An installer your users trust',
+    url: 'install-command',
+    artifact: INSTALL_OUTPUT,
+    body: `<code>hasQuickInstall()</code> registers <code>php artisan blog:install</code>, publishes
+      what the package declared and reports what it did — with presets, hooks and
+      environment-aware publishing when you want them.`,
+  },
+]
+
+/**
+ * The mental model, as two panels rather than two paragraphs. The library's whole
+ * claim is that there are exactly two objects, so the section is built out of
+ * exactly two panels, each showing the side of the work it owns.
+ */
+const OBJECTS = [
+  {
+    name: 'Packager',
+    role: 'what the package has',
+    body: `The description. Every method is a <code>hasX()</code> builder returning
+      <code>$this</code>, so configuration is one chain — and it validates eagerly, so a missing
+      directory fails while you are building the package, not on a user's machine six months
+      later.`,
+    code: `$packager
+    ->name('Blog')
+    ->hasViews();`,
+  },
+  {
+    name: 'PackageServiceProvider',
+    role: 'when Laravel is ready for it',
+    body: `The machinery. It creates the <code>Packager</code>, hands it to your
+      <code>configure()</code>, then acts on the description at the two moments Laravel gives it:
+      <code>register()</code> and <code>boot()</code>.`,
+    code: `$this->loadViewsFrom($views, 'blog');
+
+$this->publishes([
+    $views => resource_path('views/vendor/blog'),
+], 'blog::views');`,
+  },
+]
+
+/**
+ * The chain, with every builder in it. `docs.js` hides the lines whose chip is
+ * not pressed and moves the closing `;` onto whichever line ends up last, so the
+ * snippet is always valid PHP rather than a chain with a semicolon in the middle.
+ */
+function builderChain(renderCode) {
+  const body = [
+    'class BlogServiceProvider extends PackageServiceProvider',
+    '{',
+    '    public function configure(Packager $packager): void',
+    '    {',
+    '        $packager',
+    "            ->name('Blog')",
+    ...BUILDERS.map(([, , call]) => `            ${call}`),
+    '    }',
+    '}',
+  ].join('\n')
+
+  return renderCode(body, 'php')
+}
 
 function lineCount(code) {
   return code.trim().split('\n').length
@@ -225,16 +294,15 @@ export function home({ page, content, base, site, version, renderCode, editUrl }
   const canonical = `${site.origin}${base}`
   const install = 'composer require nyoncode/laravel-package-toolkit'
 
-  const chips = RESOURCES.map(
-    ([label, url]) =>
-      `<a class="chip" href="${base}${url}/"><code>${escape(label)}</code></a>`,
-  ).join('')
-
   const cards = CARDS.map(
     (card) => `<a class="lp-card" href="${base}${card.url}/">
-        <h3>${escape(card.title)}</h3>
-        <p>${card.body}</p>
-        <span class="lp-card__more">Read more ${icon.arrowRight}</span>
+        <div class="lp-card__artifact">${card.artifact}</div>
+        <div class="lp-card__body">
+          <p class="lp-kicker">${escape(card.kicker)}</p>
+          <h3>${escape(card.title)}</h3>
+          <p>${card.body}</p>
+          <span class="lp-card__more">Read more ${icon.arrowRight}</span>
+        </div>
       </a>`,
   ).join('')
 
@@ -270,7 +338,7 @@ ${masthead({ base, version, site, variant: 'over-ink', withDrawer: false, docsUr
 
         <div class="lp-actions">
           <a class="cta" href="${base}quickstart/">Build your first package ${icon.arrowRight}</a>
-          <a class="cta cta--ink" href="${base}api-reference/">API reference</a>
+          <a class="cta cta--ghost" href="${base}api-reference/">API reference</a>
         </div>
 
         <button class="lp-install" type="button" data-copy-text="${escape(install)}">
@@ -289,71 +357,106 @@ ${masthead({ base, version, site, variant: 'over-ink', withDrawer: false, docsUr
     </div>
   </section>
 
-  <section class="lp-section lp-section--install">
+  <section class="lp-strip" data-reveal>
     <div class="lp-frame">
-    <div class="lp-section__inner">
-      <header class="lp-section__head">
-        <p class="lp-kicker">what your users run</p>
-        <h2>The installer comes with the declaration</h2>
-        <p class="lp-section__lead">
-          <code>hasQuickInstall()</code> — the last line of that provider — registers
-          <code>php artisan blog:install</code>, publishes what the package declared, and reports
-          what it did.
-        </p>
-      </header>
-      ${TERMINAL}
-    </div>
+      <div class="lp-strip__inner">
+        <p class="lp-strip__label">works with</p>
+        <div class="lp-fact"><span class="lp-fact__value">PHP 8.2+</span><span class="lp-fact__label">8.2 · 8.3 · 8.4 · 8.5</span></div>
+        <div class="lp-fact"><span class="lp-fact__value">Laravel 12 &amp; 13</span><span class="lp-fact__label">12.61.1+ · 13.12.0+</span></div>
+        <div class="lp-fact"><span class="lp-fact__value">24 builders</span><span class="lp-fact__label">one per resource type</span></div>
+        <div class="lp-fact"><span class="lp-fact__value">MIT</span><span class="lp-fact__label">no runtime dependency</span></div>
+      </div>
     </div>
   </section>
-
-  <section class="lp-section lp-section--resources">
+  <section class="lp-section lp-section--resources" data-reveal>
     <div class="lp-frame">
     <div class="lp-section__inner">
       <header class="lp-section__head">
         <p class="lp-kicker">the vocabulary</p>
-        <h2>Everything a package ships, declared</h2>
+        <h2>Everything a package ships, <em>declared</em></h2>
         <p class="lp-section__lead">
           One builder per resource type, each with a matching <code>bootX()</code> or
-          <code>publishX()</code> on the provider. Nothing is hidden — you can call, override or
-          skip any of them.
+          <code>publishX()</code> on the provider. Switch them on and off — this is the provider
+          you would write.
         </p>
       </header>
-      <div class="chip-grid">${chips}</div>
+
+      <div class="lp-builder" data-builder-widget>
+        <div class="lp-builder__out">
+          <div class="code-block" data-language="php">
+            ${builderChain(renderCode)}
+          </div>
+          <div class="lp-builder__foot">
+            <p class="lp-builder__count"><span data-builder-count>0</span> lines</p>
+            <a class="lp-builder__docs" href="${base}config/" data-builder-docs hidden></a>
+            <button class="lp-builder__copy" type="button" data-builder-copy>Copy provider</button>
+          </div>
+        </div>
+        <div class="chip-grid" role="group" aria-label="Resources this package declares">
+          ${BUILDERS.map(
+            ([label, url, call]) => `<button class="chip" type="button"
+              aria-pressed="${PRESET.includes(label) ? 'true' : 'false'}"
+              data-builder="${escape(call)}" data-builder-url="${base}${url}/"
+              data-builder-label="${escape(label)}"><code>${escape(label)}</code></button>`,
+          ).join('')}
+        </div>
+
+      </div>
     </div>
     </div>
   </section>
 
-  <section class="lp-section">
+  <section class="lp-section" data-reveal>
     <div class="lp-frame">
     <div class="lp-section__inner">
       <header class="lp-section__head">
-        <p class="lp-kicker">included</p>
-        <h2>The parts you would rather not maintain</h2>
+        <p class="lp-kicker">what you get</p>
+        <h2>Three things you no longer <em>maintain</em></h2>
       </header>
       <div class="lp-cards">${cards}</div>
     </div>
     </div>
   </section>
 
-  <section class="lp-section lp-section--prose">
+  <section class="lp-section lp-section--model" data-reveal>
     <div class="lp-frame">
     <div class="lp-section__inner">
-      <article class="prose">${content}</article>
+      <header class="lp-section__head">
+        <p class="lp-kicker">the mental model</p>
+        <h2>Two objects, and <em>nothing hidden</em></h2>
+        <div class="lp-section__lead">${content}</div>
+      </header>
+
+      <div class="lp-objects">
+        ${OBJECTS.map(
+          (object) => `<div class="lp-object">
+            <p class="lp-object__role">${escape(object.role)}</p>
+            <h3><code>${escape(object.name)}</code></h3>
+            <p>${object.body}</p>
+            <div class="lp-object__code">
+              <div class="code-block" data-language="php">
+                <button class="code-copy" type="button" data-copy aria-label="Copy this snippet"><span data-copy-label>Copy</span></button>
+                ${renderCode(object.code, 'php')}
+              </div>
+            </div>
+          </div>`,
+        ).join('')}
+      </div>
     </div>
     </div>
   </section>
 
-  <section class="lp-final">
+  <section class="lp-final" data-reveal>
     <div class="lp-frame">
     <div class="lp-final__inner">
-      <h2>Start with a working package</h2>
+      <h2>Start with a <em>working package</em></h2>
       <p>
         The quickstart goes from an empty directory to a package with config, routes, views,
         migrations and its own <code>artisan install</code> command — in one page.
       </p>
       <div class="lp-actions lp-actions--centred">
         <a class="cta" href="${base}quickstart/">Build your first package ${icon.arrowRight}</a>
-        <a class="cta cta--ink" href="${site.repository}" rel="noopener noreferrer" target="_blank">
+        <a class="cta cta--ghost" href="${site.repository}" rel="noopener noreferrer" target="_blank">
           ${icon.github} View on GitHub
         </a>
       </div>
@@ -387,7 +490,6 @@ ${masthead({ base, version, site, variant: 'over-ink', withDrawer: false, docsUr
           <li><a href="${base}api-reference/">API reference</a></li>
           <li><a href="${base}publishing/">Publishing</a></li>
           <li><a href="${base}testing/">Testing</a></li>
-          <li><a href="${base}roadmap/">Roadmap</a></li>
         </ul>
       </div>
       <div>

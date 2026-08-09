@@ -189,5 +189,5 @@ Known removals:
 - `Contracts\HasAbout` — use `Packable`.
 - `bootVewComposers()` — use `bootViewComposers()`.
 
-The [roadmap](/roadmap) covers what 3.0 is being built around, and states the rule the whole plan is
-held to: nothing gets taken away without a replacement that is already in place.
+One rule holds the whole plan for 3.0 together: nothing gets taken away without a replacement that
+is already in place.

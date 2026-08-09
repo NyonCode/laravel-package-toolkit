@@ -91,7 +91,7 @@ cannot come out reversed:
 ```php
 $packager->hasMigrations([
     'create_blog_posts_table.php',
-    'create_blog_comments_table.php',      // FK → blog_posts
+    'create_blog_comments_table.php',      // FK → blog_posts [tl! ~~]
     'add_slug_to_blog_posts_table.php',
 ]);
 ```
@@ -194,8 +194,8 @@ Prefix your tables with the package name. It is the only defence against a colli
 application table, and it makes a package's footprint obvious in a schema dump.
 
 ```php
-Schema::create('blog_posts', …);     // ✓
-Schema::create('posts', …);          // ✗ — whose posts?
+Schema::create('posts', …);          // whose posts? [tl! --]
+Schema::create('blog_posts', …);     // [tl! ++]
 ```
 
 For a table name the consumer can change, read it from config:

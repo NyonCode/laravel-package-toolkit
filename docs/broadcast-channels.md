@@ -51,25 +51,27 @@ The default directory is `../routes`, matching Laravel's own convention. That cr
 ```php
 $packager
     ->name('Blog')
-    ->hasRoutes()               // ← discovers routes/channels.php too
-    ->hasBroadcastChannels();   // ← and so does this
+    ->hasRoutes()               // ← discovers routes/channels.php too [tl! ~~]
+    ->hasBroadcastChannels();   // ← and so does this [tl! ~~]
 ```
 
 Both builders discover the same directory, so `channels.php` is loaded twice — once correctly, once
-as a route file. Two ways out, both fine:
+as a route file. Two ways out, both fine. Name the files explicitly:
 
 ```php
-// Name the files explicitly.
 $packager
-    ->hasRoutes(['web.php', 'api.php'])
-    ->hasBroadcastChannels(['channels.php']);
+    ->hasRoutes()                                // [tl! --]
+    ->hasBroadcastChannels();                    // [tl! --]
+    ->hasRoutes(['web.php', 'api.php'])          // [tl! ++]
+    ->hasBroadcastChannels(['channels.php']);    // [tl! ++]
 ```
 
+Or give channels their own directory, and let discovery keep working:
+
 ```php
-// Or give channels their own directory.
 $packager
     ->hasRoutes()
-    ->hasBroadcastChannels(directory: '../broadcasting');
+    ->hasBroadcastChannels(directory: '../broadcasting');   // [tl! focus]
 ```
 
 ## Several channel files

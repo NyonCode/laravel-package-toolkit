@@ -161,30 +161,71 @@ md.renderer.rules.fence = (tokens, idx) => {
 
 /**
  * Hand the block to Torchlight untouched. It rewrites the `<pre>` in place,
- * adds the `torchlight` class plus `has-focus-lines` / `has-diff-lines`, and
- * leaves the original source behind in a hidden textarea — which is where the
- * copy button reads from.
+ * adds the `torchlight` class plus `has-focus-lines` / `has-diff-lines` /
+ * `has-summaries`, and leaves the original source behind in a hidden textarea —
+ * which is where the copy button reads from.
  */
 function torchlightPlaceholder(code, language) {
   return `<pre><code class="language-${escapeHtml(language)}">${escapeHtml(code.replace(/\n$/, ''))}</code></pre>`
 }
 
+/**
+ * What a folded section shows while it is closed. Kept in step with
+ * `options.summaryCollapsedIndicator` in `torchlight.config.cjs`, so a block
+ * looks the same whichever path built it.
+ */
+const COLLAPSED_INDICATOR = '…'
+
 /** The no-token path: annotations and colouring resolved here in the build. */
 function renderLocally(code, language) {
-  const { lines, flags } = parseAnnotations(code)
+  const { lines, flags, sections } = parseAnnotations(code)
 
-  const rendered = lines
-    .map((line) => {
-      const html = highlight(line.text, language)
-      const classes = ['line', ...line.classes].join(' ')
+  const rendered = lines.map((line) => {
+    const html = highlight(line.text, language)
+    const classes = ['line', ...line.classes].join(' ')
 
-      return `<div class="${classes}">${html === '' ? '​' : html}</div>`
-    })
-    .join('')
+    return `<div class="${classes}">${html === '' ? '​' : html}</div>`
+  })
 
   const original = escapeHtml(stripAnnotations(code).replace(/\n$/, ''))
 
-  return `<pre><code class="torchlight ${flags.join(' ')}">${rendered}<textarea data-torchlight-original="true" style="display:none !important;">${original}</textarea></code></pre>`
+  return `<pre><code class="torchlight ${flags.join(' ')}">${fold(rendered, sections)}<textarea data-torchlight-original="true" style="display:none !important;">${original}</textarea></code></pre>`
+}
+
+/**
+ * Wrap each collapsed range in a `<details>`, leaving every other line where it
+ * was. `sections` arrives sorted and non-overlapping, so one pass with a cursor
+ * is enough.
+ *
+ * The `<summary>` carries `line` so it inherits the same padding as the code
+ * around it — without it a folded block's caret would sit out of column with
+ * the diff gutter.
+ */
+function fold(rendered, sections) {
+  if (sections.length === 0) {
+    return rendered.join('')
+  }
+
+  const out = []
+  let cursor = 0
+
+  for (const section of sections) {
+    out.push(...rendered.slice(cursor, section.from))
+
+    const summary = `<summary class="line summary"><span class="summary-caret summary-toggle" aria-hidden="true"></span><span class="summary-indicator summary-hide-when-open">${COLLAPSED_INDICATOR}</span></summary>`
+
+    out.push(
+      `<details${section.open ? ' open' : ''}>${summary}${rendered
+        .slice(section.from, section.to + 1)
+        .join('')}</details>`,
+    )
+
+    cursor = section.to + 1
+  }
+
+  out.push(...rendered.slice(cursor))
+
+  return out.join('')
 }
 
 /**

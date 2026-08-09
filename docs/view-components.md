@@ -61,7 +61,7 @@ use Acme\Blog\View\Components\{PostCard, PostList, AuthorBadge};
 $packager->hasComponents('blog', [
     'card' => PostCard::class,
     'list' => PostList::class,
-    AuthorBadge::class,          // no alias — derived name only
+    AuthorBadge::class,          // no alias — derived name only [tl! ~~]
 ]);
 ```
 
@@ -99,10 +99,10 @@ class PostCard extends Component
         return str($this->post->body)->stripTags()->words(30);
     }
 
-    public function render(): View
+    public function render(): View                          // [tl! focus:start]
     {
         return view('blog::components.post-card');
-    }
+    }                                                       // [tl! focus:end]
 }
 ```
 

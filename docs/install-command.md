@@ -18,9 +18,9 @@ $packager
     ->name('Blog')
     ->hasConfig()
     ->hasMigrations()
-    ->hasInstallCommand(function (InstallCommand $command) {
+    ->hasInstallCommand(function (InstallCommand $command) {     // [tl! focus:start]
         $command->publishConfig()->publishMigrations();
-    });
+    });                                                          // [tl! focus:end]
 ```
 
 ```bash
@@ -148,7 +148,7 @@ input-dependent belongs in a hook instead.
 ```php
 $packager->hasInstallCommand(function (InstallCommand $command) {
     $command
-        ->beforeInstallation(function (InstallCommand $command) {
+        ->beforeInstallation(function (InstallCommand $command) {   // [tl! ~~]
             $command->info('Checking requirements…');
 
             if (! extension_loaded('gd')) {
@@ -157,7 +157,7 @@ $packager->hasInstallCommand(function (InstallCommand $command) {
         })
         ->publishConfig()
         ->publishMigrations()
-        ->afterInstallation(function (InstallCommand $command) {
+        ->afterInstallation(function (InstallCommand $command) {    // [tl! ~~]
             if ($command->confirm('Run migrations now?', true)) {
                 $command->call('migrate');
             }
@@ -179,9 +179,9 @@ destructive:
 
 ```php
 $command->afterInstallation(function (InstallCommand $command) {
-    if ($command->option('no-interaction')) {
+    if ($command->option('no-interaction')) {   // [tl! focus:start]
         return;
-    }
+    }                                           // [tl! focus:end]
 
     // …interactive follow-up
 });

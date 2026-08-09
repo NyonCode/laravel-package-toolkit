@@ -56,11 +56,14 @@ public function register(): void
    `mergeConfigFrom()`. A file that does not return an array throws `InvalidReturnTypeException`.
 9. **`registerAssetMirror()`** declares the package's asset directory with the shared
    [`PublishedAssets`](/assets#the-asset-mirror) singleton. Bookkeeping only — nothing is copied here.
-10. **`registerInstallCommand()`** registers the install command, but only when the package is
+10. **`registerPackageAssets()`** declares the entries a template renders with the shared
+    [`PackageAssets`](/assets#rendering-them-in-a-template) singleton. Also bookkeeping — no manifest
+    is read and no file is touched until a tag is actually rendered.
+11. **`registerInstallCommand()`** registers the install command, but only when the package is
     installable *and* the application is running in the console.
-11. **`performAutoInstall()`** schedules a silent installation on `app.booted` when
+12. **`performAutoInstall()`** schedules a silent installation on `app.booted` when
     `installOnRun()` was set.
-12. **`registeredPackage()`** fires the `registered` lifecycle hook.
+13. **`registeredPackage()`** fires the `registered` lifecycle hook.
 
 :::note Why config is merged in `register()`
 Laravel expects `mergeConfigFrom()` in `register()` so that other providers booting after yours
@@ -100,6 +103,7 @@ do not use is one boolean check. Full destinations and tag names are on [Publish
 
 ```php
 $this->bootAboutCommand()
+    ->bootAssets()
     ->bootMigrations()
     ->bootRoutes()
     ->bootBroadcastChannels()

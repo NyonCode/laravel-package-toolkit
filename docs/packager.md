@@ -47,9 +47,9 @@ must match `/^[a-z0-9-]+$/` — lowercase letters, digits and hyphens only. Anyt
 `InvalidArgumentException` with the offending value in the message.
 
 ```php
-$packager->hasShortName('Awesome');     // ✗ not kebab-case
-$packager->hasShortName('my_awesome');  // ✗ underscore
-$packager->hasShortName('awesome-2');   // ✓
+$packager->hasShortName('Awesome');     // not kebab-case [tl! --]
+$packager->hasShortName('my_awesome');  // underscore [tl! --]
+$packager->hasShortName('awesome-2');   // [tl! ++]
 ```
 
 Here is what a short name of `blog` buys you, in full:

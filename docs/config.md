@@ -108,21 +108,23 @@ their published file wins for that whole array and your new key is invisible.
 // A consumer published an older copy containing:
 'cache' => ['enabled' => false],
 
-// config('blog.cache') is ['enabled' => false] — no ttl, no tags.
+// config('blog.cache') is: [tl! highlight:1]
+'cache' => ['enabled' => false],  // no ttl, no tags — the published array won whole
 ```
 
 Two ways to live with it:
 
 ```php
-// Read defensively for anything added after 1.0.
-$ttl = config('blog.cache.ttl', 3600);
+$ttl = config('blog.cache.ttl', 3600);   // read defensively for anything added after 1.0 [tl! focus]
 ```
 
 ```php
-// Or keep additions at the top level, where the shallow merge does reach them.
-'cache_enabled' => true,
-'cache_ttl' => 3600,
+'cache' => ['enabled' => true, 'ttl' => 3600],   // [tl! --]
+'cache_enabled' => true,                         // [tl! ++]
+'cache_ttl' => 3600,                             // [tl! ++]
 ```
+
+The second keeps additions at the top level, where the shallow merge does reach them.
 
 ## Publishing
 

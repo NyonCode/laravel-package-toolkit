@@ -34,7 +34,7 @@ acme/blog/
     │   └── validation.php
     ├── cs/
     │   └── messages.php
-    ├── pt_BR/
+    ├── pt_BR/            # [tl! ~~:1]
     │   └── messages.php
     ├── en.json
     └── cs.json

@@ -111,11 +111,22 @@ $packager
 $packager
     ->hasSeeders()    // [tl! ++]
     ->hasOldThing();  // [tl! --]
+
+private function boilerplate(): void   // [tl! collapse:start]
+{
+    // …thirty lines nobody needs to read to follow the paragraph
+}                                      // [tl! collapse:end]
 ```
 ````
 
 Ranges work as Torchlight documents them: `focus:start` / `focus:end`, `focus:3`, `focus:-2`,
-`focus:1,4`, and the same for `add` and `remove`. `**`, `++` and `--` are the shorthands.
+`focus:1,4`, and the same for every other kind. A collapsed section takes one extra modifier —
+`[tl! collapse:start open]` ships it expanded, so the reader folds it away rather than revealing it.
+
+Choosing between focus and highlight is worth a moment. Focus makes a claim about the whole block —
+*everything else here is context* — and pays for it by blurring. A block that focuses half its lines
+has said nothing. Highlight makes no such claim, so it is the right one for a list where two entries
+differ, or where a diff is already carrying the block.
 
 The build takes one of two paths, and says which:
 
@@ -124,9 +135,12 @@ The build takes one of two paths, and says which:
 | set | Blocks are emitted raw and the [Torchlight CLI](https://torchlight.dev/docs/clients/cli) highlights the built HTML in place — real VS Code grammars, the `material-theme-palenight` theme, annotations handled by the service that defined them. |
 | not set | [`lib/highlight.mjs`](./lib/highlight.mjs) and [`lib/annotations.mjs`](./lib/annotations.mjs) resolve the annotations and colour the code locally. |
 
-Both paths emit the same DOM — `.torchlight`, `.line`, `.line-focus`, `.line-add`, `.line-remove`
-and the `has-*` flags — so one stylesheet dresses both, and the local fallback is tuned to the same
-palette. The fallback is not as good; it exists so a contributor without a token can build and read
+Both paths emit the same DOM — `.torchlight`, `.line`, `.line-focus`, `.line-highlight`,
+`.line-add`, `.line-remove`, a `<details>` / `<summary class="line summary">` pair for a collapsed
+section, and the `has-*` flags (`has-focus-lines`, `has-highlight-lines`, `has-diff-lines`,
+`has-summaries`) — so one stylesheet dresses both, and the local fallback is tuned to the same
+palette. The one asymmetry is where the flags land: Torchlight puts them on the `<pre>`, the
+fallback on the `<code>`, so style them with a descendant selector and never as `code.torchlight`. The fallback is not as good; it exists so a contributor without a token can build and read
 the site.
 
 To use Torchlight locally:

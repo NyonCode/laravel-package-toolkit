@@ -361,6 +361,167 @@
     })
   })
 
+  /* ------------------------------------------------------- builder widget */
+
+  /* The vocabulary section is a live provider: pressing a chip shows that
+     builder's line, releasing it hides it. Every line was rendered and
+     highlighted at build time, so nothing here parses PHP — it toggles rows and
+     moves the closing semicolon onto whichever line ends up last. */
+  var widget = document.querySelector('[data-builder-widget]')
+
+  if (widget) {
+    var chips = Array.prototype.slice.call(widget.querySelectorAll('[data-builder]'))
+    var lines = Array.prototype.slice.call(widget.querySelectorAll('.lp-builder__out .line'))
+    var countOut = widget.querySelector('[data-builder-count]')
+    var docsOut = widget.querySelector('[data-builder-docs]')
+    var copyOut = widget.querySelector('[data-builder-copy]')
+    var quiet = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    // Match each rendered line to the chip that owns it. The call text is the
+    // key, so a chip and its line cannot drift apart.
+    var owned = {}
+
+    chips.forEach(function (chip) {
+      var call = chip.getAttribute('data-builder')
+      var head = call.split('(')[0]
+
+      for (var i = 0; i < lines.length; i++) {
+        if (lines[i].textContent.indexOf(head + '(') !== -1 && !lines[i].dataset.owner) {
+          lines[i].dataset.owner = call
+          owned[call] = lines[i]
+          break
+        }
+      }
+    })
+
+    var semicolon = document.createElement('span')
+    semicolon.className = 'tok-pun'
+    semicolon.textContent = ';'
+
+    function sync(changed) {
+      var visible = []
+
+      chips.forEach(function (chip) {
+        var on = chip.getAttribute('aria-pressed') === 'true'
+        var line = owned[chip.getAttribute('data-builder')]
+        if (!line) return
+
+        line.hidden = !on
+        if (on) visible.push(chip)
+      })
+
+      // The chain always ends in a semicolon, and only on its last line.
+      var tail = visible.length
+        ? owned[visible[visible.length - 1].getAttribute('data-builder')]
+        : widget.querySelector('.lp-builder__out .line[data-name-line]')
+
+      if (tail) tail.appendChild(semicolon)
+
+      var shown = lines.filter(function (line) {
+        return !line.hidden
+      })
+
+      if (countOut) countOut.textContent = String(shown.length)
+
+      if (copyOut) {
+        copyOut.setAttribute(
+          'data-copy-text',
+          shown
+            .map(function (line) {
+              return line.textContent.replace(/\u200b/g, '')
+            })
+            .join('\n'),
+        )
+      }
+
+      if (docsOut) {
+        if (changed) {
+          docsOut.hidden = false
+          docsOut.href = changed.getAttribute('data-builder-url')
+          docsOut.textContent = changed.getAttribute('data-builder-label') + ' →'
+        } else if (!visible.length) {
+          docsOut.hidden = true
+        }
+      }
+    }
+
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var on = chip.getAttribute('aria-pressed') !== 'true'
+        chip.setAttribute('aria-pressed', on ? 'true' : 'false')
+
+        var line = owned[chip.getAttribute('data-builder')]
+
+        if (on && line && !quiet) {
+          line.classList.remove('is-new')
+          void line.offsetWidth
+          line.classList.add('is-new')
+        }
+
+        sync(on ? chip : null)
+      })
+    })
+
+    // The copy button carries its text on data-copy-text, which the generic
+    // clipboard handler above already knows how to read — but it is wired after
+    // that handler ran, so it gets its own listener.
+    if (copyOut) {
+      copyOut.addEventListener('click', function () {
+        writeClipboard(copyOut.getAttribute('data-copy-text') || '', function (ok) {
+          copyOut.classList.toggle('is-copied', ok)
+          copyOut.textContent = ok ? 'Copied' : 'Copy provider'
+          setTimeout(function () {
+            copyOut.classList.remove('is-copied')
+            copyOut.textContent = 'Copy provider'
+          }, 1600)
+        })
+      })
+    }
+
+    sync(null)
+  }
+
+  /* --------------------------------------------------------- scroll reveal */
+
+  /* Sections arrive as they are reached. Driven by scroll position rather than an
+     IntersectionObserver on purpose: an observer only fires for elements that
+     actually intersect, so jumping straight to the foot of the page — End, an
+     anchor, a restored scroll position — left everything it skipped paused at
+     zero opacity, which is content permanently invisible. This checks position
+     instead, so anything at or above the fold is revealed whether it was
+     scrolled past or jumped over. */
+  var pending = Array.prototype.slice.call(document.querySelectorAll('[data-reveal]'))
+
+  if (pending.length) {
+    var scheduled = false
+
+    function sweep() {
+      scheduled = false
+      var edge = window.innerHeight * 0.92
+
+      pending = pending.filter(function (target) {
+        if (target.getBoundingClientRect().top > edge) return true
+        target.classList.add('is-revealed')
+        return false
+      })
+
+      if (!pending.length) {
+        window.removeEventListener('scroll', queue)
+        window.removeEventListener('resize', queue)
+      }
+    }
+
+    function queue() {
+      if (scheduled) return
+      scheduled = true
+      window.requestAnimationFrame(sweep)
+    }
+
+    window.addEventListener('scroll', queue, { passive: true })
+    window.addEventListener('resize', queue)
+    sweep()
+  }
+
   /* -------------------------------------------------------------- masthead */
 
   /* The landing page's header sits on the dark hero with no ground of its own;
@@ -394,29 +555,111 @@
     var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     var touched = false
 
-    function show(name, focus) {
+    // The counter counts rather than cuts: 54 to 19 is the whole argument, and a
+    // number that lands in one frame is a number a reader does not register.
+    var ticking = null
+
+    function tick(to) {
+      if (!counter) return
+
+      var from = parseInt(counter.textContent, 10)
+      window.clearInterval(ticking)
+
+      if (reduced || isNaN(from) || from === to) {
+        counter.textContent = String(to)
+        return
+      }
+
+      var step = from > to ? -1 : 1
+      var span = Math.abs(to - from)
+      var every = Math.max(12, Math.round(360 / span))
+
+      ticking = window.setInterval(function () {
+        from += step
+        counter.textContent = String(from)
+        if (from === to) window.clearInterval(ticking)
+      }, every)
+    }
+
+    function show(name, focus, animate) {
       tabs.forEach(function (tab) {
         var isCurrent = tab.getAttribute('data-provider-tab') === name
         tab.setAttribute('aria-selected', isCurrent ? 'true' : 'false')
         tab.setAttribute('tabindex', isCurrent ? '0' : '-1')
 
         if (isCurrent) {
-          if (counter) counter.textContent = tab.getAttribute('data-provider-lines') || ''
+          tick(parseInt(tab.getAttribute('data-provider-lines'), 10))
           if (focus) tab.focus()
         }
       })
 
-      provider.querySelectorAll('[data-provider-pane]').forEach(function (pane) {
-        pane.hidden = pane.getAttribute('data-provider-pane') !== name
+      var panes = Array.prototype.slice.call(
+        provider.querySelectorAll('[data-provider-pane]'),
+      )
+
+      function settle() {
+        panes.forEach(function (pane) {
+          var isCurrent = pane.getAttribute('data-provider-pane') === name
+          pane.hidden = !isCurrent
+          pane.classList.remove('is-leaving', 'is-entering')
+
+          if (isCurrent && animate && !reduced) {
+            // Restarting a CSS animation needs the class off, a reflow, and the
+            // class on again.
+            void pane.offsetWidth
+            pane.classList.add('is-entering')
+          }
+        })
+
+        provider.setAttribute('data-state', name)
+      }
+
+      var leaving = panes.filter(function (pane) {
+        return !pane.hidden && pane.getAttribute('data-provider-pane') !== name
+      })[0]
+
+      if (animate && !reduced && leaving) {
+        leaving.classList.add('is-leaving')
+        window.setTimeout(settle, 200)
+        return
+      }
+
+      settle()
+    }
+
+    // One custom property per line, counted from the top of each pane: a single
+    // running index across both panes put the declaration's first line 54 steps
+    // deep, so its stagger began over a second after the pane appeared.
+    provider.querySelectorAll('[data-provider-pane]').forEach(function (pane) {
+      var lines = pane.querySelectorAll('.line')
+
+      lines.forEach(function (line, index) {
+        line.style.setProperty('--i', String(index))
       })
 
-      provider.setAttribute('data-state', name)
+      // The step is per pane and the total is capped: at a flat 20ms the
+      // hand-written provider's 54 lines took a full second to arrive, which
+      // reads as the page being slow rather than as anything landing.
+      var step = Math.max(6, Math.min(22, Math.round(380 / Math.max(lines.length, 1))))
+      pane.style.setProperty('--step-ms', step + 'ms')
+    })
+
+    // The caret belongs to the declaration, so it goes on its last line.
+    var lastLine = provider.querySelector(
+      '[data-provider-pane="toolkit"] .line:last-of-type',
+    )
+
+    if (lastLine) {
+      var caret = document.createElement('span')
+      caret.className = 'provider__caret'
+      caret.setAttribute('aria-hidden', 'true')
+      lastLine.appendChild(caret)
     }
 
     tabs.forEach(function (tab, index) {
       tab.addEventListener('click', function () {
         touched = true
-        show(tab.getAttribute('data-provider-tab'), false)
+        show(tab.getAttribute('data-provider-tab'), false, true)
       })
 
       tab.addEventListener('keydown', function (event) {
@@ -426,19 +669,19 @@
         event.preventDefault()
         touched = true
         var next = tabs[(index + step + tabs.length) % tabs.length]
-        show(next.getAttribute('data-provider-tab'), true)
+        show(next.getAttribute('data-provider-tab'), true, true)
       })
     })
 
-    show('hand', false)
+    show('hand', false, false)
 
     // The collapse is the argument, so it plays once, unprompted — but a reader
     // who asked for less motion, or who has already picked a tab, is left alone.
     if (reduced) {
-      show('toolkit', false)
+      show('toolkit', false, false)
     } else {
       setTimeout(function () {
-        if (!touched) show('toolkit', false)
+        if (!touched) show('toolkit', false, true)
       }, 2200)
     }
   }

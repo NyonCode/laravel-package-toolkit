@@ -125,9 +125,9 @@ use NyonCode\LaravelPackageToolkit\Packager;
 
 class TestServiceProvider extends PackageServiceProvider
 {
-    public static ?Closure $configureUsing = null;
+    public static ?Closure $configureUsing = null; // [tl! highlight]
 
-    public static ?Closure $aboutDataUsing = null;
+    public static ?Closure $aboutDataUsing = null; // [tl! highlight]
 
     public function configure(Packager $packager): void
     {
@@ -150,10 +150,10 @@ abstract class PackageTestCase extends TestCase
     {
         $this->resetServiceProviderState();
 
-        TestServiceProvider::$configureUsing = fn (Packager $packager) => $this->configure($packager);
+        TestServiceProvider::$configureUsing = fn (Packager $packager) => $this->configure($packager); // [tl! focus]
         TestServiceProvider::$aboutDataUsing = null;
 
-        parent::setUp();   // ← the application boots here, with the closure in place
+        parent::setUp();   // ← the application boots here, with the closure in place [tl! focus]
     }
 
     protected function getPackageProviders($app): array
@@ -198,17 +198,17 @@ use ReflectionClass;
 
 protected function resetServiceProviderState(): void
 {
-    $this->resetStaticProperty(ServiceProvider::class, 'publishes', []);
+    $this->resetStaticProperty(ServiceProvider::class, 'publishes', []);                             // [tl! focus:start]
     $this->resetStaticProperty(ServiceProvider::class, 'publishGroups', []);
     $this->resetStaticProperty(ServiceProvider::class, 'publishableMigrationPaths', []);
     $this->resetStaticProperty(ServiceProvider::class, 'optimizeCommands', []);
     $this->resetStaticProperty(ServiceProvider::class, 'optimizeClearCommands', []);
     $this->resetStaticProperty(PackageServiceProvider::class, 'isPackageAboutRegistered', false);
 
-    AboutCommand::flushState();
+    AboutCommand::flushState();                                                                      // [tl! focus:end]
 }
 
-private function resetStaticProperty(string $class, string $property, mixed $value): void
+private function resetStaticProperty(string $class, string $property, mixed $value): void // [tl! collapse:start]
 {
     $reflection = new ReflectionClass($class);
 
@@ -224,11 +224,13 @@ private function resetStaticProperty(string $class, string $property, mixed $val
     }
 
     $propertyReflection->setValue(null, $value);
-}
+} // [tl! collapse:end]
 ```
 
-The `hasProperty()` guard matters: these are framework internals, and they are not identical across
-Laravel 12 and 13. Skipping a property that does not exist keeps the suite green on both.
+The list is the part worth reading; `resetStaticProperty()` is folded above because it is the same
+reflection boilerplate every package writes once. Expand it for the one detail that is not
+boilerplate — the `hasProperty()` guard. These are framework internals, and they are not identical
+across Laravel 12 and 13. Skipping a property that does not exist keeps the suite green on both.
 
 `isPackageAboutRegistered` is the toolkit's own flag — it stops the "Laravel Package Toolkit"
 section being registered more than once per process, which without a reset means only the first test

@@ -57,15 +57,11 @@ Every entry needs its own key. Laravel stores these commands in a map, and the t
 key to your package short name — so a second entry with no key overwrites the first:
 
 ```php
-// ✗ only the second survives — both use the key 'blog'
 $packager
-    ->hasOptimizeCommands(optimize: 'blog:cache-routes')
-    ->hasOptimizeCommands(optimize: 'blog:cache-search');
-
-// ✓
-$packager
-    ->hasOptimizeCommands(optimize: 'blog:cache-routes', key: 'blog-routes')
-    ->hasOptimizeCommands(optimize: 'blog:cache-search', key: 'blog-search');
+    ->hasOptimizeCommands(optimize: 'blog:cache-routes')                            // both key 'blog' [tl! --]
+    ->hasOptimizeCommands(optimize: 'blog:cache-search');                           // only this one survives [tl! --]
+    ->hasOptimizeCommands(optimize: 'blog:cache-routes', key: 'blog-routes')        // [tl! ++]
+    ->hasOptimizeCommands(optimize: 'blog:cache-search', key: 'blog-search');       // [tl! ++]
 ```
 
 The key is also what Laravel prints beside each step, so give it a name a reader will recognise.

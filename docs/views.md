@@ -123,19 +123,20 @@ content view to use it.
 
 ```blade title="resources/views/post.blade.php"
 <article>
-    @stack('blog-post-before')
+    @stack('blog-post-before')  {{-- [tl! ++] --}}
 
     <h1>{{ $post->title }}</h1>
     {!! $post->body !!}
 
-    @stack('blog-post-after')
+    @stack('blog-post-after')   {{-- [tl! ++] --}}
 </article>
 ```
 
 **Don't hard-code CSS classes** a consumer cannot change:
 
 ```blade
-<article class="{{ config('blog.classes.post', 'blog-post') }}">
+<article class="blog-post">                                          {{-- [tl! --] --}}
+<article class="{{ config('blog.classes.post', 'blog-post') }}">      {{-- [tl! ++] --}}
 ```
 
 ## Sharing data with your views

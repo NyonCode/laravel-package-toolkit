@@ -53,7 +53,7 @@ Repeated calls **merge** per event rather than replacing:
 ```php
 $packager
     ->hasEvent(PostPublished::class, NotifySubscribers::class)
-    ->hasEvent(PostPublished::class, UpdateSearchIndex::class);
+    ->hasEvent(PostPublished::class, UpdateSearchIndex::class);   // [tl! ++]
 
 // PostPublished => [NotifySubscribers, UpdateSearchIndex]
 ```
@@ -151,11 +151,11 @@ use Acme\Blog\Events\PostPublished;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
-class NotifySubscribers implements ShouldQueue
+class NotifySubscribers implements ShouldQueue   // [tl! focus]
 {
-    use InteractsWithQueue;
+    use InteractsWithQueue;                      // [tl! focus]
 
-    public int $tries = 3;
+    public int $tries = 3;                       // [tl! focus]
 
     public function __construct(private NotificationDispatcher $dispatcher) {}
 

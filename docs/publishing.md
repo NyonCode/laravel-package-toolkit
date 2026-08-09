@@ -86,7 +86,7 @@ Some ecosystems prefer the flat `package-group` form. Pass a different separator
 ```php
 $packager
     ->name('Blog')
-    ->hasPublishTagSeparator('-')
+    ->hasPublishTagSeparator('-')   // [tl! focus]
     ->hasConfig();
 ```
 

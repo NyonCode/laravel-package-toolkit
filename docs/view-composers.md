@@ -105,7 +105,7 @@ view keeps only the last:
 ```php
 $packager
     ->hasViewComposer('blog::sidebar', CategoryComposer::class)
-    ->hasViewComposer('blog::sidebar', RecentPostsComposer::class);
+    ->hasViewComposer('blog::sidebar', RecentPostsComposer::class);   // [tl! ~~]
 
 // Only RecentPostsComposer is registered for blog::sidebar.
 ```
@@ -151,8 +151,8 @@ $packager->hasSharedDataForAllViews([
     'blogFlags' => ['beta' => true],              // ✓ array
     'blogTheme' => null,                          // ✓ null
     'blogCategories' => Category::all(),          // ✓ Arrayable
-    'blogFormatter' => fn () => …,                // ✗ Closure
-    'blogRepository' => new PostRepository(),     // ✗ object
+    'blogFormatter' => fn () => …,                // Closure [tl! --]
+    'blogRepository' => new PostRepository(),     // object [tl! --]
 ]);
 ```
 
@@ -184,8 +184,8 @@ Shared data is a flat global namespace shared with the application and every oth
 package that shares `$settings` will one day silently overwrite something.
 
 ```php
-'blogSettings' => …   // ✓
-'settings' => …       // ✗
+'settings' => …       // one day, somebody else's [tl! --]
+'blogSettings' => …   // [tl! ++]
 ```
 
 ## Choosing between them
