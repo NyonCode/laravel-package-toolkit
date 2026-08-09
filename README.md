@@ -872,6 +872,52 @@ To opt out and rely on `vendor:publish` alone:
 $packager->hasAssets(mirror: false);
 ```
 
+### Rendering them in a template
+
+Name the files a template renders and the toolkit registers the directives that render them — no
+helper class, no hand-written `Blade::directive()`:
+
+```php
+$packager->hasAssets(entries: ['css/index.css', 'js/index.js']);
+```
+
+```blade
+<head>
+    @packageStyles('my-package')
+</head>
+<body>
+    @packageScripts('my-package')
+</body>
+```
+
+`@packageAssets('my-package')` renders both, `@packageAssetUrl('my-package', 'js/index.js')` gives
+the bare URL, and any of them takes further arguments to render only the entries you name. Paths
+are checked at registration, so a typo throws where it was declared. `.js` renders as
+`type="module"`; a shipped IIFE bundle says so with
+`Asset::make('js/index.js')->classic()`.
+
+### Vite — in the application, not in the package
+
+The toolkit ships no Vite config and builds nothing. What it supports is the consuming
+application compiling your package inside *its* build — which is what an application on Tailwind
+needs anyway, since its config has to see your Blade markup.
+
+```php
+$packager
+    ->hasAssets(entries: ['css/index.css', 'js/index.js'])
+    ->hasViteAssets([
+        // Vite source in the package => the shipped file it stands in for
+        'resources/css/index.css' => 'css/index.css',
+        'resources/js/index.js' => 'js/index.js',
+    ]);
+```
+
+An application that wants in lists the sources in its own `vite.config.js`
+(`'vendor/acme/my-package/resources/js/index.js'`) and changes nothing else. Each entry then
+resolves per request: the dev server while `npm run dev` runs, the application's manifest once it
+is built, and the shipped file from the mirror otherwise. The template keeps saying
+`@packageAssets('my-package')`.
+
 ---
 
 ## Stubs

@@ -1,18 +1,22 @@
 ---
 title: Assets
-description: Ship CSS and JavaScript, publish them under Laravel's conventional tag, and keep public/vendor in step automatically with the asset mirror.
+description: Ship CSS and JavaScript, render them from a template with one directive, and let the consuming application's Vite build take over when it wants to.
 ---
 
 # Assets
 
 ```php
-public function hasAssets(string $directory = 'dist', bool $mirror = true): static
+public function hasAssets(string $directory = 'dist', bool $mirror = true, array $entries = []): static
+public function hasViteAssets(array $entries, ?string $base = null): static
 ```
 
 ```php title="src/BlogServiceProvider.php"
 $packager
     ->name('Blog')
-    ->hasAssets();
+    ->hasAssets(entries: [
+        'css/blog.css',
+        'js/blog.js',
+    ]);
 ```
 
 ```text
@@ -22,8 +26,20 @@ acme/blog/
     └── js/blog.js
 ```
 
-One call gives you three things: two publish tags, and a self-maintaining mirror that keeps
-`public/vendor/blog` in step with `dist/` without anyone running a command.
+```blade title="any layout — the package's own, or the application's"
+<head>
+    @packageStyles('blog')
+</head>
+<body>
+    @packageScripts('blog')
+</body>
+```
+
+One call gives you four things: two publish tags, a self-maintaining mirror that keeps
+`public/vendor/blog` in step with `dist/` without anyone running a command, and tags a template
+can ask for by name. [`hasViteAssets()`](#vite-in-the-application) adds the fifth — the same
+declaration resolving through the consuming application's own Vite build when that application
+wants the package inside it.
 
 ## Publishing
 
@@ -114,6 +130,9 @@ moment of the copy. That is what keeps Livewire's `data-navigate-track` meaningf
 full-page-reloads a `wire:navigate` visit when a tracked asset's query string changed, so an upgrade
 is picked up instead of running new markup against a file the browser already cached.
 
+`@packageStyles` and `@packageScripts` put `data-navigate-track="reload"` on every tag they render
+for that reason. Writing the tags by hand, it is on you:
+
 ```blade
 <link rel="stylesheet" href="{{ $cssUrl }}" data-navigate-track="reload">
 <script src="{{ $jsUrl }}" data-navigate-track="reload" defer></script>
@@ -183,52 +202,227 @@ The toolkit has never been developed against a long-lived worker. `flush()` exis
 consumer committed to one, not because the toolkit targets them.
 :::
 
-## Serving assets from your package
+## Rendering them in a template
 
-The cleanest shape is a small helper that resolves both URLs once:
-
-```php title="src/Blog.php"
-namespace Acme\Blog;
-
-use NyonCode\LaravelPackageToolkit\Support\PublishedAssets;
-
-class Blog
-{
-    public static function styleUrl(): ?string
-    {
-        return app(PublishedAssets::class)->url('blog', __DIR__.'/../dist/css/blog.css');
-    }
-
-    public static function scriptUrl(): ?string
-    {
-        return app(PublishedAssets::class)->url('blog', __DIR__.'/../dist/js/blog.js');
-    }
-
-    public static function styleTag(): string
-    {
-        $url = static::styleUrl();
-
-        return $url === null
-            ? ''
-            : sprintf('<link rel="stylesheet" href="%s" data-navigate-track="reload">', e($url));
-    }
-}
-```
-
-Then a Blade directive, registered from a [lifecycle hook](/lifecycle-hooks#bootedpackage):
+Added in **2.4.0**. Name the files a template renders and the toolkit registers the directives
+that render them:
 
 ```php
-use Illuminate\Support\Facades\Blade;
-
-$packager->bootedPackage(function () {
-    Blade::directive('blogStyles', fn () => "<?php echo \\Acme\\Blog\\Blog::styleTag(); ?>");
-});
+$packager->hasAssets(entries: ['css/blog.css', 'js/blog.js']);
 ```
 
 ```blade
-<head>
-    @blogStyles
-</head>
+@packageAssets('blog')                      {{-- everything, stylesheets first --}}
+@packageStyles('blog')                      {{-- only the <link> tags --}}
+@packageScripts('blog')                     {{-- only the <script> tags --}}
+@packageScripts('blog', 'js/blog.js')       {{-- only the entries you name --}}
+@packageAssetUrl('blog', 'js/blog.js')         {{-- the bare URL, for your own markup --}}
+```
+
+```html title="rendered"
+<link rel="stylesheet" href="/vendor/blog/css/blog.css?id=1754640000" data-navigate-track="reload">
+<script src="/vendor/blog/js/blog.js?id=1754640000" type="module" data-navigate-track="reload"></script>
+```
+
+Every path is relative to the asset directory and is checked at registration — a typo throws
+where it was declared, not as a 404 in the browser six screens later. A path that does not exist
+throws `FileNotFoundException`, naming both the entry and the directory it was looked for in.
+
+Order matters, and the error says so. `hasAssets()` is what establishes the asset directory, so a
+shipped file declared before it has nowhere to be resolved against and throws
+`PackageConfigurationException`:
+
+```php
+$packager
+    ->hasViteAssets(['resources/js/blog.js' => 'js/blog.js'])   // [tl! --]
+    ->hasAssets();                                              // [tl! --]
+    ->hasAssets()                                               // [tl! ++]
+    ->hasViteAssets(['resources/js/blog.js' => 'js/blog.js']);  // [tl! ++]
+
+// Asset [js/blog.js] needs an asset directory. Call hasAssets() before declaring it.
+```
+
+The directives take the short name rather than being generated per package (`@blogStyles`). A
+generated name exists only when that package is installed, cannot be grepped for, and collides
+silently with another package's; the short name is already how the toolkit namespaces views,
+translations and publish tags.
+
+### Scripts are modules
+
+`.js` renders as `type="module"`, which is what a Vite build produces. A package shipping an
+IIFE or UMD bundle must say so — a module is deferred and its top-level declarations never reach
+`window`, so a bundle that expects to export a global would silently stop working:
+
+```php
+use NyonCode\LaravelPackageToolkit\Support\Asset;
+
+$packager->hasAssets(entries: [
+    'css/blog.css',
+    Asset::make('js/blog-legacy.js')->classic(),                                // [tl! focus]
+    Asset::make('js/blog.js')->attributes(['data-turbo-track' => 'reload']),    // [tl! focus]
+]);
+```
+
+`Asset` is only needed for what a plain string cannot express. `data-navigate-track="reload"` is
+on every tag by default — it is what makes the `?id=` query string mean something to Livewire's
+`wire:navigate` — and `->attributes(['data-navigate-track' => null])` removes it.
+
+### When the extension is not the answer
+
+Whether an entry renders as a `<link>` or a `<script>` is inferred from its extension — `css`,
+`scss`, `sass`, `less`, `styl` and `pcss` are stylesheets, everything else is a script. That
+covers every build whose output extension matches its input. For the build that does not, say it:
+
+```php
+$packager->hasAssets(entries: [
+    Asset::make('css/blog.blade.php')->asStylesheet(),   // [tl! ~~]
+    Asset::make('js/blog.txt')->asScript(),              // [tl! ~~]
+]);
+```
+
+## Vite — in the application
+
+Added in **2.4.0**. The toolkit ships no Vite config, no build step and no manifest of its own,
+and that is the design rather than a gap. What it supports is the other direction: letting the
+**consuming application's** Vite build compile the package.
+
+That is the case that actually needs help. An application on Tailwind has to run its own config
+over the package's Blade markup or half the package's classes are purged; an application shipping
+its own JavaScript would rather not load a second copy of a dependency it already bundles. Both
+need the package's *sources* inside the application's build — and then the package's own layout
+has to emit a hashed filename it can only learn from the application's manifest.
+
+Declare the sources, and the entries they replace when the application does build them:
+
+```php title="src/BlogServiceProvider.php"
+$packager
+    ->name('Blog')
+    ->hasAssets(entries: ['css/blog.css', 'js/blog.js'])
+    ->hasViteAssets([                                                                 // [tl! ++:start]
+        // Vite source, relative to the package root => the shipped file it stands in for
+        'resources/css/blog.css' => 'css/blog.css',
+        'resources/js/blog.js' => 'js/blog.js',
+    ]);                                                                               // [tl! ++:end]
+```
+
+Nothing else in the package changes. The template still says `@packageAssets('blog')`.
+
+### Three ways to say it
+
+The map above is the shorthand. All three forms below declare the same thing, and mixed forms in
+one call are fine — reach past the shorthand only when an entry also needs `classic()`,
+`attributes()` or an explicit kind:
+
+```php
+$packager->hasViteAssets([
+    'resources/css/blog.css' => 'css/blog.css',                          // source => shipped fallback
+    'resources/js/blog-legacy.js',                                       // source only, no fallback
+    Asset::vite('resources/js/blog.js')->fallback('js/blog.js')          // [tl! focus:start]
+        ->attributes(['data-turbo-track' => 'reload']),                  // [tl! focus:end]
+]);
+```
+
+Declaring the same shipped file in both calls is not a mistake and not a duplicate. A later entry
+for a file already declared **replaces** the earlier one, and renders once, in the position it was
+first declared — which is exactly what makes the `hasAssets(entries: …)` list above and the
+`hasViteAssets()` map naming the same files add up to two tags rather than four.
+
+An application that wants in adds the package's sources to its own config — the path it writes
+there is exactly the declared source prefixed with where the package lives:
+
+```js title="the application's vite.config.js"
+export default defineConfig({
+  plugins: [
+    laravel({
+      input: [
+        'resources/js/app.js',
+        'vendor/acme/blog/resources/js/blog.js',    // [tl! ++]
+        'vendor/acme/blog/resources/css/blog.css',  // [tl! ++]
+      ],
+    }),
+  ],
+})
+```
+
+```css title="the application's app.css, for Tailwind"
+@source "../../vendor/acme/blog/resources/views";
+```
+
+From then on `@packageAssets('blog')` resolves through the application's manifest — hashed
+filename, its preloads, its Tailwind pass — and is served hot alongside everything else while
+`npm run dev` runs. An application that never touches its `vite.config.js` keeps getting the
+shipped files from the mirror, exactly as before.
+
+### Resolution is per entry
+
+Each entry is looked up on its own, so the two modes mix — which is the common case, not an edge
+one: an application typically wants the CSS in its build (Tailwind) and is happy with the shipped
+JavaScript.
+
+1. `npm run dev` is running → the dev server serves it.
+2. The application's manifest has the key → the application's built file.
+3. Otherwise → the shipped file, through the [mirror](#the-asset-mirror).
+
+A miss falls back rather than throwing. `@vite` throws on an unknown entry, which is right in an
+application's own layout and wrong inside a package's: the package author cannot fix the
+application's Vite config, and a 500 on every page is a poor way to say "this could have been
+faster".
+
+### When the prefix cannot be derived
+
+`vendor/acme/blog` is read off the package's own location, which is right for anything installed
+by Composer. A package symlinked in from a path repository sits outside the application root, and
+there is nothing to derive — say it explicitly:
+
+```php
+$packager->hasViteAssets([...], base: 'vendor/acme/blog');
+```
+
+Getting this wrong is quiet by design: the manifest lookup misses and the shipped file is served,
+which looks exactly like an application that chose not to build the package.
+
+### Knowing which one you got
+
+Falling back is silent, and the most common mistake on the application's side is silent for the
+same reason: an input listed under a path one segment off from the manifest key leaves every page
+working, served from the shipped file, with nothing saying the build you configured is not being
+used.
+
+A package with `hasAbout()` reports it where you already look. The row appears in console only,
+and only for a package that declared Vite sources — there is nothing to disambiguate otherwise:
+
+```text
+  Blog ..........................................................................
+  Version ................................................................ 2.1.0
+  Assets .......... css/blog.css: application build, js/blog.js: shipped
+```
+
+Or ask directly — `dev server`, `application build`, `shipped`, `not published`, `unresolved`:
+
+```php
+use NyonCode\LaravelPackageToolkit\Support\PackageAssets;
+
+app(PackageAssets::class)->resolution('blog');
+// ['css/blog.css' => 'application build', 'js/blog.js' => 'shipped']
+```
+
+Nothing is written to find out: an entry the mirror would publish on demand reports `shipped` on
+the strength of the file existing rather than publishing it.
+
+### Content Security Policy
+
+`Vite::useCspNonce()` puts a nonce on every tag Laravel generates, and the toolkit carries the same
+one onto the tags it renders itself — otherwise a strict policy would load the entry the
+application built and block the one falling back to the shipped file. A nonce declared on an entry
+wins over the application's.
+
+### Entries with no shipped copy
+
+A package that ships no built assets at all can declare sources alone. Then there is no fallback:
+the entry renders when the application built it and renders nothing when it did not.
+
+```php
+$packager->hasViteAssets(['resources/js/blog.js']);
 ```
 
 ## A custom directory
@@ -242,11 +436,13 @@ $packager->hasAssets('resources/dist');    // ../resources/dist
 The directory is resolved relative to your provider's directory, and must exist — a missing one
 throws `DirectoryNotFoundException` at registration.
 
-## Building assets
+## Building what you ship
 
-The toolkit does not build anything; ship the compiled output. A conventional setup:
+The toolkit builds nothing. The `dist/` you ship is yours to produce, and the setup below is what
+pairs with `hasViteAssets()`: a library build whose entries are the same source files an
+application would list in its own config, so the two modes stay in step by construction.
 
-```js title="vite.config.js"
+```js title="the package's own vite.config.js — for the dist/ it ships"
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -254,6 +450,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     lib: {
+      // The same file the application lists as its input, when it builds the package itself.
       entry: { blog: 'resources/js/blog.js' },
       formats: ['es'],
     },
@@ -277,17 +474,22 @@ export default defineConfig({
 
 Commit `dist/`. A package consumer runs `composer require`, not `npm run build`.
 
-:::tip Hashed filenames are unnecessary
-The mirror already cache-busts with `?id=<mtime>`, and a hashed filename would defeat the mtime
-comparison the incremental sync depends on. Keep the output names stable.
+:::tip Hashed filenames are for the application's build, not yours
+The mirror cache-busts with `?id=<mtime>`, and a hashed name in `dist/` would defeat the mtime
+comparison its incremental sync depends on while leaving every old hash behind in `public/`. Keep
+the shipped names stable — hashing is the application's build's job, and it does it for you the
+moment it takes over an entry.
 :::
 
 ## Introspection
 
 ```php
-$packager->isAssetable();     // bool
-$packager->assetDirectory();  // absolute path
-$packager->mirrorsAssets();   // bool — false after hasAssets(mirror: false)
+$packager->isAssetable();       // bool
+$packager->assetDirectory();    // absolute path
+$packager->mirrorsAssets();     // bool — false after hasAssets(mirror: false)
+$packager->hasAssetEntries();   // bool — anything declared for a template to render
+$packager->assetEntries();      // Support\Asset[] in declaration order
+$packager->viteBase();          // ?string — only when given to hasViteAssets()
 ```
 
 ## Testing
@@ -327,3 +529,37 @@ test('a published copy newer than the shipped one is left alone', function () {
 ```php
 beforeEach(fn () => File::deleteDirectory(public_path('vendor/blog')));
 ```
+
+### Testing the application-built path
+
+Write the manifest the application's build would have written, and render. Laravel memoises parsed
+manifests in a static that outlives an application a test rebuilds, so forget it between cases or
+the previous test's manifest answers for the next one:
+
+```php
+use Illuminate\Foundation\Vite;
+
+function writeApplicationManifest(array $manifest): void
+{
+    File::ensureDirectoryExists(public_path('build'));
+    File::put(public_path('build/manifest.json'), json_encode($manifest));
+
+    (new ReflectionClass(Vite::class))->getProperty('manifests')->setValue(null, []);
+}
+
+test('an entry the application built is served from its manifest', function () {
+    writeApplicationManifest([
+        'vendor/acme/blog/resources/js/blog.js' => [
+            'file' => 'assets/blog-a1b2c3.js',
+            'src' => 'vendor/acme/blog/resources/js/blog.js',
+            'isEntry' => true,
+        ],
+    ]);
+
+    expect(Blade::render('@packageScripts("blog")'))
+        ->toContain('/build/assets/blog-a1b2c3.js')
+        ->not->toContain('vendor/blog/js/blog.js');
+});
+```
+
+Writing `public/hot` covers the dev-server case; deleting both files covers the fallback.

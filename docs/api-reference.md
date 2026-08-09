@@ -102,10 +102,18 @@ The `$namespace` argument of `hasViews()` is [not currently applied](/views#the-
 
 | Method | Returns |
 |---|---|
-| `hasAssets(string $directory = 'dist', bool $mirror = true)` | `static` |
+| `hasAssets(string $directory = 'dist', bool $mirror = true, array $entries = [])` | `static` |
+| `hasViteAssets(array $entries, ?string $base = null)` | `static` |
 | `isAssetable()` | `bool` |
 | `assetDirectory()` | `string` |
 | `mirrorsAssets()` | `bool` |
+| `hasAssetEntries()` | `bool` |
+| `assetEntries()` | `Asset[]` |
+| `viteBase()` | `?string` |
+
+Blade directives, registered once when any package declares entries:
+`@packageAssets($package, ...$only)` · `@packageStyles(…)` · `@packageScripts(…)` ·
+`@packageAssetUrl($package, $entry)` (URL only).
 
 ### Middleware
 
@@ -245,6 +253,7 @@ Public `bool` properties `registeringDefined`, `registeredDefined`, `bootingDefi
 | `bootPackager()` | `Packager` | override to return a subclass |
 | `getPackageBaseDir()` | `string` | reflection on `static::class` |
 | `packageCommands()` | `array` | extra commands, merged with `hasCommands()` |
+| `registerPackageCommands()` | `void` | registers both sets during `register()` |
 | `aboutData()` | `array` | extra `about` rows |
 | `registeringPackage()` | `void` | fires the hook |
 | `registeredPackage()` | `void` | fires the hook |
@@ -256,7 +265,8 @@ Public `bool` properties `registeringDefined`, `registeredDefined`, `bootingDefi
 
 ### Boot steps
 
-Each returns `static`, so an override can chain: `bootAboutCommand()`, `bootMigrations()`,
+Each returns `static`, so an override can chain: `bootAboutCommand()`, `bootAssets()`,
+`bootMigrations()`,
 `bootRoutes()`, `bootBroadcastChannels()`, `bootMiddleware()`, `bootEvents()`, `bootOptimizes()`,
 `bootSharedViewData()`, `bootTranslations()`, `bootViewComposers()`,
 `bootViewComponentNamespaces()`, `bootViewComponents()`, `bootViews()`, plus the umbrella
@@ -302,6 +312,36 @@ Inspection: `getPublishTags(): array` · `willPublish(string $tag): bool` ·
 | `askToStarRepoOnGitHub(?string $repoUrl = null)` | falls back to `composer.json` |
 | `copyAndRegisterServiceProviderInApp(?string $providerClass = null)` | `config/app.php` only |
 
+## `Support\Asset`
+
+A declared entry. A plain string is accepted wherever an `Asset` is; reach for the class only for
+what a string cannot express.
+
+| Method | Returns | Notes |
+|---|---|---|
+| `Asset::make(string $file)` | `self` | a file shipped in the asset directory |
+| `Asset::vite(string $source)` | `self` | a source the application's Vite build compiles |
+| `fallback(string $file)` | `self` | shipped file to serve when the application did not build it |
+| `classic()` | `self` | drop `type="module"`, add `defer` |
+| `attributes(array $attributes)` | `self` | `true` renders bare, `null` removes a default |
+| `asStylesheet()` / `asScript()` | `self` | override the extension inference |
+| `source()` / `file()` / `key()` | `?string` / `?string` / `string` | |
+| `isStylesheet()` / `isModule()` | `bool` | |
+| `tagAttributes()` | `array` | declared attributes merged over the defaults |
+
+## `Support\PackageAssets`
+
+The renderer behind the directives; a container singleton shared by every package.
+
+| Method | Returns | Notes |
+|---|---|---|
+| `declare(string $package, string $directory, array $entries, ?string $base, bool $mirrored)` | `void` | called by the provider |
+| `tags(string $package, string ...$only)` | `HtmlString` | application build first, then stylesheets, then scripts |
+| `styles(…)` / `scripts(…)` | `HtmlString` | same, filtered |
+| `url(string $package, string $entry)` | `?string` | one URL, `null` when nothing resolves |
+| `declared(string $package)` | `bool` | |
+| `resolution(string $package)` | `array` | entry => `dev server` / `application build` / `shipped` / `not published` / `unresolved`; writes nothing |
+
 ## `Support\PublishedAssets`
 
 | Method | Returns | Notes |
@@ -345,7 +385,7 @@ A backed enum of ISO 639-1 codes — case name is the code, value is the English
 | `MissingNameException` | `Exceptions\` | `name()` was never called |
 | `InvalidReturnTypeException` | `Exceptions\` | a config file does not return an array |
 | `InvalidLanguageDirectoryException` | `Exceptions\` | a translation subdirectory is not a language code |
-| `PackageConfigurationException` | root namespace | the packager is `null`, or reflection fails |
+| `PackageConfigurationException` | root namespace | the packager is `null`, reflection fails, or an asset is declared before `hasAssets()` |
 
 The toolkit also lets `InvalidArgumentException`,
 `Illuminate\Contracts\Filesystem\FileNotFoundException` and

@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`hasAssets(entries: [...])` and the asset directives** — name the files a template renders and the toolkit
+  registers `@packageAssets`, `@packageStyles`, `@packageScripts` and `@packageAssetUrl`, each taking the package
+  short name. This replaces the boilerplate the toolkit used to leave to the package author: a helper class holding the
+  paths, a method assembling and escaping the markup, and a `Blade::directive()` registered from a lifecycle hook — all
+  of it derived from facts the packager already had. Paths are validated at declaration, so a typo throws where it was
+  written rather than 404ing in a browser. `.js` renders as `type="module"` with `data-navigate-track="reload"`;
+  `Support\Asset::make('js/x.js')->classic()` opts a shipped IIFE or UMD bundle out, since a module is deferred and its
+  top-level declarations never reach `window`. Directives are registered per container, guarded on the compiler's
+  existing directives rather than a static, so a rebuilt application re-registers and a second package does not.
+- **`hasViteAssets()`** — declare sources the **consuming application's** Vite build can compile. The toolkit still
+  ships no Vite config, no build step and no manifest of its own: a package building its own would produce a second
+  manifest, a second dev server and a second set of hashed filenames, and would still have to hand plain files to a
+  template — which the mirror already does. What was missing is the other direction. An application on Tailwind must
+  run its own config over the package's Blade markup or half the package's classes are purged, and an application
+  bundling its own JavaScript would rather not ship a second copy of a shared dependency; both need the package's
+  *sources* in the application's build, and then the package's own layout has to emit a hashed filename it can only
+  learn from the application's manifest. Declaring `'resources/js/blog.js' => 'js/blog.js'` covers both: the entry
+  resolves through the dev server while `npm run dev` runs, through the application's manifest once built, and through
+  the shipped file otherwise — per entry, so an application can build the CSS and leave the JavaScript alone. A miss
+  falls back instead of throwing, because a package's layout cannot fix the application's Vite config and a 500 on
+  every page is a poor way to report a missed optimisation. The manifest key prefix is derived from the package's
+  location under the application; `base:` states it for a symlinked path repository, where nothing can be derived.
+- **`PackageAssets::resolution()`** — names how each entry resolves right now (`dev server`, `application build`,
+  `shipped`, `not published`, `unresolved`), the counterpart to `PublishedAssets::isStale()` and there for the same
+  reason. Falling back is silent by design, which means the most common mistake on the application's side is silent
+  too: an input listed under a path one segment off from the manifest key leaves every page working, served from the
+  shipped file, with nothing saying the configured build is unused. A package that called `hasAbout()` and declared
+  Vite sources gets the same summary as an `Assets` line in `php artisan about`. Nothing is written to report —
+  an entry the mirror would publish on demand reports `shipped` on the strength of the file existing.
+- **CSP nonces on toolkit-rendered tags** — `Vite::useCspNonce()` nonces every tag Laravel generates, so without this
+  the two halves of one declaration behave differently under a strict policy: the entry the application built loads
+  and the one falling back to the shipped file is blocked. An entry's own `nonce` attribute wins.
 - **`hasBroadcastChannels()`** — registers channel authorization files (`Broadcast::channel()`) with the broadcaster.
   Until now a channel file had to be smuggled through `hasRoutes()`, which loads it into the router inside a route
   group — the wrong destination for an authorization callback. Discovers the package's `routes` directory by default,

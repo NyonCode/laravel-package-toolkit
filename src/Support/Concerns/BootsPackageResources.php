@@ -25,8 +25,8 @@ trait BootsPackageResources
      *
      * This method boots the package by calling other methods that
      * register the package's resources. It calls the following methods
-     * in order: `bootAboutCommand`, `bootMigrations`, `bootRoutes`,
-     * `bootBroadcastChannels`, `bootMiddleware`, `bootEvents`,
+     * in order: `bootAboutCommand`, `bootAssets`, `bootMigrations`,
+     * `bootRoutes`, `bootBroadcastChannels`, `bootMiddleware`, `bootEvents`,
      * `bootOptimizes`, `bootSharedViewData`, `bootTranslations`,
      * `bootViewComposers`, `bootViewComponentNamespaces`,
      * `bootViewComponents`, and `bootViews`.
@@ -36,6 +36,7 @@ trait BootsPackageResources
     public function bootPackageResources(): void
     {
         $this->bootAboutCommand()
+            ->bootAssets()
             ->bootMigrations()
             ->bootRoutes()
             ->bootBroadcastChannels()
