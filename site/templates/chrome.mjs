@@ -5,6 +5,12 @@
  * landing page — and both need the same head, masthead, search dialog and script
  * tags. They live here so the two templates cannot drift apart: a change to the
  * theme bootstrap or the search markup is made once.
+ *
+ * Everything is styled with Tailwind utilities written into the markup. Class
+ * names that are *not* utilities — `nav-link`, `code-block`, `search-result` and
+ * the `is-*` state classes — are hooks `assets/docs.js` queries by name; they
+ * carry no styling of their own, and the states they represent are styled from
+ * here with the `[&.is-x]:` variant.
  */
 
 export const escape = (value) =>
@@ -21,6 +27,9 @@ export const icon = {
   menu: `<svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`,
   close: `<svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
   search: `<svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>`,
+  /* The disclosure arrow on a `<details>`. Drawn rather than typed: at the size
+     these summaries need, `▸` renders as a smudge on most platforms. */
+  chevron: `<svg viewBox="0 0 24 24" aria-hidden="true" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>`,
   arrowLeft: `<svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>`,
   arrowRight: `<svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`,
   copy: `<svg viewBox="0 0 24 24" aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M15 5.5A2.5 2.5 0 0 0 12.5 3H6.5A2.5 2.5 0 0 0 4 5.5v6A2.5 2.5 0 0 0 6.5 14"/></svg>`,
@@ -43,6 +52,35 @@ export const icon = {
 }
 
 /**
+ * The frame around a highlighted block.
+ *
+ * `code-block` and `code-copy` are styled in the component layer of
+ * `assets/tailwind.css`, because most blocks come from a Markdown fence and there
+ * is nowhere in a fence to put a class. `group` is the exception: it is a
+ * Tailwind marker, and the copy button's `group-hover:` needs it here.
+ *
+ * Both the fence renderer in `build.mjs` and the hand-authored snippets on the
+ * landing page go through this, so a block cannot be framed two different ways.
+ */
+export function codeBlock(inner, language, copyLabel = 'Copy code to clipboard') {
+  return `<div class="code-block group" data-language="${escape(language)}">
+  <button class="code-copy" type="button" data-copy aria-label="${escape(copyLabel)}"><span data-copy-label>Copy</span></button>
+  ${inner}
+</div>
+`
+}
+
+/** The shared shape of every square control in the masthead. */
+const ICON_BUTTON =
+  'inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted no-underline ' +
+  'transition-colors hover:bg-sunken hover:text-ink pointer-coarse:size-11'
+
+/** The same control, on the landing page's band. */
+const ICON_BUTTON_INK =
+  'inline-flex size-9 shrink-0 items-center justify-center rounded-md text-band-muted no-underline ' +
+  'transition-colors hover:bg-band-soft-strong hover:text-band-ink pointer-coarse:size-11'
+
+/**
  * Everything up to and including `<body>`.
  *
  * The theme is resolved inline, before the body is parsed, so a dark-mode reader
@@ -60,7 +98,7 @@ export function documentHead({ title, description, canonical, base, site, bodyCl
 <meta name="description" content="${escape(description)}">
 <link rel="canonical" href="${escape(canonical)}">
 ${markdown ? `<link rel="alternate" type="text/markdown" href="${escape(markdown)}" title="${escape(title)} as Markdown">\n` : ''}<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#0a0a12">
+<meta name="theme-color" content="#0b0b0d">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${escape(site.title)}">
 <meta property="og:title" content="${escape(title)}">
@@ -87,27 +125,43 @@ ${markdown ? `<link rel="alternate" type="text/markdown" href="${escape(markdown
 })()
 </script>
 </head>
-<body data-page="${escape(pageId)}"${bodyClass ? ` class="${escape(bodyClass)}"` : ''}>
-<a class="skip-link" href="#content">Skip to content</a>
+<body data-page="${escape(pageId)}" class="${bodyClass ? `${escape(bodyClass)} ` : ''}min-h-dvh">
+<a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-100 focus:rounded-md focus:border focus:border-line focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-ink focus:no-underline focus:shadow-lg" href="#content">Skip to content</a>
 `
 }
 
 /**
  * The masthead.
  *
- * `variant: 'over-ink'` is the landing page, where the header sits on the dark
- * hero band and has to be legible against it until the reader scrolls past —
- * `docs.js` adds `is-scrolled` and the solid background takes over. A
- * documentation page passes no variant and gets the ordinary opaque bar.
+ * On a documentation page it has no ground of its own until the reader has
+ * moved: it is transparent at the top, and `docs.js` adds `is-scrolled` past the
+ * first few pixels, which brings in the blur and the hairline.
+ *
+ * `onInk: true` is the landing page, which has its own ground one step away from
+ * the documentation's. There the bar is part of that band rather than a strip of
+ * a different colour drawn across the top of it. Both follow the reader's theme.
  *
  * `withDrawer: false` drops the hamburger, because the landing page has no
  * sidebar to open; it links into the documentation instead.
+ *
+ * `withTheme: false` drops the day/night control, for a page that has no light
+ * version to switch to. Nothing passes it today.
  */
-export function masthead({ base, version, site, variant = '', withDrawer = true, docsUrl }) {
+export function masthead({
+  base,
+  version,
+  site,
+  withDrawer = true,
+  docsUrl,
+  onInk = false,
+  withTheme = true,
+}) {
+  const iconButton = onInk ? ICON_BUTTON_INK : ICON_BUTTON
+
   const drawerButton = withDrawer
-    ? `<button class="icon-button masthead__menu" type="button" data-drawer-toggle aria-expanded="false" aria-controls="sidebar">
-      <span class="icon-button__open">${icon.menu}</span>
-      <span class="icon-button__close">${icon.close}</span>
+    ? `<button class="${iconButton} md:hidden" type="button" data-drawer-toggle aria-expanded="false" aria-controls="sidebar">
+      <span class="in-[body.drawer-open]:hidden">${icon.menu}</span>
+      <span class="hidden in-[body.drawer-open]:block">${icon.close}</span>
       <span class="sr-only">Toggle navigation</span>
     </button>`
     : ''
@@ -115,39 +169,59 @@ export function masthead({ base, version, site, variant = '', withDrawer = true,
   // The label shortens rather than disappearing: on the landing page this is the
   // only way into the documentation that is not a call-to-action button.
   const docsLink = docsUrl
-    ? `<a class="masthead__link" href="${docsUrl}"><span class="masthead__link-long">Documentation</span><span class="masthead__link-short">Docs</span></a>`
+    ? `<a class="hidden rounded-md px-2.5 py-1.5 text-sm font-medium no-underline transition-colors sm:block ${
+        onInk
+          ? 'text-band-muted hover:bg-band-soft-strong hover:text-band-ink'
+          : 'text-muted hover:bg-sunken hover:text-ink'
+      }" href="${docsUrl}">Documentation</a>`
     : ''
 
-  return `<header class="masthead${variant ? ` masthead--${variant}` : ''}" data-masthead>
-  <div class="masthead__inner">
+  const shell = onInk
+    ? 'bg-band [&.is-scrolled]:border-band-line [&.is-scrolled]:bg-band/85 [&.is-scrolled]:backdrop-blur-md'
+    : '[&.is-scrolled]:border-line [&.is-scrolled]:bg-page/80 [&.is-scrolled]:backdrop-blur-md'
+
+  return `<header class="sticky top-0 z-50 h-(--masthead-h) border-b border-transparent transition-[background-color,border-color,backdrop-filter] ${shell}" data-masthead>
+  <div class="mx-auto flex h-full max-w-(--shell-max) items-center gap-1 px-3 sm:gap-2 sm:px-5">
     ${drawerButton}
-    <a class="brand" href="${base}">
+    <a class="flex min-w-0 items-center gap-2.5 no-underline" href="${base}">
       ${icon.logo('masthead')}
-      <span class="brand__text">
-        <span class="brand__name">Package Toolkit</span>
-        <span class="brand__meta">for Laravel</span>
+      <span class="flex min-w-0 flex-col leading-none">
+        <span class="truncate font-display text-[0.9375rem] font-bold tracking-tight ${onInk ? 'text-band-ink' : 'text-ink'}">Package Toolkit</span>
+        <span class="mt-0.5 hidden text-[0.625rem] font-semibold uppercase tracking-[0.1em] sm:block ${onInk ? 'text-band-muted' : 'text-faint'}">for Laravel</span>
       </span>
     </a>
 
-    <span class="version-badge">v${escape(version)}</span>
+    <span class="ml-1 hidden shrink-0 rounded-full border px-2 py-0.5 font-mono text-[0.6875rem] sm:inline-block ${
+      onInk ? 'border-band-line bg-band-soft text-band-muted' : 'border-line bg-sunken text-muted'
+    }">v${escape(version)}</span>
 
-    <div class="masthead__spacer"></div>
+    <div class="flex-1"></div>
 
     ${docsLink}
 
-    <button class="search-trigger" type="button" data-search-open>
+    <button class="flex items-center gap-2 rounded-md border py-1.5 pl-2.5 pr-2 transition-colors max-sm:size-9 max-sm:justify-center max-sm:border-0 max-sm:bg-transparent max-sm:p-0 ${
+      onInk
+        ? 'border-band-line bg-band-soft text-band-muted hover:border-band-line-strong hover:text-band-ink'
+        : 'border-line bg-sunken text-muted hover:border-line-strong hover:text-ink'
+    }" type="button" data-search-open>
       ${icon.search}
-      <span class="search-trigger__label">Search</span>
-      <kbd class="search-trigger__kbd">/</kbd>
+      <span class="hidden text-sm sm:block">Search</span>
+      <kbd class="hidden rounded-xs border px-1.5 font-mono text-[0.6875rem] sm:block ${
+        onInk ? 'border-band-line bg-band-soft' : 'border-line bg-surface text-faint'
+      }">/</kbd>
     </button>
 
-    <button class="icon-button" type="button" data-theme-toggle>
-      <span class="icon-button__light">${icon.sun}</span>
-      <span class="icon-button__dark">${icon.moon}</span>
+    ${
+      withTheme
+        ? `<button class="${iconButton}" type="button" data-theme-toggle>
+      <span class="dark:hidden">${icon.moon}</span>
+      <span class="hidden dark:block">${icon.sun}</span>
       <span class="sr-only">Toggle colour theme</span>
-    </button>
+    </button>`
+        : ''
+    }
 
-    <a class="icon-button" href="${site.repository}" rel="noopener noreferrer" target="_blank">
+    <a class="${iconButton}" href="${site.repository}" rel="noopener noreferrer" target="_blank">
       ${icon.github}<span class="sr-only">GitHub repository</span>
     </a>
   </div>
@@ -156,16 +230,21 @@ export function masthead({ base, version, site, variant = '', withDrawer = true,
 }
 
 export function searchDialog() {
-  return `<div class="search-dialog" data-search-dialog hidden>
-  <div class="search-dialog__backdrop" data-search-close></div>
-  <div class="search-dialog__panel" role="dialog" aria-modal="true" aria-label="Search documentation">
-    <div class="search-dialog__field">
+  return `<div class="fixed inset-0 z-90 flex items-start justify-center px-4 pt-[10vh]" data-search-dialog hidden>
+  <!-- search-backdrop and search-panel carry no styling: they are the hooks the
+       stylesheet animates the dialog's entrance from, because a dialog shown by
+       dropping the hidden attribute has no previous state to transition out of. -->
+  <div class="search-backdrop absolute inset-0 bg-ink/40 backdrop-blur-sm" data-search-close></div>
+  <div class="search-panel relative flex max-h-[75vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-lg" role="dialog" aria-modal="true" aria-label="Search documentation">
+    <div class="flex items-center gap-3 border-b border-line px-4 text-faint">
       ${icon.search}
-      <input type="search" placeholder="Search the documentation…" data-search-input autocomplete="off" spellcheck="false" enterkeyhint="go">
-      <button class="icon-button" type="button" data-search-close>${icon.close}<span class="sr-only">Close search</span></button>
+      <input class="min-w-0 flex-1 bg-transparent py-3.5 text-[0.9375rem] text-ink outline-none placeholder:text-faint" type="search" placeholder="Search the documentation…" data-search-input autocomplete="off" spellcheck="false" enterkeyhint="go">
+      <button class="${ICON_BUTTON}" type="button" data-search-close>${icon.close}<span class="sr-only">Close search</span></button>
     </div>
-    <div class="search-dialog__results" data-search-results></div>
-    <p class="search-dialog__hint"><kbd>↑</kbd><kbd>↓</kbd> to navigate · <kbd>↵</kbd> to open · <kbd>esc</kbd> to close</p>
+    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2" data-search-results></div>
+    <p class="hidden items-center gap-1.5 border-t border-line px-4 py-2 text-xs text-faint sm:flex [&_kbd]:rounded-xs [&_kbd]:border [&_kbd]:border-line [&_kbd]:bg-sunken [&_kbd]:px-1.5 [&_kbd]:font-mono">
+      <kbd>↑</kbd><kbd>↓</kbd> to navigate · <kbd>↵</kbd> to open · <kbd>esc</kbd> to close
+    </p>
   </div>
 </div>
 `

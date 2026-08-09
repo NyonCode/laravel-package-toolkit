@@ -1,0 +1,942 @@
+/* =============================================================================
+   Laravel Package Toolkit — documentation
+   -----------------------------------------------------------------------------
+   Tailwind v4, configured in CSS. Everything the templates render is written as
+   utility classes in `templates/*.mjs`; the only rules that live here are the
+   ones that cannot: `@theme` (the design tokens), a thin base layer, and a
+   component layer for the HTML this project does not author — the output of
+   markdown-it and of Torchlight, which arrive as `.prose`, `.callout`,
+   `.table-scroll` and `.code-block` and have nowhere to put a class.
+
+   Source detection is explicit rather than automatic, so the stylesheet can be
+   built before (or without) `dist/`, and so Torchlight's own inline output can
+   never be mistaken for a utility.
+   ========================================================================== */
+
+@import 'tailwindcss' source(none);
+
+@source '../templates/*.mjs';
+@source '../build.mjs';
+@source './docs.js';
+
+/* -----------------------------------------------------------------------------
+   Dark mode
+
+   Three states, not two: an explicit choice is stamped on `<html>` as
+   `data-theme`, and the default — no attribute — follows the operating system.
+   Almost nothing needs the `dark:` variant, because the colour tokens below are
+   redefined per theme and every utility reads them through `var()`. It exists
+   for the handful of cases where a value, not a colour, has to change.
+-------------------------------------------------------------------------------*/
+
+@custom-variant dark {
+    @media (prefers-color-scheme: dark) {
+        &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+            @slot;
+        }
+    }
+
+    &:where(:root[data-theme='dark'], :root[data-theme='dark'] *) {
+        @slot;
+    }
+}
+
+/* -------------------------------------------------------------------- tokens */
+
+@theme {
+    /* Display is Inter Tight: flat-cut terminals, high x-height, no flourish,
+       and the same family as the brand lockups. Body is Inter, because thirty-odd
+       pages of reference prose need a workhorse. Both degrade to the system stack
+       if the font request never arrives. */
+    --font-display:
+        'Inter Tight', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
+    --font-sans:
+        Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+        'Noto Sans', sans-serif;
+    --font-mono:
+        'JetBrains Mono', ui-monospace, 'SF Mono', SFMono-Regular, 'Fira Code', Menlo, Consolas,
+        'Liberation Mono', monospace;
+
+    /* Light — near-white paper, warm grey ink. */
+    --color-page: #fdfdfc;
+    --color-sunken: #f6f6f4;
+    --color-surface: #ffffff;
+    --color-raised: #fbfbfa;
+    --color-line: #e7e6e2;
+    --color-line-strong: #d5d4ce;
+    --color-ink: #171714;
+    --color-muted: #5c5b55;
+    /* Darker than it looks like it should be. This is the step that carries the
+       breadcrumbs, the sidebar group titles and the pager labels — small type,
+       and at #85847b every one of them measured 3.7:1 on paper. */
+    --color-faint: #75746b;
+
+    /* The red of the mark, darkened for type on paper: #dc2626 clears 4.5:1 on
+       white, which the mark's own lit face (#f87171) does not. Filled surfaces
+       keep the same red in both themes — a button's contrast is with its own
+       label, not with the page. */
+    --color-accent: #dc2626;
+    --color-accent-hover: #b91c1c;
+    --color-accent-solid: #dc2626;
+    --color-accent-solid-hover: #b91c1c;
+
+    /* One counter-accent, and it means one thing: this worked. Mint is the green
+       the diff renderer already uses for an added line, and it only ever appears
+       on the code surface, so it needs no light variant. */
+    --color-mint: #6ee7b7;
+
+    /* The blueprint: hairlines and joint marks carry the structure. Ink on paper
+       in the day, light on ink at night, so it stays a drafting grid rather than
+       a smudge. */
+    --color-grid: rgb(20 20 25 / 0.05);
+    --color-cross: rgb(220 38 38 / 0.75);
+
+    /* The band: the landing page's own ground, one step away from the
+       documentation's. It follows the reader's theme like everything else — what
+       stays dark in both is the `--color-code` surface the console output and the
+       snippets sit on, so a panel of output reads as a terminal on the page
+       rather than as more of the page. */
+    --color-band: #f7f7f5;
+    --color-band-raised: #ffffff;
+    --color-band-line: #e5e4e0;
+    --color-band-line-strong: #d3d2cc;
+    --color-band-ink: #17171a;
+    --color-band-muted: #5c5b55;
+    --color-band-soft: #f0efec;
+    --color-band-soft-strong: #e7e6e2;
+
+    /* The code surface is dark in both themes, the way an editor is. These are
+       Material Palenight, which is also the Torchlight theme, so a highlighted
+       block and its frame come from the same palette. */
+    --color-code: #292d3e;
+    --color-code-ink: #a6accd;
+    --color-code-line: rgb(255 255 255 / 0.08);
+
+    /* Fallback highlighter tokens. Torchlight ships inline colours instead, so
+       these only paint the offline path — same palette, so the two agree. */
+    --color-tok-com: #676e95;
+    --color-tok-str: #c3e88d;
+    --color-tok-key: #c792ea;
+    --color-tok-var: #f07178;
+    --color-tok-fn: #82aaff;
+    --color-tok-num: #f78c6c;
+    --color-tok-cls: #ffcb6b;
+    --color-tok-pun: #89ddff;
+    --color-tok-op: #89ddff;
+    --color-tok-attr: #ffcb6b;
+    --color-tok-tag: #f07178;
+    --color-tok-dir: #c792ea;
+
+    --color-diff-add: #73c991;
+    --color-diff-remove: #f07178;
+    --color-mark: #ffcb6b;
+
+    /* Tight geometry on purpose. Full pills and 20px corners read as marketing;
+       a developer tool reads as drawn with a ruler. */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+
+    --shadow-sm: 0 1px 2px rgb(20 20 25 / 0.06);
+    --shadow-md: 0 8px 24px -8px rgb(20 20 25 / 0.18);
+    --shadow-lg: 0 24px 60px -20px rgb(20 20 25 / 0.35);
+
+    /* The rail is the one breakpoint the default scale has no name for: it is
+       where a third column of on-this-page links starts to fit. */
+    --breakpoint-rail: 72rem;
+
+    /* Shell geometry, referenced from the templates as `h-(--masthead-h)` and
+       friends rather than retyped as magic numbers. */
+    --masthead-h: 3.5rem;
+    --sidebar-w: 15.5rem;
+    --rail-w: 14rem;
+    --content-max: 46rem;
+    --shell-max: 100rem;
+}
+
+/* Neutral greys, not blue-violet ones: beside a red accent the cooler greys
+   these were first tuned against read cold. */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        --color-page: #0b0b0d;
+        --color-sunken: #0f0f12;
+        --color-surface: #131317;
+        --color-raised: #18181d;
+        --color-line: #26262c;
+        --color-line-strong: #34343c;
+        --color-ink: #eeeef1;
+        --color-muted: #a4a4ad;
+        --color-faint: #7d7d87;
+
+        --color-accent: #f87171;
+        --color-accent-hover: #fca5a5;
+        --color-accent-solid: #dc2626;
+        --color-accent-solid-hover: #ef4444;
+
+        --color-grid: rgb(255 255 255 / 0.045);
+        --color-cross: rgb(248 113 113 / 0.8);
+
+        --color-code: #1c1f2e;
+        --color-code-line: rgb(255 255 255 / 0.06);
+
+        --color-band: #0a0a0f;
+        --color-band-raised: #101018;
+        --color-band-line: rgb(255 255 255 / 0.09);
+        --color-band-line-strong: rgb(255 255 255 / 0.22);
+        --color-band-ink: #f2f2f6;
+        --color-band-muted: #9d9daa;
+        --color-band-soft: rgb(255 255 255 / 0.05);
+        --color-band-soft-strong: rgb(255 255 255 / 0.1);
+
+        --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+        --shadow-md: 0 8px 24px -8px rgb(0 0 0 / 0.6);
+        --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.8);
+    }
+}
+
+:root[data-theme='dark'] {
+    --color-page: #0b0b0d;
+    --color-sunken: #0f0f12;
+    --color-surface: #131317;
+    --color-raised: #18181d;
+    --color-line: #26262c;
+    --color-line-strong: #34343c;
+    --color-ink: #eeeef1;
+    --color-muted: #a4a4ad;
+    --color-faint: #7d7d87;
+
+    --color-accent: #f87171;
+    --color-accent-hover: #fca5a5;
+    --color-accent-solid: #dc2626;
+    --color-accent-solid-hover: #ef4444;
+
+    --color-grid: rgb(255 255 255 / 0.045);
+    --color-cross: rgb(248 113 113 / 0.8);
+
+    --color-code: #1c1f2e;
+    --color-code-line: rgb(255 255 255 / 0.06);
+
+    --color-band: #0a0a0f;
+    --color-band-raised: #101018;
+    --color-band-line: rgb(255 255 255 / 0.09);
+    --color-band-line-strong: rgb(255 255 255 / 0.22);
+    --color-band-ink: #f2f2f6;
+    --color-band-muted: #9d9daa;
+    --color-band-soft: rgb(255 255 255 / 0.05);
+    --color-band-soft-strong: rgb(255 255 255 / 0.1);
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 8px 24px -8px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.8);
+}
+
+/* ---------------------------------------------------------------------- base */
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+        /* A heading jumped to from the rail must clear the sticky masthead. */
+        scroll-padding-top: calc(var(--masthead-h) + --spacing(6));
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+
+    body {
+        @apply bg-page text-ink font-sans text-[0.9375rem] leading-relaxed antialiased;
+        text-rendering: optimizeLegibility;
+    }
+
+    /* Preflight leaves anchors unstyled; the whole site wants the same one. */
+    a {
+        @apply text-accent underline-offset-[3px] decoration-accent/35 transition-colors;
+    }
+
+    a:hover {
+        @apply text-accent-hover decoration-accent/70;
+    }
+
+    /* The masthead and the search dialog dress their own; this covers the ones
+       written into prose, where there is no class to hang on them. */
+    kbd {
+        @apply rounded-xs border border-line bg-sunken px-1 font-mono text-[0.85em] text-muted;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-accent rounded-xs;
+    }
+
+    ::selection {
+        @apply bg-accent/20;
+    }
+
+    svg {
+        @apply block shrink-0;
+    }
+
+    /* Torchlight and the fallback highlighter both leave the untouched source
+       behind in a textarea for the copy button to read. It is never displayed. */
+    textarea[data-torchlight-original] {
+        display: none !important;
+    }
+}
+
+/* ----------------------------------------------------------------- utilities */
+
+/* The drafting grid behind the hero. One ambient layer, flat and unanimated —
+   no bloom, no mesh gradient, nothing that moves while somebody is reading. */
+@utility bg-blueprint {
+    background-image:
+        linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
+    background-size: 3rem 3rem;
+}
+
+/* The same grid at the landing page's scale — a wider cell, because the hero it
+   sits behind is the largest thing on the site. */
+@utility bg-blueprint-lg {
+    background-image:
+        linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
+    background-size: 3.5rem 3.5rem;
+}
+
+/* A panel that is taller than its box fades out at the bottom edge, so the cut
+   reads as "there is more" rather than as a line chopped in half. */
+@utility mask-fade-b {
+    mask-image: linear-gradient(to bottom, black calc(100% - 3rem), transparent);
+}
+
+/* A joint mark: the small cross the landing page's frame puts where its rules
+   cross. Drawn rather than shipped as an icon so it inherits the accent. */
+@utility mark-cross {
+    background-image:
+        linear-gradient(to right, var(--color-cross) 100%, transparent 0),
+        linear-gradient(to bottom, var(--color-cross) 100%, transparent 0);
+    background-size:
+        9px 1px,
+        1px 9px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* ---------------------------------------------------------------- components */
+
+@layer components {
+    /* -------------------------------------------------------------- reveal */
+
+    /* Landing sections arrive as they are reached — but the section itself never
+       moves. What moves is what it contains: the heading first, then the things
+       the heading was introducing, a beat apart. Fading a whole band in and out
+       reads as a page still loading; the parts arriving in reading order reads as
+       the page being written.
+     *
+     * `[data-reveal]` is only the trigger. `docs.js` adds `is-revealed` when the
+     * section reaches the fold, and every rule below hangs off that — so a
+     * reader without JavaScript gets the fully-composed page rather than an
+     * empty one, because the held state *is* the finished state. */
+    [data-reveal] .lp-stagger > * {
+        animation-name: none;
+    }
+
+    [data-reveal].is-revealed .lp-stagger > * {
+        animation: lpt-rise 560ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    /* The delays have to be written at the same specificity as the rule above —
+       that one sets `animation` as a shorthand, which resets the delay to zero,
+       and it would otherwise win against a lighter `:nth-child` selector. */
+    [data-reveal].is-revealed .lp-stagger > *:nth-child(2) {
+        animation-delay: 90ms;
+    }
+    [data-reveal].is-revealed .lp-stagger > *:nth-child(3) {
+        animation-delay: 180ms;
+    }
+    [data-reveal].is-revealed .lp-stagger > *:nth-child(4) {
+        animation-delay: 270ms;
+    }
+    [data-reveal].is-revealed .lp-stagger > *:nth-child(5) {
+        animation-delay: 360ms;
+    }
+    [data-reveal].is-revealed .lp-stagger > *:nth-child(6) {
+        animation-delay: 450ms;
+    }
+
+    /* ------------------------------------------------- landing page motion */
+
+    /* Two pieces of motion, both of them the argument rather than decoration:
+       the hand-written provider collapsing into the declared one, and a line
+       arriving when its chip is pressed. Neither can be expressed as a utility,
+       because both are keyframes driven by a custom property the script sets per
+       line. A reader who asked for less motion is covered by the base layer,
+       which flattens every animation on the page. */
+
+    @keyframes lpt-line-in {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+    }
+
+    @keyframes lpt-pane-out {
+        to {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+    }
+
+    @keyframes lpt-blink {
+        0%,
+        45% {
+            opacity: 1;
+        }
+        50%,
+        95% {
+            opacity: 0;
+        }
+    }
+
+    @keyframes lpt-rise {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+    }
+
+    /* Opacity only. Scaling a 130px blur every frame is the most expensive thing
+       a page like this can ask a compositor to do, and the difference is not
+       visible on a shape with no edge. */
+    @keyframes lpt-glow {
+        0%,
+        100% {
+            opacity: 0.6;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
+
+    /* The hero arrives in reading order: the label, then the claim, then the
+       ways of acting on it, then the evidence. One pass, on load, no scroll
+       listener — everything here is above the fold by definition. */
+    .lp-enter > * {
+        animation: lpt-rise 620ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    .lp-enter > *:nth-child(1) {
+        animation-delay: 60ms;
+    }
+    .lp-enter > *:nth-child(2) {
+        animation-delay: 140ms;
+    }
+    .lp-enter > *:nth-child(3) {
+        animation-delay: 220ms;
+    }
+    .lp-enter > *:nth-child(4) {
+        animation-delay: 300ms;
+    }
+    .lp-enter > *:nth-child(5) {
+        animation-delay: 380ms;
+    }
+    .lp-enter > *:nth-child(6) {
+        animation-delay: 460ms;
+    }
+
+    /* A run of lines that types itself out — the console strips, and any list
+       that reads as output rather than as layout. Inside a revealed section it
+       waits for the section; in the hero it plays on load. */
+    .lp-seq > * {
+        animation: lpt-rise 420ms ease-out both;
+        animation-delay: calc(200ms + var(--i, 0) * 110ms);
+    }
+
+    /* Held, not paused: a paused animation never reaches its end, which leaves
+       anything waiting on the page — a screenshot, a test — waiting forever. */
+    [data-reveal] .lp-seq > * {
+        animation-name: none;
+    }
+
+    [data-reveal].is-revealed .lp-seq > * {
+        animation-name: lpt-rise;
+    }
+
+    .lp-glow {
+        animation: lpt-glow 9s ease-in-out infinite;
+    }
+
+    /* ------------------------------------------------------- search dialog */
+
+    /* The dialog is shown by removing `hidden`, so its entrance is an animation
+       rather than a transition — there is no previous state to interpolate from.
+       Backdrop first and fastest, panel a touch slower and from slightly under
+       its resting size: the panel should feel like it came forward. */
+    @keyframes lpt-fade {
+        from {
+            opacity: 0;
+        }
+    }
+
+    @keyframes lpt-dialog {
+        from {
+            opacity: 0;
+            transform: translateY(-8px) scale(0.98);
+        }
+    }
+
+    [data-search-dialog]:not([hidden]) .search-backdrop {
+        animation: lpt-fade 160ms ease-out both;
+    }
+
+    [data-search-dialog]:not([hidden]) .search-panel {
+        animation: lpt-dialog 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    /* Results restack on every keystroke, so this has to be quick enough not to
+       lag behind typing. */
+    .search-result {
+        animation: lpt-fade 140ms ease-out both;
+    }
+
+
+    /* Lines stagger only on the pane that was just switched to, so scrolling
+       back to the card does not replay the whole provider. */
+    .provider__pane.is-entering .line {
+        animation: lpt-line-in 320ms both;
+        animation-delay: calc(var(--i, 0) * var(--step-ms, 14ms));
+    }
+
+    .provider__pane.is-leaving {
+        animation: lpt-pane-out 200ms both;
+    }
+
+    /* The caret sits at the end of the declaration: the file is finished, and
+       this is where you would carry on typing. */
+    .provider__caret {
+        @apply ml-0.5 inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-mint;
+        animation: lpt-blink 1.1s steps(1, end) infinite;
+    }
+
+    [data-builder-out] .line.is-new {
+        animation: lpt-line-in 350ms both;
+    }
+
+    /* --------------------------------------------------------------- prose */
+
+    /* Everything below styles HTML this project never writes by hand: it comes
+       out of markdown-it, so a class cannot be put on it at the source. */
+
+    .prose {
+        @apply text-ink/90;
+    }
+
+    .prose > * + * {
+        @apply mt-5;
+    }
+
+    .prose h2 {
+        @apply relative mt-14 mb-5 scroll-mt-24 border-t border-line pt-8
+               font-display text-2xl font-bold tracking-tight text-ink
+               first:mt-0 first:border-0 first:pt-0;
+    }
+
+    /* A short accent tick sitting on the section rule — the same mark the active
+       navigation row carries, so a section opening and a section selected agree. */
+    .prose h2:not(:first-child)::before {
+        @apply absolute -top-px left-0 h-px w-9 bg-accent content-[''];
+    }
+
+    .prose h3 {
+        @apply font-display text-lg font-semibold tracking-tight text-ink mt-10 mb-3 scroll-mt-24;
+    }
+
+    .prose h4 {
+        @apply font-display text-base font-semibold text-ink mt-8 mb-2;
+    }
+
+    .prose h4 code {
+        @apply text-[0.9375rem];
+    }
+
+    .prose p {
+        @apply text-pretty;
+    }
+
+    .prose ul {
+        @apply list-disc space-y-2 pl-5 marker:text-line-strong;
+    }
+
+    .prose ol {
+        @apply list-decimal space-y-2 pl-5 marker:text-faint marker:tabular-nums;
+    }
+
+    .prose li > ul,
+    .prose li > ol {
+        @apply mt-2;
+    }
+
+    .prose li::marker {
+        @apply text-sm;
+    }
+
+    .prose hr {
+        @apply my-12 border-line;
+    }
+
+    .prose strong {
+        @apply font-semibold text-ink;
+    }
+
+    .prose blockquote {
+        @apply border-l-2 border-line-strong pl-4 text-muted italic;
+    }
+
+    /* Inline code is neutral. Painting it in the accent put a dozen red badges
+       on a page whose actual links then had nothing left to be. */
+    .prose :not(pre) > code {
+        @apply rounded-sm border border-line bg-sunken px-1.5 py-0.5
+               font-mono text-[0.85em] text-ink;
+    }
+
+    .prose a > code {
+        @apply text-accent;
+    }
+
+    /* A heading that names a class is still a heading: the chip that marks code
+       inside a paragraph turns a section title into a button at this size. */
+    .prose h2 code,
+    .prose h3 code {
+        @apply border-0 bg-transparent p-0 text-[0.95em];
+    }
+
+    .prose a {
+        @apply font-medium;
+    }
+
+    /* The anchor markdown-it-anchor puts inside each heading. Visible on hover
+       and whenever it has focus, so it is reachable from the keyboard. */
+    .heading-anchor {
+        @apply ml-2 select-none font-normal text-faint no-underline opacity-0 transition-opacity;
+    }
+
+    h2:hover > .heading-anchor,
+    h3:hover > .heading-anchor,
+    .heading-anchor:focus-visible {
+        @apply opacity-100;
+    }
+
+    /* -------------------------------------------------------------- tables */
+
+    /* Tables scroll inside their own box; the page never scrolls sideways. */
+    .table-scroll {
+        @apply -mx-1 overflow-x-auto rounded-lg border border-line px-px;
+    }
+
+    .table-scroll table {
+        @apply w-full border-collapse text-sm;
+    }
+
+    .table-scroll th {
+        @apply whitespace-nowrap border-b border-line bg-sunken px-4 py-2.5 text-left
+               font-display text-xs font-semibold uppercase tracking-wider text-muted;
+    }
+
+    .table-scroll td {
+        @apply border-b border-line px-4 py-3 align-top text-muted;
+    }
+
+    .table-scroll tr:last-child td {
+        @apply border-b-0;
+    }
+
+    /* Signatures wrap rather than holding the column open. The reference tables
+       are three columns of `method | returns | notes`, and a first column wide
+       enough for `resolveFiles(string|array|null $files, …)` on one line pushed
+       the other two off the side of a box the reader had no reason to think
+       scrolled. */
+    .table-scroll td code {
+        @apply break-words;
+    }
+
+    /* ------------------------------------------------------------ callouts */
+
+    .callout {
+        @apply my-6 rounded-lg border border-line bg-sunken px-4 py-3.5 text-sm text-muted;
+    }
+
+    .callout > * + * {
+        @apply mt-3;
+    }
+
+    .callout > :last-child {
+        @apply mb-0;
+    }
+
+    /* Not uppercased: a title is allowed to name a method, and a method name
+       shouted in small caps stops looking like the method. */
+    .callout__title {
+        @apply flex items-center gap-2 font-display text-[0.9375rem] font-semibold text-ink;
+    }
+
+    .callout__title svg {
+        @apply text-faint;
+    }
+
+    .callout--tip {
+        @apply border-emerald-600/25 bg-emerald-500/[0.06];
+    }
+
+    .callout--tip .callout__title svg {
+        @apply text-emerald-600 dark:text-emerald-400;
+    }
+
+    .callout--warning {
+        @apply border-amber-600/25 bg-amber-500/[0.07];
+    }
+
+    .callout--warning .callout__title svg {
+        @apply text-amber-600 dark:text-amber-400;
+    }
+
+    .callout--danger {
+        @apply border-accent/25 bg-accent/[0.06];
+    }
+
+    .callout--danger .callout__title svg {
+        @apply text-accent;
+    }
+
+    /* --------------------------------------------------------- code blocks */
+
+    /* `group` is added in the markup, not here — it is a marker for the copy
+       button's `group-hover:`, and a marker cannot be `@apply`-ed. */
+    .code-block {
+        @apply relative my-6 overflow-hidden rounded-lg border border-code-line bg-code shadow-sm;
+    }
+
+    .code-block__head {
+        @apply flex items-center justify-between gap-3 border-b border-code-line px-4 py-2
+               font-mono text-xs text-code-ink/70;
+    }
+
+    .code-block__file {
+        @apply truncate text-white;
+    }
+
+    .code-block__lang {
+        /* Quiet, but not below the floor: the filename above it is white, so
+           the language keeps its place in the hierarchy without an alpha. */
+        @apply shrink-0 uppercase tracking-wider text-code-ink;
+    }
+
+    /* The copy button sits in the corner the filename header leaves free, and
+       only appears once the block is hovered or focused — except on a touch
+       device, which has no hover to reveal it with. */
+    .code-copy {
+        @apply absolute right-2 top-2 z-10 rounded-md border border-code-line bg-code
+               px-2 py-1 font-sans text-[0.7rem] font-medium text-code-ink
+               opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100
+               hover:border-white/20 hover:text-white;
+    }
+
+    /* A titled block already has a bar across the top; the button tucks into it
+       rather than floating over the first line of code. */
+    .code-block:has(.code-block__head) .code-copy {
+        @apply top-1.5;
+    }
+
+    /* A copy that worked is a state change with no visible result — the
+       clipboard is somewhere else. The label already says so; the pop is what
+       makes it register without being read. */
+    @keyframes lpt-pop {
+        50% {
+            transform: scale(1.08);
+        }
+    }
+
+    .code-copy.is-copied,
+    [data-builder-copy].is-copied {
+        animation: lpt-pop 260ms ease-out;
+    }
+
+    /* The install command is a direct child of `.lp-enter`, so it already owns an
+       `animation` — the hero's entrance. Setting one here would replace it, and
+       taking the class off again would hand `lpt-rise` back to an element that
+       has long since finished it, replaying the whole entrance: the button would
+       vanish and fly back in every time somebody copied. The pop goes on the icon
+       instead, which has no animation of its own to lose. */
+    [data-copy-text].is-copied > span[aria-hidden='true'] {
+        animation: lpt-pop 260ms ease-out;
+    }
+
+    .code-copy.is-copied {
+        @apply border-mint/40 text-mint opacity-100;
+    }
+
+    @media (hover: none) {
+        .code-copy {
+            @apply opacity-100;
+        }
+    }
+
+    .code-block pre {
+        @apply overflow-x-auto py-3.5;
+    }
+
+    .code-block pre code {
+        @apply block font-mono text-[0.8125rem] leading-[1.7] text-code-ink;
+        /* Ligatures off: these blocks are full of shell flags, and a `--tag`
+           rendered as an em dash is a command nobody can retype. */
+        font-variant-ligatures: none;
+        tab-size: 4;
+    }
+
+    @media (min-width: 40rem) {
+        .code-block pre code {
+            @apply text-[0.85rem];
+        }
+    }
+
+    /* Horizontal padding lives on the line, not on the `pre`, so a diff or a
+       focus background reaches the full width of a scrolled block. */
+    .code-block pre code .line {
+        @apply relative block min-h-[1.7em] px-4;
+    }
+
+    /* Focus lines — `[tl! focus]`. The unfocused ones fade until the block is
+       hovered or focused, so the point is made without hiding the context. */
+    .torchlight.has-focus-lines .line:not(.line-focus):not(.summary) {
+        @apply opacity-40 blur-[0.4px] transition duration-200;
+    }
+
+    .code-block:hover .torchlight.has-focus-lines .line:not(.line-focus),
+    .code-block:focus-within .torchlight.has-focus-lines .line:not(.line-focus) {
+        @apply opacity-100 blur-none;
+    }
+
+    @media (hover: none) {
+        .torchlight.has-focus-lines .line:not(.line-focus):not(.summary) {
+            @apply opacity-100 blur-none;
+        }
+    }
+
+    /* Highlighted lines — `[tl! highlight]`. Warm enough to read as "look
+       here" without claiming the line was changed. */
+    .torchlight .line-highlight {
+        @apply bg-mark/[0.13];
+        box-shadow: inset 2px 0 0 var(--color-mark);
+    }
+
+    /* Git diffs — `[tl! ++]` / `[tl! --]`. The gutter is drawn here rather
+       than injected by Torchlight, so both render paths agree. */
+    .torchlight .line-add {
+        @apply bg-diff-add/[0.14];
+    }
+
+    .torchlight .line-remove {
+        @apply bg-diff-remove/[0.14];
+    }
+
+    .torchlight.has-diff-lines .line {
+        @apply pl-8;
+    }
+
+    .torchlight.has-diff-lines .line::before {
+        @apply absolute left-4 select-none text-code-ink/35 content-[''];
+    }
+
+    .torchlight.has-diff-lines .line-add::before {
+        @apply text-diff-add content-['+'];
+    }
+
+    .torchlight.has-diff-lines .line-remove::before {
+        @apply text-diff-remove content-['-'];
+    }
+
+    /* Collapsed sections — `[tl! collapse:start]` … `[tl! collapse:end]`.
+       Tinted at rest, not only on hover: a fold nobody notices is a fold that
+       hid a line of the example. */
+    .code-block pre summary {
+        /* `display: block` is what removes the disclosure triangle in Safari;
+           `list-style: none` is what removes it everywhere else. */
+        @apply block cursor-pointer select-none bg-white/[0.03] text-code-ink/50
+               transition hover:bg-white/[0.06] hover:text-code-ink;
+        list-style: none;
+    }
+
+    .code-block pre summary::-webkit-details-marker {
+        @apply hidden;
+    }
+
+    /* Open, the row has done its job — it stays only as the way back. */
+    .code-block pre details[open] summary {
+        @apply bg-transparent hover:bg-white/[0.04];
+    }
+
+    .code-block pre summary .summary-toggle::before {
+        @apply inline-block text-[0.75em] transition-transform content-['▸'];
+    }
+
+    .code-block pre details[open] summary .summary-toggle::before {
+        @apply rotate-90;
+    }
+
+    .code-block pre details[open] summary .summary-hide-when-open {
+        @apply hidden;
+    }
+
+    .summary-caret {
+        @apply mr-2 inline-block;
+    }
+
+    /* Fallback highlighter tokens. */
+    .tok-com {
+        @apply text-tok-com italic;
+    }
+    .tok-str {
+        @apply text-tok-str;
+    }
+    .tok-key {
+        @apply text-tok-key;
+    }
+    .tok-var {
+        @apply text-tok-var;
+    }
+    .tok-fn {
+        @apply text-tok-fn;
+    }
+    .tok-num {
+        @apply text-tok-num;
+    }
+    .tok-cls {
+        @apply text-tok-cls;
+    }
+    .tok-pun {
+        @apply text-tok-pun;
+    }
+    .tok-op {
+        @apply text-tok-op;
+    }
+    .tok-attr {
+        @apply text-tok-attr;
+    }
+    .tok-tag {
+        @apply text-tok-tag;
+    }
+    .tok-dir {
+        @apply text-tok-dir;
+    }
+}
