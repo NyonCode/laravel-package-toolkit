@@ -206,6 +206,37 @@ test('createInstallCommand without callback sets no tags', function () {
     expect($command->getPublishTags())->toBeEmpty();
 });
 
+test('createInstallCommand names the command after the default signature', function () {
+    $this->packager->hasInstallCommand();
+
+    expect($this->packager->createInstallCommand()->getName())->toBe('test-package:install');
+});
+
+test('createInstallCommand applies a custom command name', function () {
+    $this->packager->hasInstallCommand()->installCommandName('setup');
+
+    expect($this->packager->createInstallCommand()->getName())->toBe('test-package:setup');
+});
+
+// installOnRunInEnvironment()
+test('installOnRunInEnvironment turns auto-install on for the current environment', function () {
+    $this->packager->installOnRunInEnvironment(['testing', 'local']);
+
+    expect($this->packager->shouldInstallOnRun())->toBeTrue();
+});
+
+test('installOnRunInEnvironment leaves auto-install off elsewhere', function () {
+    $this->packager->installOnRunInEnvironment('staging');
+
+    expect($this->packager->shouldInstallOnRun())->toBeFalse();
+});
+
+test('installOnRunInLocal and installOnRunInProduction do not apply while testing', function () {
+    $this->packager->installOnRunInLocal()->installOnRunInProduction();
+
+    expect($this->packager->shouldInstallOnRun())->toBeFalse();
+});
+
 // Quick install presets
 test('hasQuickInstall is installable', function () {
     $this->packager->hasQuickInstall();
