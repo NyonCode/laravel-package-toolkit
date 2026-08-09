@@ -82,6 +82,7 @@ test('a shipped file newer than its published copy is copied again', function ()
 
     $published = public_path('vendor/'.$this->package.'/js/app.js');
     touch($published, time() - 60);
+    clearstatcache(true, $published);
 
     $this->assets->flush();
     $this->assets->url($this->package, $this->shipped.'/dist/js/app.js');
@@ -95,7 +96,11 @@ test('a published copy older than the shipped file is stale', function () {
     $this->assets->mirrors($this->package, $this->shipped.'/dist');
     $this->assets->url($this->package, $this->shipped.'/dist/js/app.js');
 
-    touch(public_path('vendor/'.$this->package.'/js/app.js'), time() - 60);
+    // Before PHP 8.3, touch() left the mtime it changed in the stat cache, and the
+    // copy above already primed it — so the age set here is only visible once cleared.
+    $published = public_path('vendor/'.$this->package.'/js/app.js');
+    touch($published, time() - 60);
+    clearstatcache(true, $published);
 
     expect($this->assets->isStale($this->package, $this->shipped.'/dist/js/app.js'))->toBeTrue();
 });
@@ -126,4 +131,4 @@ test('a read-only public directory yields no url and no exception', function () 
         chmod($readOnly, 0o755);
         File::deleteDirectory($readOnly);
     }
-})->skip(fn () => is_readable('/etc/sudoers'), 'Running as root: permission bits are ignored.');
+})->skip(fn () => ! permissionsAreEnforced(), 'Permission bits are not enforced here.');

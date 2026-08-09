@@ -46,7 +46,7 @@ test('duplicate and trailing separators are normalized away', function () {
 
 test('path joins the relative path onto the base path', function () {
     expect($this->packager->path('Commands'))
-        ->toBe(__DIR__.'/../TestPackageData/src'.DIRECTORY_SEPARATOR.'Commands');
+        ->toBe($this->packager->basePath().DIRECTORY_SEPARATOR.'Commands');
 });
 
 // resolveFiles — explicit files

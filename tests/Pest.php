@@ -41,7 +41,21 @@ uses(PackageServiceProviderTestCase::class)->in('PackageProviderTests');
 |
 */
 
-/*function something()
+/**
+ * Whether the platform actually enforces the permission bits a test sets.
+ *
+ * Windows has no such bits — `chmod()` there only toggles the read-only attribute and
+ * a file stays readable — and root is exempt from the ones it does have. A test that
+ * makes something unreadable and expects to be stopped by it proves nothing in either
+ * case, so it is skipped rather than left to fail.
+ */
+function permissionsAreEnforced(): bool
 {
-    // ..
-}*/
+    if (PHP_OS_FAMILY === 'Windows') {
+        return false;
+    }
+
+    return function_exists('posix_geteuid')
+        ? posix_geteuid() !== 0
+        : ! is_readable('/etc/sudoers');
+}
