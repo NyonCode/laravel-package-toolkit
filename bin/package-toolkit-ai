@@ -1,0 +1,547 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Wire the toolkit's agent support into the project that installed it.
+ *
+ *   vendor/bin/package-toolkit-ai install     add all three, idempotently
+ *   vendor/bin/package-toolkit-ai status      report what is wired up
+ *   vendor/bin/package-toolkit-ai remove      take it all back out
+ *
+ * Three separate things, because agents disagree about where they read from:
+ *
+ *   AGENTS.md   a managed block pointing at the guide that ships in vendor/.
+ *               Read by Claude Code, Cursor, Codex, Copilot, Windsurf, Zed.
+ *   .claude/    a Claude Code skill, so the guidance loads when the work is
+ *               about the toolkit rather than on every single turn.
+ *   .mcp.json   the MCP server, which answers from the installed source rather
+ *               than from a model's recollection of some earlier release.
+ *
+ * Everything written here is delimited, tagged or namespaced, so `remove` takes
+ * back exactly what `install` added — and so running `install` twice changes
+ * nothing the second time. AGENTS.md comes back byte-for-byte; `.mcp.json` comes
+ * back with the same content, but re-encoded, since JSON has to be parsed to be
+ * edited safely and no encoder preserves the author's whitespace.
+ */
+
+declare(strict_types=1);
+
+const MARKER_START = '<!-- laravel-package-toolkit:start -->';
+const MARKER_END = '<!-- laravel-package-toolkit:end -->';
+const MCP_KEY = 'laravel-package-toolkit';
+const SKILL = 'laravel-package-toolkit';
+
+exit(main($argv));
+
+function main(array $argv): int
+{
+    $arguments = array_slice($argv, 1);
+    $flags = array_values(array_filter($arguments, fn (string $a): bool => str_starts_with($a, '-')));
+    $command = array_values(array_filter($arguments, fn (string $a): bool => ! str_starts_with($a, '-')))[0] ?? 'install';
+
+    if (in_array('-h', $flags, true) || in_array('--help', $flags, true) || $command === 'help') {
+        usage();
+
+        return 0;
+    }
+
+    $dryRun = in_array('--dry-run', $flags, true);
+
+    $packageRoot = locatePackageRoot();
+
+    if ($packageRoot === null) {
+        fail('Cannot find the toolkit itself. Run this from a project that requires nyoncode/laravel-package-toolkit.');
+
+        return 1;
+    }
+
+    $projectRoot = projectRootFrom($flags, $packageRoot);
+
+    if ($projectRoot === null) {
+        fail('No composer.json in the current directory. Run this from the project root, or pass --project=/path/to/project.');
+
+        return 1;
+    }
+
+    // Run inside the toolkit's own checkout, "the project" and "the package" are
+    // the same directory: installing would append a block to this repository's
+    // AGENTS.md pointing two lines further down the same file.
+    if ($projectRoot === $packageRoot && $command !== 'status') {
+        fail('This is the toolkit\'s own repository — there is nothing to wire it into. Run this from a package that requires it.');
+
+        return 1;
+    }
+
+    return match ($command) {
+        'install' => install($packageRoot, $projectRoot, $flags, $dryRun),
+        'status' => status($packageRoot, $projectRoot),
+        'remove', 'uninstall' => remove($projectRoot, $dryRun),
+        default => (function () use ($command): int {
+            fail("Unknown command \"$command\".");
+            usage();
+
+            return 1;
+        })(),
+    };
+}
+
+function usage(): void
+{
+    $lines = [
+        '',
+        bold('package-toolkit-ai').' — agent support for nyoncode/laravel-package-toolkit',
+        '',
+        '  '.bold('install').'    Reference the agent guide from AGENTS.md, install the Claude Code',
+        '              skill, and register the MCP server in .mcp.json. Idempotent.',
+        '  '.bold('status').'     Report which of the three are currently wired up.',
+        '  '.bold('remove').'     Undo all three.',
+        '',
+        '  '.bold('--dry-run').'          Print what would change, write nothing.',
+        '  '.bold('--project=PATH').'     Target project root (default: the current directory).',
+        '  '.bold('--no-skill').'         Skip the Claude Code skill.',
+        '  '.bold('--no-mcp').'           Skip the MCP server registration.',
+        '',
+    ];
+
+    echo implode(PHP_EOL, $lines).PHP_EOL;
+}
+
+/* ------------------------------------------------------------------ locating */
+
+/**
+ * The toolkit's own directory.
+ *
+ * `__DIR__` is right whenever this file is reached through a symlink or run in
+ * place. Composer also has a Windows/`bin-compat` mode where `vendor/bin` holds
+ * a *proxy* PHP file rather than a link, and there `__DIR__` is the project's
+ * `vendor/bin` — hence the second guess.
+ */
+function locatePackageRoot(): ?string
+{
+    $candidates = [
+        dirname(__DIR__),
+        dirname(__DIR__).'/../nyoncode/laravel-package-toolkit',
+        getcwd().'/vendor/nyoncode/laravel-package-toolkit',
+    ];
+
+    foreach ($candidates as $candidate) {
+        $resolved = realpath($candidate);
+
+        if ($resolved !== false && is_file($resolved.'/ai/AGENTS.md')) {
+            return $resolved;
+        }
+    }
+
+    return null;
+}
+
+function projectRootFrom(array $flags, string $packageRoot): ?string
+{
+    foreach ($flags as $flag) {
+        if (str_starts_with($flag, '--project=')) {
+            $path = realpath(substr($flag, strlen('--project=')));
+
+            return $path !== false && is_file($path.'/composer.json') ? $path : null;
+        }
+    }
+
+    $cwd = realpath(getcwd());
+
+    if ($cwd !== false && is_file($cwd.'/composer.json')) {
+        return $cwd;
+    }
+
+    // Run with no arguments from inside vendor/: walk out to the project that
+    // installed us, which is the only thing "the project" can mean there.
+    $above = realpath($packageRoot.'/../../..');
+
+    return $above !== false && is_file($above.'/composer.json') ? $above : null;
+}
+
+/**
+ * How to refer to a file inside the package, from the project root.
+ *
+ * The conventional `vendor/…` path is preferred over anything derived from
+ * `realpath()`, and checked for readability rather than assumed: with the
+ * toolkit installed from a path repository, Composer symlinks it and the real
+ * directory is somewhere else entirely on this one machine. That absolute path
+ * works — right up until AGENTS.md is committed and read on someone else's.
+ */
+function packageReference(string $projectRoot, string $packageRoot, string $suffix): string
+{
+    $conventional = 'vendor/nyoncode/laravel-package-toolkit/'.$suffix;
+
+    if (is_file($projectRoot.'/'.$conventional)) {
+        return $conventional;
+    }
+
+    return relativePath($projectRoot, $packageRoot.'/'.$suffix);
+}
+
+/** A path from the project root to a file in the package, for use in Markdown. */
+function relativePath(string $from, string $to): string
+{
+    $from = rtrim(str_replace('\\', '/', $from), '/');
+    $to = str_replace('\\', '/', $to);
+
+    if (str_starts_with($to, $from.'/')) {
+        return substr($to, strlen($from) + 1);
+    }
+
+    return $to;
+}
+
+/* ------------------------------------------------------------------ install */
+
+/**
+ * @param  string[]  $flags
+ */
+function install(string $packageRoot, string $projectRoot, array $flags, bool $dryRun): int
+{
+    $skipSkill = in_array('--no-skill', $flags, true);
+    $skipMcp = in_array('--no-mcp', $flags, true);
+
+    echo PHP_EOL.bold('Wiring agent support into ').$projectRoot.PHP_EOL.PHP_EOL;
+
+    $changed = 0;
+    $changed += installGuideReference($packageRoot, $projectRoot, $dryRun) ? 1 : 0;
+
+    if (! $skipSkill) {
+        $changed += installSkill($packageRoot, $projectRoot, $dryRun) ? 1 : 0;
+    }
+
+    if (! $skipMcp) {
+        $changed += installMcpServer($packageRoot, $projectRoot, $dryRun) ? 1 : 0;
+    }
+
+    echo PHP_EOL;
+
+    if ($dryRun) {
+        echo dim("  Dry run — nothing was written. $changed file(s) would change.").PHP_EOL.PHP_EOL;
+
+        return 0;
+    }
+
+    echo $changed === 0
+        ? dim('  Already up to date.').PHP_EOL
+        : ok("Done — $changed file(s) written.").PHP_EOL;
+
+    if (! $skipMcp && ! hasNode()) {
+        echo PHP_EOL.warn('The MCP server needs Node 18+, which is not on PATH. The other two work without it.').PHP_EOL;
+    }
+
+    echo PHP_EOL;
+
+    return 0;
+}
+
+/**
+ * The managed block in the project's own AGENTS.md.
+ *
+ * A block rather than a whole file: AGENTS.md belongs to the project, and most
+ * projects that install this already have one. Markers make the block ours to
+ * rewrite on upgrade and to delete on `remove`, without touching a line the
+ * author wrote.
+ */
+function installGuideReference(string $packageRoot, string $projectRoot, bool $dryRun): bool
+{
+    $file = $projectRoot.'/AGENTS.md';
+    $guide = packageReference($projectRoot, $packageRoot, 'ai/AGENTS.md');
+
+    $block = implode(PHP_EOL, [
+        MARKER_START,
+        '',
+        '## Building this package with laravel-package-toolkit',
+        '',
+        'This package extends `PackageServiceProvider` and describes itself in one method,',
+        '`configure(Packager $packager)`. Before writing or changing that method, read the complete',
+        'API reference that ships with the installed release:',
+        '',
+        "[$guide]($guide)",
+        '',
+        'It covers every `hasX()` builder, which resources load vs. publish vs. both, how paths',
+        'resolve relative to the provider file, the publish-tag format, and the mistakes that fail',
+        'silently. Prefer it over recalling the API — it matches the version in `composer.lock`.',
+        '',
+        MARKER_END,
+    ]);
+
+    $existing = is_file($file) ? (string) file_get_contents($file) : null;
+
+    if ($existing === null) {
+        return writeFile($file, "# AGENTS.md".PHP_EOL.PHP_EOL.$block.PHP_EOL, 'AGENTS.md', ['create', 'created'], $dryRun);
+    }
+
+    if (str_contains($existing, MARKER_START) && str_contains($existing, MARKER_END)) {
+        $updated = (string) preg_replace(
+            '/'.preg_quote(MARKER_START, '/').'.*?'.preg_quote(MARKER_END, '/').'/s',
+            str_replace('$', '\$', $block),
+            $existing
+        );
+
+        if ($updated === $existing) {
+            echo unchanged('AGENTS.md').PHP_EOL;
+
+            return false;
+        }
+
+        return writeFile($file, $updated, 'AGENTS.md', ['update the managed block in', 'updated the managed block in'], $dryRun);
+    }
+
+    return writeFile($file, rtrim($existing).PHP_EOL.PHP_EOL.$block.PHP_EOL, 'AGENTS.md', ['append a block to', 'appended a block to'], $dryRun);
+}
+
+function installSkill(string $packageRoot, string $projectRoot, bool $dryRun): bool
+{
+    $source = $packageRoot.'/ai/skills/'.SKILL.'/SKILL.md';
+    $target = $projectRoot.'/.claude/skills/'.SKILL.'/SKILL.md';
+
+    if (! is_file($source)) {
+        echo warn('Skill not found in the package — skipped.').PHP_EOL;
+
+        return false;
+    }
+
+    $contents = (string) file_get_contents($source);
+
+    if (is_file($target) && file_get_contents($target) === $contents) {
+        echo unchanged('.claude/skills/'.SKILL.'/SKILL.md').PHP_EOL;
+
+        return false;
+    }
+
+    return writeFile($target, $contents, '.claude/skills/'.SKILL.'/SKILL.md', is_file($target) ? ['update', 'updated'] : ['create', 'created'], $dryRun);
+}
+
+/**
+ * Register the server under our own key in `.mcp.json`.
+ *
+ * The file is decoded, one key is set, and it is re-encoded — so a project that
+ * already registered other servers keeps them, and re-running only ever rewrites
+ * the one entry.
+ */
+function installMcpServer(string $packageRoot, string $projectRoot, bool $dryRun): bool
+{
+    $file = $projectRoot.'/.mcp.json';
+    $server = packageReference($projectRoot, $packageRoot, 'ai/mcp/server.mjs');
+
+    $config = [];
+
+    if (is_file($file)) {
+        $decoded = json_decode((string) file_get_contents($file), true);
+
+        if (! is_array($decoded)) {
+            echo warn('.mcp.json is not valid JSON — leaving it alone.').PHP_EOL;
+
+            return false;
+        }
+
+        $config = $decoded;
+    }
+
+    $config['mcpServers'] ??= [];
+    $config['mcpServers'][MCP_KEY] = [
+        'type' => 'stdio',
+        'command' => 'node',
+        'args' => [$server],
+    ];
+
+    $encoded = encodeJson($config, is_file($file) ? (string) file_get_contents($file) : null);
+
+    if (is_file($file) && file_get_contents($file) === $encoded) {
+        echo unchanged('.mcp.json').PHP_EOL;
+
+        return false;
+    }
+
+    return writeFile($file, $encoded, '.mcp.json', is_file($file) ? ['register the server in', 'registered the server in'] : ['create', 'created'], $dryRun);
+}
+
+/* ------------------------------------------------------------- status/remove */
+
+function status(string $packageRoot, string $projectRoot): int
+{
+    $agents = $projectRoot.'/AGENTS.md';
+    $hasBlock = is_file($agents) && str_contains((string) file_get_contents($agents), MARKER_START);
+
+    $skill = $projectRoot.'/.claude/skills/'.SKILL.'/SKILL.md';
+
+    $mcp = $projectRoot.'/.mcp.json';
+    $decoded = is_file($mcp) ? json_decode((string) file_get_contents($mcp), true) : null;
+    $hasServer = is_array($decoded) && isset($decoded['mcpServers'][MCP_KEY]);
+
+    echo PHP_EOL.bold('Agent support in ').$projectRoot.PHP_EOL.PHP_EOL;
+    echo mark($hasBlock).' AGENTS.md references the guide'.PHP_EOL;
+    echo mark(is_file($skill)).' Claude Code skill installed'.PHP_EOL;
+    echo mark($hasServer).' MCP server registered'.(! $hasServer || hasNode() ? '' : dim('  (node not on PATH)')).PHP_EOL;
+    echo PHP_EOL.dim('  Guide: '.packageReference($projectRoot, $packageRoot, 'ai/AGENTS.md')).PHP_EOL.PHP_EOL;
+
+    return $hasBlock && is_file($skill) && $hasServer ? 0 : 1;
+}
+
+function remove(string $projectRoot, bool $dryRun): int
+{
+    echo PHP_EOL.bold('Removing agent support from ').$projectRoot.PHP_EOL.PHP_EOL;
+
+    $file = $projectRoot.'/AGENTS.md';
+
+    if (is_file($file)) {
+        $existing = (string) file_get_contents($file);
+        $stripped = (string) preg_replace(
+            '/\n*'.preg_quote(MARKER_START, '/').'.*?'.preg_quote(MARKER_END, '/').'\n*/s',
+            PHP_EOL.PHP_EOL,
+            $existing
+        );
+
+        if ($stripped !== $existing) {
+            writeFile($file, rtrim($stripped).PHP_EOL, 'AGENTS.md', ['remove the managed block from', 'removed the managed block from'], $dryRun);
+        }
+    }
+
+    $skill = $projectRoot.'/.claude/skills/'.SKILL;
+
+    if (is_dir($skill)) {
+        if (! $dryRun) {
+            @unlink($skill.'/SKILL.md');
+            @rmdir($skill);
+        }
+
+        echo ok('removed .claude/skills/'.SKILL).PHP_EOL;
+    }
+
+    $mcp = $projectRoot.'/.mcp.json';
+
+    if (is_file($mcp)) {
+        $original = (string) file_get_contents($mcp);
+        $decoded = json_decode($original, true);
+
+        if (is_array($decoded) && isset($decoded['mcpServers'][MCP_KEY])) {
+            unset($decoded['mcpServers'][MCP_KEY]);
+
+            writeFile(
+                $mcp,
+                encodeJson($decoded, $original),
+                '.mcp.json',
+                ['deregister the server in', 'deregistered the server in'],
+                $dryRun
+            );
+        }
+    }
+
+    echo PHP_EOL;
+
+    return 0;
+}
+
+/* -------------------------------------------------------------------- output */
+
+/**
+ * @param  array{0: string, 1: string}  $verb  The action, as [infinitive, past participle] —
+ *                                             a dry run says what it would do, a real run what it did.
+ */
+function writeFile(string $path, string $contents, string $label, array $verb, bool $dryRun): bool
+{
+    [$infinitive, $past] = $verb;
+
+    if ($dryRun) {
+        echo '  '.dim('would '.$infinitive.' ').$label.PHP_EOL;
+
+        return true;
+    }
+
+    $directory = dirname($path);
+
+    if (! is_dir($directory) && ! @mkdir($directory, 0o755, true) && ! is_dir($directory)) {
+        echo warn("could not create $directory").PHP_EOL;
+
+        return false;
+    }
+
+    if (@file_put_contents($path, $contents) === false) {
+        echo warn("could not write $label").PHP_EOL;
+
+        return false;
+    }
+
+    echo ok($past.' '.$label).PHP_EOL;
+
+    return true;
+}
+
+/**
+ * Pretty JSON, indented the way the file already was.
+ *
+ * PHP indents with four spaces and offers no way to ask for anything else, while
+ * most `.mcp.json` files use two — so a one-key edit would re-indent the whole
+ * file and land in someone's diff as a rewrite. Matching what is there costs one
+ * regex. Inline objects still expand onto their own lines; that much no encoder
+ * can preserve, which is why `remove` promises the same content rather than the
+ * same bytes.
+ */
+function encodeJson(array $config, ?string $original): string
+{
+    $encoded = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+    if ($original !== null && preg_match('/\n(\x20+)"/', $original, $match) === 1 && strlen($match[1]) === 2) {
+        $encoded = (string) preg_replace_callback(
+            '/^(?: {4})+/m',
+            fn (array $indent): string => str_repeat(' ', intdiv(strlen($indent[0]), 2)),
+            (string) $encoded
+        );
+    }
+
+    return $encoded.PHP_EOL;
+}
+
+function hasNode(): bool
+{
+    $which = PHP_OS_FAMILY === 'Windows' ? 'where node' : 'command -v node';
+
+    exec($which.' 2>'.(PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null'), $output, $status);
+
+    return $status === 0;
+}
+
+function colours(): bool
+{
+    return getenv('NO_COLOR') === false && (PHP_OS_FAMILY !== 'Windows' || getenv('ANSICON') !== false);
+}
+
+function bold(string $text): string
+{
+    return colours() ? "\033[1m$text\033[0m" : $text;
+}
+
+function dim(string $text): string
+{
+    return colours() ? "\033[2m$text\033[0m" : $text;
+}
+
+function ok(string $text): string
+{
+    return '  '.(colours() ? "\033[32m✓\033[0m" : '[ok]')." $text";
+}
+
+function unchanged(string $text): string
+{
+    return '  '.(colours() ? "\033[2m·\033[0m" : '[--]').' '.dim("unchanged  $text");
+}
+
+function warn(string $text): string
+{
+    return '  '.(colours() ? "\033[33m!\033[0m" : '[!!]')." $text";
+}
+
+function mark(bool $yes): string
+{
+    if (! colours()) {
+        return $yes ? '  [ok]' : '  [--]';
+    }
+
+    return $yes ? "  \033[32m✓\033[0m" : "  \033[33m·\033[0m";
+}
+
+function fail(string $message): void
+{
+    fwrite(STDERR, PHP_EOL.warn($message).PHP_EOL.PHP_EOL);
+}

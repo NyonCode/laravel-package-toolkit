@@ -1,0 +1,145 @@
+name: Agent support
+
+# The `ai/` directory ships with the package, and nothing else in CI covers it.
+# The MCP server reads signatures out of `src/` with a regex and takes its page
+# list from `site/nav.mjs`; both would degrade quietly rather than fail, and the
+# symptom — an agent told a builder does not exist — never reaches this
+# repository. So it is checked here, on every change to anything it reads.
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'docs/**'
+      - 'ai/**'
+      - 'bin/**'
+      - 'site/nav.mjs'
+      - '.github/workflows/agent-support.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'docs/**'
+      - 'ai/**'
+      - 'bin/**'
+      - 'site/nav.mjs'
+      - '.github/workflows/agent-support.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: MCP server and installer
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: MCP server parses the package
+        run: node ai/mcp/server.mjs --self-test
+
+      # The self-test proves parsing works; this proves it did not silently fall
+      # back. Reading `nav.mjs` yields the published pages plus the agent guide —
+      # scanning `docs/` instead would quietly include the planning documents the
+      # site does not build, and hand a model unreleased features as fact.
+      - name: Page list came from nav.mjs, not from a directory scan
+        run: |
+          listed=$(grep -c "file: '" site/nav.mjs)
+          expected=$((listed + 1))
+          actual=$(printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_docs"}}' \
+            | node ai/mcp/server.mjs \
+            | tail -n 1 \
+            | node -e 'let r="";process.stdin.on("data",d=>r+=d).on("end",()=>console.log(JSON.parse(r).result.content[0].text.split("\n").length))')
+
+          echo "nav.mjs lists $listed pages; the server serves $actual (expected $expected)"
+          test "$actual" -eq "$expected"
+
+      - name: Every tool answers
+        run: |
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+            '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_docs","arguments":{"query":"publish tag separator"}}}' \
+            '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_doc","arguments":{"slug":"agent-guide"}}}' \
+            '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"list_api","arguments":{"owner":"Packager"}}}' \
+            '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"describe_api","arguments":{"method":"hasConfig"}}}' \
+            | node ai/mcp/server.mjs \
+            | node -e '
+              let raw = ""
+              process.stdin.on("data", (d) => (raw += d)).on("end", () => {
+                const replies = raw.trim().split("\n").map((line) => JSON.parse(line))
+
+                if (replies.length !== 6) {
+                  throw new Error(`expected 6 replies, got ${replies.length}`)
+                }
+
+                for (const reply of replies) {
+                  if (reply.error) throw new Error(`#${reply.id}: ${reply.error.message}`)
+                  if (reply.result.isError) throw new Error(`#${reply.id}: ${reply.result.content[0].text}`)
+                }
+
+                console.log("all six replies ok")
+              })'
+
+      - name: Installer is syntactically valid
+        run: php -l bin/package-toolkit-ai
+
+      # Install into a throwaway project, then remove, and assert the files came
+      # back. That round trip is the whole promise of the markers in AGENTS.md and
+      # the namespaced key in .mcp.json — an installer that cannot be uninstalled
+      # cleanly is one nobody should run against a repository they care about.
+      #
+      # AGENTS.md is compared byte-for-byte. `.mcp.json` is compared as data:
+      # editing JSON safely means parsing it, and re-encoding cannot reproduce the
+      # author's whitespace. The installer matches their indent width, which
+      # covers the common case, but inline objects still expand.
+      - name: Installer round-trips without touching what it did not write
+        run: |
+          project="$(mktemp -d)"
+          mkdir -p "$project/vendor/nyoncode"
+          echo '{"name":"acme/scratch"}' > "$project/composer.json"
+          printf '# AGENTS.md\n\nGuidance the author wrote.\n' > "$project/AGENTS.md"
+          printf '{\n  "mcpServers": {\n    "other": { "type": "stdio", "command": "foo" }\n  }\n}\n' > "$project/.mcp.json"
+          ln -s "$PWD" "$project/vendor/nyoncode/laravel-package-toolkit"
+
+          cp "$project/AGENTS.md" "$project/AGENTS.md.before"
+          cp "$project/.mcp.json" "$project/.mcp.json.before"
+
+          php bin/package-toolkit-ai install --project="$project"
+          php bin/package-toolkit-ai status  --project="$project"
+          test -f "$project/.claude/skills/laravel-package-toolkit/SKILL.md"
+          grep -q 'laravel-package-toolkit:start' "$project/AGENTS.md"
+
+          # Second run must be a no-op.
+          php bin/package-toolkit-ai install --project="$project" | tee /tmp/second-run
+          grep -q 'Already up to date' /tmp/second-run
+
+          php bin/package-toolkit-ai remove --project="$project"
+          diff "$project/AGENTS.md.before" "$project/AGENTS.md"
+          node -e '
+            const fs = require("fs")
+            const read = (f) => JSON.parse(fs.readFileSync(f, "utf8"))
+            const before = read(process.argv[1] + "/.mcp.json.before")
+            const after = read(process.argv[1] + "/.mcp.json")
+
+            if (JSON.stringify(before) !== JSON.stringify(after)) {
+              throw new Error(".mcp.json did not come back:\n" + JSON.stringify(after, null, 2))
+            }
+          ' "$project"
+          test ! -e "$project/.claude/skills/laravel-package-toolkit"
+          echo "round trip clean"

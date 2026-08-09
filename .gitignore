@@ -1,5 +1,8 @@
 vendor/
-bin/
+# `bin/` is ignored wholesale except for what the package actually ships: the
+# entry is a directory, so a bare `!bin/x` would never be reconsidered.
+/bin/*
+!/bin/package-toolkit-ai
 .idea/
 composer.lock
 /cov.html/
@@ -9,3 +12,17 @@ package-lock.json
 .DS_Store
 --cache-directory/
 .claude/settings.local.json
+
+# Local agent scratch. `.ai/` is maintainer notes that stay on this machine —
+# not to be confused with `ai/`, which ships with the package. `.mcp.json` here
+# is a dev-machine config (it pins a running IDE's localhost port), unlike the
+# one `bin/package-toolkit-ai install` writes into a consuming project.
+/.ai/
+/.mcp.json
+
+# Documentation site
+# The lockfile is kept so the Pages workflow can `npm ci` against pinned versions.
+!site/package-lock.json
+site/dist/
+site/.torchlight-cache/
+.playwright-mcp/

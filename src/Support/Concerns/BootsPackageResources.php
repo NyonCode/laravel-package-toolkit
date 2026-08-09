@@ -2,6 +2,7 @@
 
 namespace NyonCode\LaravelPackageToolkit\Support\Concerns;
 
+use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
@@ -24,18 +25,21 @@ trait BootsPackageResources
      *
      * This method boots the package by calling other methods that
      * register the package's resources. It calls the following methods
-     * in order: `bootAboutCommand`, `bootMigrations`, `bootRoutes`,
-     * `bootSharedViewData`, `bootTranslations`, `bootViewComposers`,
-     * `bootViewComponentNamespaces`, `bootViewComponents`, and
-     * `bootViews`.
+     * in order: `bootAboutCommand`, `bootAssets`, `bootMigrations`,
+     * `bootRoutes`, `bootBroadcastChannels`, `bootMiddleware`, `bootEvents`,
+     * `bootOptimizes`, `bootSharedViewData`, `bootTranslations`,
+     * `bootViewComposers`, `bootViewComponentNamespaces`,
+     * `bootViewComponents`, and `bootViews`.
      *
      * @throws ParsingException
      */
     public function bootPackageResources(): void
     {
         $this->bootAboutCommand()
+            ->bootAssets()
             ->bootMigrations()
             ->bootRoutes()
+            ->bootBroadcastChannels()
             ->bootMiddleware()
             ->bootEvents()
             ->bootOptimizes()
@@ -102,6 +106,31 @@ trait BootsPackageResources
 
         foreach ($this->packager->routeFiles() as $routeFile) {
             $this->loadRoutesFrom(path: $routeFile->getPathname());
+        }
+
+        return $this;
+    }
+
+    /**
+     * Boot the broadcast channels for the package.
+     *
+     * Each channel file is required so its `Broadcast::channel()` calls run against the
+     * application's broadcaster. Guarded on the broadcasting component being installed:
+     * the toolkit requires `illuminate/support` only, so an application without
+     * `illuminate/broadcasting` must not be forced to resolve a missing manager.
+     */
+    public function bootBroadcastChannels(): static
+    {
+        if (! $this->packager->isBroadcastable()) {
+            return $this;
+        }
+
+        if (! class_exists(BroadcastManager::class)) {
+            return $this;
+        }
+
+        foreach ($this->packager->broadcastChannelFiles() as $channelFile) {
+            require $channelFile->getPathname();
         }
 
         return $this;

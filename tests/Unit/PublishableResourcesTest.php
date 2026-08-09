@@ -51,6 +51,27 @@ test('publishMigrations adds migrations tag', function () {
     expect($this->command->willPublish('migrations'))->toBeTrue();
 });
 
+test('publishSeeders adds seeders tag', function () {
+    $this->command->publishSeeders();
+
+    expect($this->command->getPublishTags())->toContain('seeders');
+    expect($this->command->willPublish('seeders'))->toBeTrue();
+});
+
+test('publishFactories adds factories tag', function () {
+    $this->command->publishFactories();
+
+    expect($this->command->getPublishTags())->toContain('factories');
+    expect($this->command->willPublish('factories'))->toBeTrue();
+});
+
+test('publishStubs adds stubs tag', function () {
+    $this->command->publishStubs();
+
+    expect($this->command->getPublishTags())->toContain('stubs');
+    expect($this->command->willPublish('stubs'))->toBeTrue();
+});
+
 test('publishRoutes adds routes tag', function () {
     $this->command->publishRoutes();
 
@@ -156,11 +177,14 @@ test('publishEverything adds all standard tags', function () {
     expect($tags)
         ->toContain('config')
         ->toContain('migrations')
+        ->toContain('seeders')
+        ->toContain('factories')
         ->toContain('routes')
         ->toContain('translations')
         ->toContain('assets')
         ->toContain('views')
         ->toContain('providers')
+        ->toContain('stubs')
         ->toContain('view-components')
         ->toContain('view-component-namespaces');
 });

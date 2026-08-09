@@ -1,0 +1,17 @@
+{
+  "name": "laravel-package-toolkit-docs",
+  "private": true,
+  "type": "module",
+  "description": "Static documentation site for nyoncode/laravel-package-toolkit",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --serve",
+    "clean": "node -e \"import('node:fs').then(fs => fs.rmSync('dist', {recursive: true, force: true}))\""
+  },
+  "devDependencies": {
+    "@torchlight-api/torchlight-cli": "^0.1.4",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.0",
+    "markdown-it-container": "^4.0.0"
+  }
+}

@@ -7,10 +7,12 @@ use InvalidArgumentException;
 use NyonCode\LaravelPackageToolkit\Concerns\FilesResolver;
 use NyonCode\LaravelPackageToolkit\Concerns\HasAboutCommand;
 use NyonCode\LaravelPackageToolkit\Concerns\HasAssets;
+use NyonCode\LaravelPackageToolkit\Concerns\HasBroadcastChannels;
 use NyonCode\LaravelPackageToolkit\Concerns\HasCommands;
 use NyonCode\LaravelPackageToolkit\Concerns\HasConditionalLoading;
 use NyonCode\LaravelPackageToolkit\Concerns\HasConfig;
 use NyonCode\LaravelPackageToolkit\Concerns\HasEvents;
+use NyonCode\LaravelPackageToolkit\Concerns\HasFactories;
 use NyonCode\LaravelPackageToolkit\Concerns\HasInstallation;
 use NyonCode\LaravelPackageToolkit\Concerns\HasMiddleware;
 use NyonCode\LaravelPackageToolkit\Concerns\HasMigrations;
@@ -18,6 +20,8 @@ use NyonCode\LaravelPackageToolkit\Concerns\HasOptimize;
 use NyonCode\LaravelPackageToolkit\Concerns\HasProviders;
 use NyonCode\LaravelPackageToolkit\Concerns\HasPublishTagSeparator;
 use NyonCode\LaravelPackageToolkit\Concerns\HasRoutes;
+use NyonCode\LaravelPackageToolkit\Concerns\HasSeeders;
+use NyonCode\LaravelPackageToolkit\Concerns\HasStubs;
 use NyonCode\LaravelPackageToolkit\Concerns\HasTranslate;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponentNamespaces;
 use NyonCode\LaravelPackageToolkit\Concerns\HasViewComponents;
@@ -31,10 +35,12 @@ class Packager
     use FilesResolver,
         HasAboutCommand,
         HasAssets,
+        HasBroadcastChannels,
         HasCommands,
         HasConditionalLoading,
         HasConfig,
         HasEvents,
+        HasFactories,
         HasInstallation,
         HasLifecycleHooks,
         HasMiddleware,
@@ -43,6 +49,8 @@ class Packager
         HasProviders,
         HasPublishTagSeparator,
         HasRoutes,
+        HasSeeders,
+        HasStubs,
         HasTranslate,
         HasViewComponentNamespaces,
         HasViewComponents,

@@ -5,11 +5,13 @@ namespace NyonCode\LaravelPackageToolkit;
 use Composer\InstalledVersions;
 use Exception;
 use Illuminate\Foundation\Console\AboutCommand;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
 use NyonCode\LaravelPackageToolkit\Contracts\ProvidesPackageServices;
 use NyonCode\LaravelPackageToolkit\Exceptions\InvalidReturnTypeException;
 use NyonCode\LaravelPackageToolkit\Exceptions\MissingNameException;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\BootsPackageResources;
+use NyonCode\LaravelPackageToolkit\Support\Concerns\DeclaresPackageAssets;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\HasEnvironmentChecks;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\HasNamespaceResolver;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\HasPublishingTag;
@@ -18,13 +20,13 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\PublishesPackageResources;
 use NyonCode\LaravelPackageToolkit\Support\Enums\LifecycleHook;
 use ReflectionClass;
 use Seld\JsonLint\ParsingException;
-use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
 use Throwable;
 
 abstract class PackageServiceProvider extends ServiceProvider implements ProvidesPackageServices
 {
     use BootsPackageResources;
+    use DeclaresPackageAssets;
     use HasEnvironmentChecks;
     use HasNamespaceResolver;
     use HasPublishingTag;
@@ -125,6 +127,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
 
         $this->registerConfig();
         $this->registerAssetMirror();
+        $this->registerPackageAssets();
         $this->registerInstallCommand();
         $this->performAutoInstall();
 
@@ -321,18 +324,18 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function performSilentInstallation(): void
     {
-        $installCommand = $this->packager?->createInstallCommand();
-
-        if ($installCommand === null) {
+        if (! $this->packager?->isInstallable()) {
             return;
         }
 
-        $installCommand->setTagSeparator($this->tagSeparator());
-
-        $input = new ArrayInput(['--no-interaction' => true]);
-        $output = new NullOutput();
-
-        $installCommand->run($input, $output);
+        // Run the command Artisan already holds, rather than a second instance built
+        // here: only the registered one carries the console application it needs for
+        // its container, its output and the `--no-interaction` option itself.
+        Artisan::call(
+            command: $this->packager->getInstallCommandName(),
+            parameters: ['--no-interaction' => true],
+            outputBuffer: new NullOutput()
+        );
     }
 
     /**

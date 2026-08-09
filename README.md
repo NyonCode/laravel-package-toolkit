@@ -4,6 +4,10 @@ Laravel Package toolkit is a powerful tool designed to streamline the process of
 Laravel. It provides a set of intuitive abstractions and helper methods for common package development tasks, enabling
 developers to focus on building features rather than boilerplate code.
 
+**📖 [Read the documentation](https://nyoncode.github.io/laravel-package-toolkit/)** — a page per resource type, with
+extended examples, gotchas and a full API reference. The Markdown lives in [`docs/`](./docs); the site that renders it
+lives in [`site/`](./site).
+
 ## Features
 
 - Simple and expressive package configuration
@@ -17,6 +21,8 @@ developers to focus on building features rather than boilerplate code.
 - Middleware registration and management
 - Event listener and subscriber registration
 - Optimize command registration (`php artisan optimize` / `optimize:clear`)
+- Broadcast channel registration
+- Publishable seeders, factories and generator stubs
 
 ## Support Laravel
 
@@ -41,8 +47,11 @@ developers to focus on building features rather than boilerplate code.
 - [Routing](#routing)
 - [Middlewares](#middlewares)
 - [Events](#events)
+- [Broadcast Channels](#broadcast-channels)
 - [Optimize](#optimize)
 - [Migrations](#migrations)
+- [Seeders](#seeders)
+- [Factories](#factories)
 - [Translations](#translations)
 - [Commands](#commands)
 - [Views](#views)
@@ -51,10 +60,12 @@ developers to focus on building features rather than boilerplate code.
 - [View Composers](#view-composers)
 - [Shared Data](#view-shared-data)
 - [Assets](#assets)
+- [Stubs](#stubs)
 - [Providers](#providers)
 - [Install Command](#install-command)
 - [About Command](#about-command)
 - [Publishing](#publishing)
+- [AI agents](#ai-agents)
 - [Testing](#testing)
 - [Upgrading from v1.x](#upgrading-from-v1x)
 - [Versioning](#versioning)
@@ -418,6 +429,49 @@ $packager
     ]);
 ```
 
+## Broadcast Channels
+
+Channel authorization callbacks (`Broadcast::channel()`) live in their own file, loaded straight into the broadcaster.
+By default the toolkit looks in the package's `routes` directory:
+
+```php
+$packager->hasBroadcastChannels();
+```
+
+Specify files explicitly, or point at another directory:
+
+```php
+$packager->hasBroadcastChannels(['channels.php']);
+
+$packager->hasBroadcastChannels(
+    channelFiles: ['channels.php', 'presence-channels.php'],
+    directory: '../broadcasting'
+);
+```
+
+A channel file looks exactly like an application's `routes/channels.php`:
+
+```php
+use Illuminate\Support\Facades\Broadcast;
+
+Broadcast::channel('blog.post.{postId}', function ($user, string $postId) {
+    return $user->canRead($postId);
+});
+```
+
+Two things to know:
+
+- **Do not use `hasRoutes()` for channel files.** That loads them into the router inside a route group, which is not
+  where a channel authorization callback belongs.
+- **Channels are not publishable.** An application does not load `routes/channels.php` unless its own bootstrap asks
+  for it, so a published copy would look authoritative while the package kept using its own. A consumer overrides
+  authorization by re-registering the same channel name from their application — the last registration wins.
+
+Registration is skipped silently when `illuminate/broadcasting` is not installed, so the call is safe in a package that
+only optionally broadcasts.
+
+---
+
 ## Optimize
 
 Register artisan commands that run with `php artisan optimize` (cache warmup) and `php artisan optimize:clear`. The
@@ -528,6 +582,59 @@ $packager->canLoadMigrations();
 
 This will load migrations directly when the package is registered, without requiring them to be published first. Works
 with both timestamped and timeless migration files.
+
+---
+
+## Seeders
+
+Seeders are a publish-only resource. By default all files in the package's `database/seeders` directory are registered:
+
+```php
+$packager->hasSeeders();
+```
+
+Or name them explicitly:
+
+```php
+$packager->hasSeeders(['BlogSeeder.php', 'BlogCategorySeeder.php']);
+
+$packager->hasSeeders(
+    seederFiles: ['BlogSeeder.php'],
+    directory: '../database/seed'
+);
+```
+
+Seeders publish **flat** into the application's `database/seeders` directory — not into a `vendor/{package}`
+subdirectory — because that is where the application's own `Database\Seeders` namespace resolves. A published seeder is
+therefore immediately runnable:
+
+```bash
+php artisan vendor:publish --tag=my-package::seeders
+php artisan db:seed --class=Database\Seeders\BlogSeeder
+```
+
+A seeder may ship as an inert `.stub` file; it is published as `.php`, the same convention `hasProvider()` follows:
+
+```php
+$packager->hasSeeders(['../stubs/BlogSeeder.stub']);   // published as BlogSeeder.php
+```
+
+---
+
+## Factories
+
+Model factories work the same way and publish flat into `database/factories`, where the application's
+`Database\Factories` namespace resolves them:
+
+```php
+$packager->hasFactories();
+
+$packager->hasFactories(['PostFactory.php']);
+```
+
+> **Note:** Laravel has no framework hook for loading factories out of a package — `loadFactoriesFrom()` was removed in
+> Laravel 8. A package that wants its factories used without publishing them must point at them from its model's
+> `newFactory()` method; the toolkit cannot do that on the model's behalf.
 
 ---
 
@@ -765,6 +872,79 @@ To opt out and rely on `vendor:publish` alone:
 $packager->hasAssets(mirror: false);
 ```
 
+### Rendering them in a template
+
+Name the files a template renders and the toolkit registers the directives that render them — no
+helper class, no hand-written `Blade::directive()`:
+
+```php
+$packager->hasAssets(entries: ['css/index.css', 'js/index.js']);
+```
+
+```blade
+<head>
+    @packageStyles('my-package')
+</head>
+<body>
+    @packageScripts('my-package')
+</body>
+```
+
+`@packageAssets('my-package')` renders both, `@packageAssetUrl('my-package', 'js/index.js')` gives
+the bare URL, and any of them takes further arguments to render only the entries you name. Paths
+are checked at registration, so a typo throws where it was declared. `.js` renders as
+`type="module"`; a shipped IIFE bundle says so with
+`Asset::make('js/index.js')->classic()`.
+
+### Vite — in the application, not in the package
+
+The toolkit ships no Vite config and builds nothing. What it supports is the consuming
+application compiling your package inside *its* build — which is what an application on Tailwind
+needs anyway, since its config has to see your Blade markup.
+
+```php
+$packager
+    ->hasAssets(entries: ['css/index.css', 'js/index.js'])
+    ->hasViteAssets([
+        // Vite source in the package => the shipped file it stands in for
+        'resources/css/index.css' => 'css/index.css',
+        'resources/js/index.js' => 'js/index.js',
+    ]);
+```
+
+An application that wants in lists the sources in its own `vite.config.js`
+(`'vendor/acme/my-package/resources/js/index.js'`) and changes nothing else. Each entry then
+resolves per request: the dev server while `npm run dev` runs, the application's manifest once it
+is built, and the shipped file from the mirror otherwise. The template keeps saying
+`@packageAssets('my-package')`.
+
+---
+
+## Stubs
+
+Stubs are the templates a package's generator commands scaffold from, published so a consumer can customise them:
+
+```php
+$packager->hasStubs();
+
+$packager->hasStubs(['command.stub', 'model.stub']);
+
+$packager->hasStubs(
+    stubFiles: ['command.stub'],
+    directory: '../resources/stubs'
+);
+```
+
+They are published to `stubs/{package-short-name}/`, keeping their original extension:
+
+```bash
+php artisan vendor:publish --tag=my-package::stubs
+# → stubs/my-package/command.stub
+```
+
+The short-name subdirectory matters: `stubs/` is a single flat directory shared with `php artisan stub:publish` and with
+every other installed package, so publishing there directly invites collisions.
+
 ---
 
 ## Providers
@@ -888,11 +1068,14 @@ The install command supports the following publishing methods:
 
 - `publishConfig()` / `publishConfigFile()` / `publishConfigFiles()`
 - `publishMigrations()`
+- `publishSeeders()`
+- `publishFactories()`
 - `publishRoutes()` / `publishRouteFiles()`
 - `publishTranslations()` / `publishTranslationFiles()` / `publishLanguageFiles()`
 - `publishAssets()` / `publishPublicAssets()`
 - `publishViews()` / `publishViewFiles()`
 - `publishProviders()` / `publishServiceProviders()`
+- `publishStubs()`
 - `publishComponents()` / `publishViewComponents()`
 - `publishComponentNamespaces()` / `publishViewComponentNamespaces()`
 - `publishEverything()` / `publishAll()`
@@ -974,11 +1157,14 @@ Each resource type has its own publishing tag in the format `{package-short-name
 
 - `{package-name}::config` - Configuration files
 - `{package-name}::migrations` - Database migrations
+- `{package-name}::seeders` - Database seeders
+- `{package-name}::factories` - Model factories
 - `{package-name}::routes` - Route files
 - `{package-name}::translations` - Translation files
 - `{package-name}::assets` - Public assets
 - `{package-name}::views` - View files
 - `{package-name}::providers` - Service providers
+- `{package-name}::stubs` - Generator stubs
 - `{package-name}::view-components` - View components
 - `{package-name}::view-component-namespaces` - View component namespaces
 
@@ -1038,6 +1224,34 @@ When publishing migrations, the behavior depends on the file format:
   publishing to ensure correct execution order.
 - **Mixed directories** are handled per-file — each file is treated individually based on whether it has a date prefix
   or not.
+
+---
+
+## AI agents
+
+An agent asked to add a resource to your package will otherwise guess at this API from whatever
+release was in its training data. The toolkit ships its own documentation for agents, inside the
+package, so what they read is the version in your `composer.lock`:
+
+```bash
+vendor/bin/package-toolkit-ai install
+```
+
+That does three independent things, each of which works without the others:
+
+| | |
+|---|---|
+| **`AGENTS.md`** | A delimited block referencing `vendor/nyoncode/laravel-package-toolkit/ai/AGENTS.md` — the complete public API in one file. Read by Claude Code, Cursor, Codex, Copilot, Windsurf, Zed. |
+| **Claude Code skill** | `.claude/skills/laravel-package-toolkit/SKILL.md`, loaded when the work is about the toolkit rather than on every turn. |
+| **MCP server** | `search_docs`, `list_docs`, `get_doc`, `list_api` and `describe_api` — the last two parse the installed `src/`, so signatures come from the release you have. Node 18+, no dependencies. |
+
+Re-running after an upgrade refreshes what changed; `status` reports what is wired up, `remove`
+undoes all of it, and `--dry-run` writes nothing. Skip pieces with `--no-skill` / `--no-mcp`.
+
+The documentation site also publishes itself in machine-readable form —
+[`llms.txt`](https://nyoncode.github.io/laravel-package-toolkit/llms.txt),
+[`llms-full.txt`](https://nyoncode.github.io/laravel-package-toolkit/llms-full.txt), and a `.md`
+twin of every page. Full detail: [AI agents](https://nyoncode.github.io/laravel-package-toolkit/ai/).
 
 ---
 

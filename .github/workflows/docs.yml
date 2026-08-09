@@ -1,0 +1,77 @@
+name: Documentation
+
+on:
+  push:
+    # Adjust to whichever branch you release the current docs from.
+    branches: [main, 2.x]
+    paths:
+      - 'docs/**'
+      - 'site/**'
+      - 'CHANGELOG.md'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+# One deployment at a time; a newer push waits rather than cancelling, so the
+# published site always reflects the last commit that finished building.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: site
+        run: npm ci
+
+      - name: Build the site
+        working-directory: site
+        env:
+          # The repository is served from https://<owner>.github.io/<repo>/, so
+          # every asset and link needs the repository name as its prefix. On a
+          # custom domain, set this to "/".
+          BASE_URL: /${{ github.event.repository.name }}/
+          # Optional. Without it the build falls back to its own highlighter and
+          # still succeeds — see site/README.md.
+          TORCHLIGHT_TOKEN: ${{ secrets.TORCHLIGHT_TOKEN }}
+        run: npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

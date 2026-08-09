@@ -1,8 +1,8 @@
-# The Platform — end-to-end walkthrough
+ex# The Platform — end-to-end walkthrough
 
-How the manifest-based platform (see [ROADMAP.md](ROADMAP.md)) works in practice, from
-three perspectives: package author, consuming application, and production. Each element
-is annotated with the track/release that delivers it.
+How the manifest-based platform works in practice, from three perspectives: package
+author, consuming application, and production. Each element is annotated with the
+track/release that delivers it.
 
 ---
 
