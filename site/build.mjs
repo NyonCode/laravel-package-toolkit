@@ -27,7 +27,7 @@ import container from 'markdown-it-container';
 
 import { sections as navSections, pages as navPages } from './nav.mjs';
 import { aiEndpoints } from './llms.mjs';
-import { icon } from './templates/chrome.mjs';
+import { codeBlock, icon } from './templates/chrome.mjs';
 import { home } from './templates/home.mjs';
 import { layout } from './templates/layout.mjs';
 import { highlight, escapeHtml } from './lib/highlight.mjs';
@@ -41,6 +41,7 @@ const outDir = path.join(here, 'dist');
 const BASE = normalizeBase(process.env.BASE_URL ?? '/');
 const TOKEN = (process.env.TORCHLIGHT_TOKEN ?? '').trim();
 const USE_TORCHLIGHT = TOKEN !== '';
+const SERVE = process.argv.includes('--serve');
 
 const site = {
     title: 'Laravel Package Toolkit',
@@ -162,12 +163,7 @@ md.renderer.rules.fence = (tokens, idx) => {
         ? torchlightPlaceholder(token.content, language)
         : renderLocally(token.content, language);
 
-    return `<div class="code-block" data-language="${escapeHtml(language)}">
-  ${head}
-  <button class="code-copy" type="button" data-copy aria-label="Copy code to clipboard"><span data-copy-label>Copy</span></button>
-  ${body}
-</div>
-`;
+    return codeBlock(head + body, language);
 };
 
 /**
@@ -366,6 +362,45 @@ function buildSearchIndex(rendered) {
     }));
 }
 
+/**
+ * Compile the stylesheet.
+ *
+ * `assets/tailwind.css` is the whole design system — tokens in `@theme`, a thin
+ * base layer, and a component layer for the HTML this project does not author
+ * (markdown-it's and Torchlight's). It declares its own sources, so this does not
+ * have to wait for `dist/` and cannot be confused by Torchlight's output.
+ *
+ * The build is minified unless the site is about to be served locally, where a
+ * readable stylesheet in devtools is worth more than the bytes.
+ */
+function buildStyles(minify) {
+    const binary = path.join(here, 'node_modules', '.bin', 'tailwindcss');
+
+    if (!fs.existsSync(binary)) {
+        throw new Error(
+            'Tailwind CLI not installed — run `npm install` in site/.',
+        );
+    }
+
+    const result = spawnSync(
+        binary,
+        [
+            '--input',
+            path.join(here, 'assets', 'tailwind.css'),
+            '--output',
+            path.join(outDir, 'assets', 'docs.css'),
+            ...(minify ? ['--minify'] : []),
+        ],
+        { stdio: 'inherit', cwd: here, env: process.env },
+    );
+
+    if (result.status !== 0) {
+        throw new Error('Tailwind build failed.');
+    }
+
+    return fs.statSync(path.join(outDir, 'assets', 'docs.css')).size;
+}
+
 function runTorchlight() {
     const binary = path.join(here, 'node_modules', '.bin', 'torchlight');
 
@@ -453,9 +488,12 @@ function build() {
         write(path.join(outDir, page.url, 'index.html'), document);
     });
 
-    // Assets, then the things GitHub Pages wants.
+    // Assets, then the things GitHub Pages wants. The stylesheet source is not
+    // among them: it is an input to the Tailwind build below, which writes the
+    // compiled `docs.css` into the same directory.
     fs.cpSync(path.join(here, 'assets'), path.join(outDir, 'assets'), {
         recursive: true,
+        filter: source => path.basename(source) !== 'tailwind.css',
     });
     write(path.join(outDir, '.nojekyll'), '');
     write(
@@ -516,6 +554,8 @@ function build() {
         }),
     );
 
+    const css = buildStyles(!SERVE);
+
     let highlighted = 'built-in fallback highlighter';
 
     if (USE_TORCHLIGHT) {
@@ -528,6 +568,7 @@ function build() {
     console.log(
         `\n  ✓ ${pages.length} pages → site/dist  (${Date.now() - started}ms)\n` +
             `    base URL:    ${BASE}\n` +
+            `    stylesheet:  ${(css / 1024).toFixed(1)} kB${SERVE ? '' : ' minified'}\n` +
             `    code blocks: ${highlighted}\n` +
             (USE_TORCHLIGHT
                 ? ''
@@ -574,6 +615,6 @@ function serve(port = 4321) {
 
 build();
 
-if (process.argv.includes('--serve')) {
+if (SERVE) {
     serve();
 }

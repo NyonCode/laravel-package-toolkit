@@ -1,0 +1,6 @@
+{
+  "resources/js/app.js": {
+    "file": "js/app.js",
+    "isEntry": true
+  }
+}

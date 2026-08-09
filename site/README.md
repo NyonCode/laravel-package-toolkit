@@ -170,8 +170,8 @@ beside the `.woff2` and why the vendoring script deletes only `*.woff2` rather t
 
 Only the `latin` and `latin-ext` subsets are kept — 6 files, about 300KB total, cached after the
 first page. Re-run the script only to change families or weights; the output is committed. Its `SOURCE` has to
-stay in step with the `--font-*` tokens in `assets/docs.css` — a family the stylesheet asks for and
-the script does not fetch fails silently, falling back to the system stack.
+stay in step with the `--font-*` tokens in the `@theme` block of `assets/tailwind.css` — a family the
+stylesheet asks for and the script does not fetch fails silently, falling back to the system stack.
 
 ## Brand assets
 
@@ -218,7 +218,8 @@ docs/*.md ─┬─ markdown-it (anchors, containers, custom fence)
            ├─ templates/layout.mjs   → the page shell
            ├─ nav.mjs                → sidebar, pager
            └─ dist/<url>/index.html
-                        ├─ assets/            copied verbatim
+                        ├─ assets/            copied verbatim (minus tailwind.css)
+                        ├─ assets/docs.css    compiled by the Tailwind CLI
                         ├─ assets/search-index.json
                         ├─ sitemap.xml, robots.txt, 404.html, .nojekyll
                         └─ (Torchlight pass, if a token is present)
@@ -231,9 +232,50 @@ docs/*.md ─┬─ markdown-it (anchors, containers, custom fence)
 | `templates/layout.mjs` | page shell — header, sidebar, prose, on-this-page rail, pager, search dialog |
 | `lib/annotations.mjs` | `[tl! …]` parsing for the no-token path |
 | `lib/highlight.mjs` | the fallback tokenizer |
-| `assets/docs.css` | the entire design — light and dark, mobile first |
+| `assets/tailwind.css` | design tokens, base layer, and the components utilities cannot reach |
 | `assets/docs.js` | theme, drawer, scrollspy, copy buttons, search |
 | `torchlight.config.cjs` | Torchlight settings (CommonJS — the CLI `require()`s it) |
+
+### The stylesheet
+
+The design is Tailwind v4, configured in CSS — there is no `tailwind.config.js`. `assets/tailwind.css`
+is the input and `dist/assets/docs.css` is the output; the build runs the CLI itself, minified unless
+`--serve` was passed. Three things live in that file and nothing else should:
+
+- **`@theme`** — the tokens. Colours are redefined per theme below it, under
+  `prefers-color-scheme` and `[data-theme]`, so `bg-surface` and friends follow the reader's choice
+  without a single `dark:` prefix. The `dark:` variant is redefined to match that three-state logic
+  for the few places that need it.
+- **`@layer base`** — element defaults, and the reduced-motion switch that flattens every animation.
+- **`@layer components`** — only the HTML this project cannot put a class on: what markdown-it emits
+  (`.prose`, `.callout`, `.table-scroll`) and what Torchlight emits (`.code-block`, `.line`,
+  `.line-add`, the `<details>` folds). Everything the templates render is utilities in the markup.
+  The keyframed motion lives here too, for the same reason — a stagger driven by `:nth-child` or by
+  a custom property is not something a utility can express.
+
+### Motion
+
+Everything moves from CSS; no library, and the only JavaScript involved is the class that says a
+section has been reached. Four groups, all of them flattened by the `prefers-reduced-motion` rule in
+the base layer:
+
+- `.lp-enter > *` — the hero, staggered on load, in reading order.
+- `.lp-stagger > *` inside `[data-reveal]` — a section's parts arriving when it reaches the fold.
+  The *held* state is the finished state (`animation-name: none`), so a reader without JavaScript
+  gets the composed page rather than an empty one, and nothing is ever left paused mid-animation.
+- `.lp-seq > *` — console output typing itself out, one line per `--i` step.
+- Ambient and feedback: the hero's glow, the sheen across the accent phrase, the caret on the
+  declared provider, the pop a copy button makes, and the search dialog's entrance.
+
+Source detection is explicit (`@import 'tailwindcss' source(none)` plus `@source`), covering
+`templates/*.mjs`, `build.mjs` and `assets/docs.js` — the last because the search dialog builds its
+results in JavaScript, and those classes have to be generated too. `dist/` is deliberately not a
+source: the stylesheet must be buildable before the HTML exists, and Torchlight's inline output has
+no business being scanned for class names.
+
+Class names that are not utilities — `nav-link`, `code-block`, `search-result`, and the `is-*` state
+classes — are hooks `assets/docs.js` queries by name. They carry no styling; the states are styled
+from the markup with the `[&.is-active]:` variant. Renaming one means changing both sides.
 
 Search is a JSON index generated at build time and queried client-side, so there is no service to
 run and nothing to keep in sync.

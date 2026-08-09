@@ -141,6 +141,41 @@ final class Asset
     }
 
     /**
+     * Take on the presentation of the entry this one replaces.
+     *
+     * Two declarations naming the same shipped file are one entry — `hasAssets()` says
+     * what is shipped, `hasViteAssets()` says what the application can build instead —
+     * and the second replaces the first so the file renders once. Without this, the
+     * replacement is a blank `Asset` and everything the first declaration said about the
+     * *tag* is quietly gone.
+     *
+     * That mattered most exactly where it was least visible. `hasViteAssets()`'s shorthand
+     * carries no presentation at all, so the common declaration —
+     * `Asset::make('js/blog.js')->classic()` followed by
+     * `hasViteAssets(['resources/js/blog.js' => 'js/blog.js'])` — used to lose `classic()`
+     * to the shorthand. An application that built the entry never saw it; one that did not
+     * got the shipped IIFE emitted as `type="module"`, whose top-level declarations never
+     * reach `window`. The bundle simply stopped working, on the fallback path the entry
+     * exists to serve.
+     *
+     * `classic()` is sticky rather than merged, because it is unexpressible in the other
+     * direction: nothing declares "explicitly a module", so a `module` of `true` cannot be
+     * told apart from the default. Sticking to the safer of the two is the only rule that
+     * can be implemented, and it is the one that keeps a working bundle working. Attributes
+     * merge with the replacement winning a collision, and an explicit
+     * {@see self::asStylesheet()} or {@see self::asScript()} on the replacement stands —
+     * both of those the replacement can only have said deliberately.
+     */
+    public function inheritPresentationFrom(self $earlier): self
+    {
+        $this->module = $this->module && $earlier->module;
+        $this->stylesheet ??= $earlier->stylesheet;
+        $this->attributes = array_merge($earlier->attributes, $this->attributes);
+
+        return $this;
+    }
+
+    /**
      * The Vite input path, or `null` for a shipped-only asset.
      */
     public function source(): ?string

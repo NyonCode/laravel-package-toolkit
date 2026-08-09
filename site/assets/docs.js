@@ -222,7 +222,9 @@
       }
 
       if (event.key === 'Enter') {
-        var first = document.querySelector('.nav-group:not([hidden]) li:not([hidden]) > .nav-link')
+        var first = document.querySelector(
+          '[data-nav-group]:not([hidden]) li:not([hidden]) > .nav-link',
+        )
         if (first) first.click()
       }
     })
@@ -371,7 +373,7 @@
 
   if (widget) {
     var chips = Array.prototype.slice.call(widget.querySelectorAll('[data-builder]'))
-    var lines = Array.prototype.slice.call(widget.querySelectorAll('.lp-builder__out .line'))
+    var lines = Array.prototype.slice.call(widget.querySelectorAll('[data-builder-out] .line'))
     var countOut = widget.querySelector('[data-builder-count]')
     var docsOut = widget.querySelector('[data-builder-docs]')
     var copyOut = widget.querySelector('[data-builder-copy]')
@@ -398,6 +400,13 @@
     semicolon.className = 'tok-pun'
     semicolon.textContent = ';'
 
+    // Where the semicolon goes when every chip is off. `->name()` is the one call
+    // the chain always makes, and nothing in the markup marks it — the lines come
+    // back from the highlighter — so it is found by its text, once.
+    var nameLine = lines.filter(function (line) {
+      return line.textContent.indexOf('->name(') !== -1
+    })[0]
+
     function sync(changed) {
       var visible = []
 
@@ -413,7 +422,7 @@
       // The chain always ends in a semicolon, and only on its last line.
       var tail = visible.length
         ? owned[visible[visible.length - 1].getAttribute('data-builder')]
-        : widget.querySelector('.lp-builder__out .line[data-name-line]')
+        : nameLine
 
       if (tail) tail.appendChild(semicolon)
 
@@ -803,6 +812,15 @@
     return html
   }
 
+  /* The classes below are Tailwind utilities like everywhere else — this file is
+     one of the sources the stylesheet is compiled from, so they are generated. */
+  var EMPTY_CLASS = 'px-3 py-8 text-center text-sm text-muted'
+
+  var RESULT_CLASS =
+    'search-result block rounded-lg px-3 py-2.5 no-underline transition-colors ' +
+    'hover:bg-sunken [&.is-active]:bg-accent/10 ' +
+    '[&_mark]:bg-transparent [&_mark]:font-semibold [&_mark]:text-accent'
+
   function render(query) {
     var terms = query
       .toLowerCase()
@@ -812,7 +830,7 @@
       })
 
     if (!terms.length || !index) {
-      results.innerHTML = '<p class="search-empty">Type at least two characters.</p>'
+      results.innerHTML = '<p class="' + EMPTY_CLASS + '">Type at least two characters.</p>'
       return
     }
 
@@ -829,7 +847,8 @@
       .slice(0, 12)
 
     if (!matches.length) {
-      results.innerHTML = '<p class="search-empty">No matches for “' + escapeHtml(query) + '”.</p>'
+      results.innerHTML =
+        '<p class="' + EMPTY_CLASS + '">No matches for “' + escapeHtml(query) + '”.</p>'
       return
     }
 
@@ -837,18 +856,19 @@
     results.innerHTML = matches
       .map(function (match, position) {
         return (
-          '<a class="search-result' +
+          '<a class="' +
+          RESULT_CLASS +
           (position === 0 ? ' is-active' : '') +
           '" href="' +
           match.entry.u +
           '">' +
-          '<span class="search-result__section">' +
+          '<span class="block font-mono text-[0.6875rem] uppercase tracking-wider text-faint">' +
           escapeHtml(match.entry.s) +
           '</span>' +
-          '<span class="search-result__title">' +
+          '<span class="mt-0.5 block font-display text-sm font-semibold text-ink">' +
           escapeHtml(match.entry.t) +
           '</span>' +
-          '<span class="search-result__snippet">' +
+          '<span class="mt-1 line-clamp-2 text-[0.8125rem] leading-snug text-muted">' +
           snippet(match.entry, terms) +
           '</span></a>'
         )

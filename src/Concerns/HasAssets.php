@@ -14,6 +14,33 @@ trait HasAssets
     use FilesResolver;
 
     /**
+     * The directories discovery looks in, relative to whichever asset directory
+     * `hasAssets()` established — its own root, and the two subdirectories a built
+     * package conventionally splits into. `''` is the root itself.
+     *
+     * Not a recursive walk, and that is the point. A code-split build writes its chunks
+     * to a subdirectory of its own (`assets/` by default), and a chunk is imported *by*
+     * an entry point rather than loaded beside it — giving one its own `<script>` runs
+     * the module twice, in the wrong order, for no benefit. Discovery that stops at these
+     * three directories leaves such a build alone; a package that ships one names its
+     * entry points explicitly, which it had to do anyway.
+     */
+    private const DISCOVERED_DIRECTORIES = ['', 'css', 'js'];
+
+    /**
+     * The extensions discovery registers, as an allowlist.
+     *
+     * An allowlist rather than "everything that is not a stylesheet", because an asset
+     * directory holds more than tags: source maps, fonts, images and a `manifest.json`
+     * all live there, and {@see Asset::isStylesheet()} would class every one of them as a
+     * script.
+     */
+    private const DISCOVERED_EXTENSIONS = [
+        'css', 'scss', 'sass', 'less', 'styl', 'pcss',
+        'js', 'mjs', 'cjs',
+    ];
+
+    /**
      * @var bool Whether the package has assets
      */
     private bool $isAssetable = false;
@@ -89,6 +116,16 @@ trait HasAssets
     /**
      * Enable the package's assets.
      *
+     * Naming no entries discovers them, the way `hasRoutes()` and `hasViews()` discover
+     * their directories: the stylesheets and scripts directly inside the asset directory
+     * and its `css/` and `js/` subdirectories become entries, in a stable alphabetical
+     * order, and the Blade directives render them. Two things stay the packager's job,
+     * because no filesystem scan can answer them — an IIFE or UMD bundle still needs
+     * `Asset::make(…)->classic()`, since a discovered script is emitted as a module, and a
+     * code-split build still needs its entry points named, since discovery deliberately
+     * does not descend into a chunk directory. Naming anything at all replaces discovery
+     * outright; the two do not merge.
+     *
      * @param  string  $directory  The directory name where the assets are located
      * @param  bool  $mirror  Whether to keep the assets mirrored into `public/vendor/<short-name>`
      * @param  array<int|string, Asset|string>  $entries  The files a template renders, relative to `$directory`
@@ -109,13 +146,53 @@ trait HasAssets
         $this->isAssetable = true;
         $this->mirrorsAssets = $mirror;
 
-        foreach ($entries as $entry) {
+        foreach ($entries === [] ? $this->discoverAssetEntries() : $entries as $entry) {
             $this->declareAsset(
                 $entry instanceof Asset ? $entry : Asset::make($entry)
             );
         }
 
         return $this;
+    }
+
+    /**
+     * The entries to register when the packager named none.
+     *
+     * Sorted, because the order entries are declared in is the order `@packageAssets`
+     * renders them and a directory listing is not ordered by anything in particular —
+     * `File::files()` hands back whatever the filesystem does, which differs between a
+     * developer's machine and the server. Stylesheets are emitted before scripts
+     * regardless, by the renderer; this only settles the order within each.
+     *
+     * @return list<string> paths relative to the asset directory
+     */
+    private function discoverAssetEntries(): array
+    {
+        $discovered = [];
+
+        foreach (self::DISCOVERED_DIRECTORIES as $subdirectory) {
+            $directory = $subdirectory === ''
+                ? $this->assetDirectory
+                : $this->assetDirectory.DIRECTORY_SEPARATOR.$subdirectory;
+
+            if (! File::isDirectory($directory)) {
+                continue;
+            }
+
+            foreach (File::files($directory) as $file) {
+                if (! in_array(strtolower($file->getExtension()), self::DISCOVERED_EXTENSIONS, true)) {
+                    continue;
+                }
+
+                $discovered[] = $subdirectory === ''
+                    ? $file->getFilename()
+                    : $subdirectory.'/'.$file->getFilename();
+            }
+        }
+
+        sort($discovered);
+
+        return $discovered;
     }
 
     /**
@@ -168,6 +245,11 @@ trait HasAssets
      * file so a `hasAssets(entries: …)` shipped file and the `hasViteAssets()` entry that
      * falls back to it render once, in the position first declared.
      *
+     * The replacement inherits what the entry it replaces said about the *tag* — see
+     * {@see Asset::inheritPresentationFrom()}. Replacing is about not rendering one file
+     * twice; it was never meant to discard a `classic()` or an attribute that the second
+     * declaration, being a shorthand, had no way to repeat.
+     *
      * @throws FileNotFoundException
      * @throws PackageConfigurationException
      */
@@ -204,7 +286,7 @@ trait HasAssets
 
         foreach ($this->assetEntries as $index => $existing) {
             if ($existing->key() === $asset->key()) {
-                $this->assetEntries[$index] = $asset;
+                $this->assetEntries[$index] = $asset->inheritPresentationFrom($existing);
 
                 return;
             }

@@ -5,8 +5,11 @@ description: What changed in each release, what breaks, and what to do about it.
 
 # Upgrade guide
 
-The toolkit follows [Semantic Versioning](https://semver.org/). Minor releases add functionality
-without breaking existing code; major releases may break.
+The toolkit follows [Semantic Versioning](https://semver.org/), and the promise worth holding it to
+is the one below the top number: nothing but a major release breaks working code. Minor releases add
+functionality. A patch release occasionally does too, where the addition closes a gap rather than
+opening a new surface — 2.4.1's asset discovery gave `hasAssets()` the file discovery every other
+`hasX()` already had, and a package that named its entries never notices. Major releases may break.
 
 | Constraint | Gets you |
 |---|---|
@@ -14,6 +17,26 @@ without breaking existing code; major releases may break.
 | `^2.0` | Laravel 12/13, PHP 8.2+ |
 | `~2.0.0` | the last line supporting Laravel 10 and 11 |
 | `^1.0` | Laravel 9 |
+
+:::warning 2.3.0 has been withdrawn
+It is no longer available to install, and `^2.3` now resolves to 2.4 or later. Everything 2.3.0
+introduced — the asset mirror and the `laravel-assets` publish tag — is in 2.4 unchanged, so
+**the minimum supported version is `^2.4`**. If a lock file still pins 2.3.0,
+`composer update nyoncode/laravel-package-toolkit` is the whole migration.
+:::
+
+## To 2.4.1
+
+Nothing to do. One thing starts working that previously did nothing:
+[`hasAssets()` with no entries named](/assets#naming-nothing-discovers-them) now discovers them,
+instead of leaving `@packageAssets` with nothing to render.
+
+A package that already names its entries is untouched — naming any entry replaces discovery
+outright. A package that called `hasAssets()` bare gets the stylesheets and scripts from the asset
+directory's root and its `css/` and `js/` subdirectories, which is what a template asking for
+`@packageAssets` wanted in the first place. The two cases discovery cannot read off a directory
+listing still need naming: a **code-split build**, whose chunk directory is deliberately skipped,
+and an **IIFE or UMD bundle**, since a discovered script is emitted as a module.
 
 ## To 2.4
 
@@ -54,6 +77,11 @@ three included in `publishEverything()`.
 per-request sync marks, for applications running the toolkit under a long-lived worker.
 
 ## To 2.3
+
+:::note Withdrawn
+2.3.0 is no longer available to install. This section is kept because both features below shipped
+unchanged in 2.4 — read it as "what 2.4 brought along", and target `^2.4`.
+:::
 
 Additive, with one behaviour change worth knowing about.
 

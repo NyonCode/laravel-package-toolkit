@@ -859,6 +859,15 @@ $url = app(PublishedAssets::class)->url('my-package', __DIR__.'/../dist/js/index
 // => http://example.test/vendor/my-package/js/index.js?id=1730000000
 ```
 
+> **This is the layer, not the way to reach it.** Since 2.4.0 an entry named in
+> [`hasAssets(entries: [...])`](#rendering-them-in-a-template) is asked for by its key —
+> `@packageAssetUrl('my-package', 'js/index.js')`, or `app(PackageAssets::class)->url('my-package', 'js/index.js')` —
+> which resolves the same mirror underneath, goes through the application's Vite build when that build covers the
+> entry, and validates the path at declaration instead of resolving a typo to `null`. Reach for `PublishedAssets`
+> directly for what is not a declared entry — an image or font the template composes itself — and for `isStale()`,
+> which has no counterpart on `PackageAssets`. Building the tag by hand around it costs
+> [rather more than it looks](#what-the-hand-written-tag-misses).
+
 The sync is lazy, incremental and self-correcting: the first asset of a package to resolve a URL in a request compares
 each shipped file against its published counterpart and copies only what is missing or older, so in steady state it is
 a handful of `stat` calls and no writes. Copies land through a temporary file and `rename()`, so a concurrent request
@@ -895,6 +904,72 @@ the bare URL, and any of them takes further arguments to render only the entries
 are checked at registration, so a typo throws where it was declared. `.js` renders as
 `type="module"`; a shipped IIFE bundle says so with
 `Asset::make('js/index.js')->classic()`.
+
+#### Naming nothing discovers them
+
+Name no entries and the asset directory answers for itself, the way `hasRoutes()` and `hasViews()`
+already discover theirs:
+
+```php
+$packager->hasAssets();
+```
+
+Discovery looks in the directory `hasAssets()` was given — at its root and in its `css/` and `js/`
+subdirectories — and registers the stylesheets and scripts it finds there, alphabetically.
+Extensions are an allowlist (`css`, `scss`, `sass`, `less`, `styl`, `pcss`, `js`, `mjs`, `cjs`), so
+source maps, fonts, images and a `manifest.json` in the same directory are passed over.
+
+It is **not** a recursive walk. A code-split build writes its chunks to a subdirectory of its own
+(`assets/` by default), and a chunk is imported *by* an entry point rather than loaded beside it —
+giving one its own `<script>` runs the module twice, in the wrong order. Stopping at three
+directories leaves such a build alone:
+
+```text
+dist/
+├── assets/blog-DkS9x2.js     ✗ a chunk, and not discovered
+├── css/index.css             ✓
+└── js/index.js               ✓
+```
+
+Naming any entry replaces discovery outright — the two do not merge — which is how the two things a
+directory listing cannot answer get said: a code-split build names its entry points, and an IIFE
+bundle says `Asset::make('js/index.js')->classic()`, since a discovered script is emitted as a
+module.
+
+Discovery runs where `hasAssets()` is called, once per boot, so unlike the mirror it is not deferred
+until something renders. Naming the entries explicitly is how you skip it.
+
+#### What the hand-written tag misses
+
+On 2.3.0 the mirror existed and the directives did not, so a package's layout had one way to reach a
+URL and built the tag around it:
+
+```blade
+<script src="{{ app(PublishedAssets::class)->url('my-package', $js) }}"></script>
+```
+
+That release has been withdrawn, which retires the pattern with it: from 2.4 there is no version
+where this is the only option, so it is code to replace rather than a trade-off to weigh. It renders
+fine, which is what keeps it in codebases — here is what it leaves out, almost all of it silently:
+
+- **`$js` has to come from somewhere.** `url()` takes an absolute filesystem path, so the package
+  needs a class or a view composer holding `__DIR__.'/../dist/js/index.js'` and handing it to the
+  view — the boilerplate `hasAssets(entries: [...])` exists to remove.
+- **`url()` returns `?string`.** Where `public/` cannot be written and nothing was published before,
+  this renders `src=""` — which a browser resolves against the current page and fetches the HTML as
+  a script. Nothing throws, nothing 404s, and the page is broken. The directives emit no tag at all
+  in that situation.
+- **No `type="module"`**, so a Vite bundle's top-level `import` is a syntax error.
+- **No `data-navigate-track="reload"`**, which makes `?id=<mtime>` a query string nobody reads:
+  Livewire has no reason to full-page-reload a `wire:navigate` visit, so an upgrade lands as new
+  markup running against the JavaScript the browser already cached.
+- **No CSP nonce**, so a strict policy under `Vite::useCspNonce()` blocks the tag.
+- **No Vite resolution**, so an application compiling this entry into its own build still gets the
+  shipped copy here while every directive on the same page serves the built one.
+- **The path is unchecked**, so a typo resolves to `null` — the second point again.
+- **`defer`, and stylesheets before scripts**, are then also yours to remember.
+
+The declaration knows every one of these, which is why it is the declaration that renders.
 
 ### Vite — in the application, not in the package
 
