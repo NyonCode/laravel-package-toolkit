@@ -18,6 +18,11 @@ copy goes stale at the next release, silently, in the one file nobody re-reads. 
 [`../bin/package-toolkit-ai`](../bin/package-toolkit-ai) wires all three into a consuming project.
 Each is independent; none is required.
 
+Only the skill is copied out of here; the guide and the server are referenced at their path in
+`vendor/` and so follow `composer update` by themselves. `package-toolkit-ai update` exists for the
+copy, and rewrites only the pieces a project already has — which is what lets it run unattended from
+a `post-update-cmd` without re-adding whatever someone deliberately left out.
+
 ## Maintaining this — adding or changing a resource type
 
 Adding a resource type to the toolkit touches four places in `src` — a `Concerns/HasX` declaration

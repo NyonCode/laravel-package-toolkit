@@ -5,6 +5,7 @@
  * Wire the toolkit's agent support into the project that installed it.
  *
  *   vendor/bin/package-toolkit-ai install     add all three, idempotently
+ *   vendor/bin/package-toolkit-ai update      refresh what is already there
  *   vendor/bin/package-toolkit-ai status      report what is wired up
  *   vendor/bin/package-toolkit-ai remove      take it all back out
  *
@@ -22,6 +23,10 @@
  * nothing the second time. AGENTS.md comes back byte-for-byte; `.mcp.json` comes
  * back with the same content, but re-encoded, since JSON has to be parsed to be
  * edited safely and no encoder preserves the author's whitespace.
+ *
+ * Two of the three point into `vendor/` and so follow `composer update` on their
+ * own. The skill is a real copy, and the AGENTS.md block is real prose, so those
+ * two need rewriting after an upgrade — which is what `update` is for.
  */
 
 declare(strict_types=1);
@@ -74,6 +79,7 @@ function main(array $argv): int
 
     return match ($command) {
         'install' => install($packageRoot, $projectRoot, $flags, $dryRun),
+        'update', 'refresh' => update($packageRoot, $projectRoot, $flags, $dryRun),
         'status' => status($packageRoot, $projectRoot),
         'remove', 'uninstall' => remove($projectRoot, $dryRun),
         default => (function () use ($command): int {
@@ -92,12 +98,15 @@ function usage(): void
         bold('package-toolkit-ai').' — agent support for nyoncode/laravel-package-toolkit',
         '',
         '  '.bold('install').'    Reference the agent guide from AGENTS.md, install the Claude Code',
-        '              skill, and register the MCP server in .mcp.json. Idempotent.',
+        '             skill, and register the MCP server in .mcp.json. Idempotent.',
+        '  '.bold('update').'     Rewrite what is already wired up, and add nothing that is not.',
+        '             Safe to run after every `composer update`.',
         '  '.bold('status').'     Report which of the three are currently wired up.',
         '  '.bold('remove').'     Undo all three.',
         '',
         '  '.bold('--dry-run').'          Print what would change, write nothing.',
         '  '.bold('--project=PATH').'     Target project root (default: the current directory).',
+        '  '.bold('--no-guide').'         Leave AGENTS.md alone.',
         '  '.bold('--no-skill').'         Skip the Claude Code skill.',
         '  '.bold('--no-mcp').'           Skip the MCP server registration.',
         '',
@@ -196,15 +205,19 @@ function relativePath(string $from, string $to): string
 /**
  * @param  string[]  $flags
  */
-function install(string $packageRoot, string $projectRoot, array $flags, bool $dryRun): int
+function install(string $packageRoot, string $projectRoot, array $flags, bool $dryRun, string $heading = 'Wiring agent support into '): int
 {
+    $skipGuide = in_array('--no-guide', $flags, true);
     $skipSkill = in_array('--no-skill', $flags, true);
     $skipMcp = in_array('--no-mcp', $flags, true);
 
-    echo PHP_EOL.bold('Wiring agent support into ').$projectRoot.PHP_EOL.PHP_EOL;
+    echo PHP_EOL.bold($heading).$projectRoot.PHP_EOL.PHP_EOL;
 
     $changed = 0;
-    $changed += installGuideReference($packageRoot, $projectRoot, $dryRun) ? 1 : 0;
+
+    if (! $skipGuide) {
+        $changed += installGuideReference($packageRoot, $projectRoot, $dryRun) ? 1 : 0;
+    }
 
     if (! $skipSkill) {
         $changed += installSkill($packageRoot, $projectRoot, $dryRun) ? 1 : 0;
@@ -269,7 +282,7 @@ function installGuideReference(string $packageRoot, string $projectRoot, bool $d
     $existing = is_file($file) ? (string) file_get_contents($file) : null;
 
     if ($existing === null) {
-        return writeFile($file, "# AGENTS.md".PHP_EOL.PHP_EOL.$block.PHP_EOL, 'AGENTS.md', ['create', 'created'], $dryRun);
+        return writeFile($file, '# AGENTS.md'.PHP_EOL.PHP_EOL.$block.PHP_EOL, 'AGENTS.md', ['create', 'created'], $dryRun);
     }
 
     if (str_contains($existing, MARKER_START) && str_contains($existing, MARKER_END)) {
@@ -357,26 +370,82 @@ function installMcpServer(string $packageRoot, string $projectRoot, bool $dryRun
     return writeFile($file, $encoded, '.mcp.json', is_file($file) ? ['register the server in', 'registered the server in'] : ['create', 'created'], $dryRun);
 }
 
+/* ------------------------------------------------------------------- update */
+
+/**
+ * Rewrite what an earlier `install` left here, and add nothing it did not.
+ *
+ * `install` is idempotent, so it can be re-run after an upgrade — but it always
+ * installs all three, which is the wrong answer for a project deliberately
+ * running without one. A `--no-mcp` install followed by an upgrade would quietly
+ * acquire an MCP server; so would a project whose author removed the skill by
+ * hand. `update` refreshes exactly the pieces that are wired up, which is what
+ * makes it safe to hang off Composer's `post-update-cmd` and forget about.
+ *
+ * Only two pieces can actually go stale: the skill is a copy, and the AGENTS.md
+ * block is prose. The guide and the MCP server are referenced at their path in
+ * `vendor/`, so `composer update` has already updated them by the time this runs
+ * — re-registering them only proves the path still holds.
+ *
+ * @param  string[]  $flags
+ */
+function update(string $packageRoot, string $projectRoot, array $flags, bool $dryRun): int
+{
+    $installed = installedPieces($projectRoot);
+
+    // Nothing to refresh is not a failure. This runs from `post-update-cmd`,
+    // where a non-zero exit fails the whole `composer update` — and a project
+    // that never installed the agent support, or removed it, has said what it
+    // wants. Adding it back is `install`'s job and nobody asked.
+    if (! in_array(true, $installed, true)) {
+        echo PHP_EOL.bold('Refreshing agent support in ').$projectRoot.PHP_EOL.PHP_EOL;
+        echo dim('  Nothing is wired up here — run `install` to add it.').PHP_EOL.PHP_EOL;
+
+        return 0;
+    }
+
+    // An explicit --no-x on top of that still wins: update never installs more
+    // than install was asked for, and the caller can narrow it further.
+    foreach (['guide' => '--no-guide', 'skill' => '--no-skill', 'mcp' => '--no-mcp'] as $piece => $flag) {
+        if (! $installed[$piece]) {
+            $flags[] = $flag;
+        }
+    }
+
+    return install($packageRoot, $projectRoot, $flags, $dryRun, 'Refreshing agent support in ');
+}
+
 /* ------------------------------------------------------------- status/remove */
+
+/**
+ * Which of the three are wired up right now.
+ *
+ * @return array{guide: bool, skill: bool, mcp: bool}
+ */
+function installedPieces(string $projectRoot): array
+{
+    $agents = $projectRoot.'/AGENTS.md';
+    $mcp = $projectRoot.'/.mcp.json';
+    $decoded = is_file($mcp) ? json_decode((string) file_get_contents($mcp), true) : null;
+
+    return [
+        'guide' => is_file($agents) && str_contains((string) file_get_contents($agents), MARKER_START),
+        'skill' => is_file($projectRoot.'/.claude/skills/'.SKILL.'/SKILL.md'),
+        'mcp' => is_array($decoded) && isset($decoded['mcpServers'][MCP_KEY]),
+    ];
+}
 
 function status(string $packageRoot, string $projectRoot): int
 {
-    $agents = $projectRoot.'/AGENTS.md';
-    $hasBlock = is_file($agents) && str_contains((string) file_get_contents($agents), MARKER_START);
-
-    $skill = $projectRoot.'/.claude/skills/'.SKILL.'/SKILL.md';
-
-    $mcp = $projectRoot.'/.mcp.json';
-    $decoded = is_file($mcp) ? json_decode((string) file_get_contents($mcp), true) : null;
-    $hasServer = is_array($decoded) && isset($decoded['mcpServers'][MCP_KEY]);
+    ['guide' => $hasBlock, 'skill' => $hasSkill, 'mcp' => $hasServer] = installedPieces($projectRoot);
 
     echo PHP_EOL.bold('Agent support in ').$projectRoot.PHP_EOL.PHP_EOL;
     echo mark($hasBlock).' AGENTS.md references the guide'.PHP_EOL;
-    echo mark(is_file($skill)).' Claude Code skill installed'.PHP_EOL;
+    echo mark($hasSkill).' Claude Code skill installed'.PHP_EOL;
     echo mark($hasServer).' MCP server registered'.(! $hasServer || hasNode() ? '' : dim('  (node not on PATH)')).PHP_EOL;
     echo PHP_EOL.dim('  Guide: '.packageReference($projectRoot, $packageRoot, 'ai/AGENTS.md')).PHP_EOL.PHP_EOL;
 
-    return $hasBlock && is_file($skill) && $hasServer ? 0 : 1;
+    return $hasBlock && $hasSkill && $hasServer ? 0 : 1;
 }
 
 function remove(string $projectRoot, bool $dryRun): int

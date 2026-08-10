@@ -5,6 +5,28 @@ All notable changes to `laravel-package-toolkit` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **`vendor/bin/package-toolkit-ai update` — refresh the agent support without re-installing it.**
+  Most of what the installer writes cannot go stale: the `AGENTS.md` block and the `.mcp.json` entry
+  hold paths into `vendor/`, so `composer update` replaces the guide and the MCP server where they
+  stand. The Claude Code skill is a real copy, and the managed block is real prose, and both went on
+  describing whatever release installed them. `install` was already idempotent and would have
+  rewritten both — but it also installs all three, so a project that installed with `--no-mcp`, or
+  deleted the skill on purpose, would quietly get it back at the next upgrade. `update` rewrites
+  exactly the pieces already wired up and adds none that are not; with nothing wired up it says so
+  and exits zero rather than installing, so it can be hung off Composer's `post-update-cmd` and
+  forgotten:
+
+  ```json
+  "scripts": { "post-update-cmd": ["@php vendor/bin/package-toolkit-ai update"] }
+  ```
+
+  `refresh` is accepted as a synonym. `install` gained `--no-guide` alongside `--no-skill` and
+  `--no-mcp`, since `update` has to be able to say "leave `AGENTS.md` alone" and there was no way to.
+
 ## [2.4.2] - 2026-08-10
 
 ### Added

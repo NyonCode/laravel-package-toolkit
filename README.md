@@ -1364,8 +1364,11 @@ That does three independent things, each of which works without the others:
 | **Claude Code skill** | `.claude/skills/laravel-package-toolkit/SKILL.md`, loaded when the work is about the toolkit rather than on every turn. |
 | **MCP server** | `search_docs`, `list_docs`, `get_doc`, `list_api` and `describe_api` — the last two parse the installed `src/`, so signatures come from the release you have. Node 18+, no dependencies. |
 
-Re-running after an upgrade refreshes what changed; `status` reports what is wired up, `remove`
-undoes all of it, and `--dry-run` writes nothing. Skip pieces with `--no-skill` / `--no-mcp`.
+The first and last hold *paths* into `vendor/`, so `composer update` updates what an agent reads
+without running anything. The skill is a real copy, and `vendor/bin/package-toolkit-ai update`
+rewrites it — refreshing only the pieces already wired up, which is what makes it safe to hang off
+`post-update-cmd`. `status` reports what is wired up, `remove` undoes all of it, and `--dry-run`
+writes nothing. Skip pieces with `--no-guide` / `--no-skill` / `--no-mcp`.
 
 The documentation site also publishes itself in machine-readable form —
 [`llms.txt`](https://package-toolkit.nyoncode.cz/llms.txt),

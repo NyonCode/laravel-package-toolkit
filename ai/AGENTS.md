@@ -298,6 +298,10 @@ Three optional pieces, all shipped in `vendor/nyoncode/laravel-package-toolkit/a
 | Claude Code skill (`/laravel-package-toolkit`) | `ai/skills/laravel-package-toolkit/SKILL.md` | same command, copies into `.claude/skills/` |
 | MCP server — searches these docs and the toolkit source | `ai/mcp/server.mjs` | same command, writes `.mcp.json` |
 
+The guide and the server are referenced where they sit in `vendor/`, so `composer update` is all it
+takes to keep them current. The skill is a copy: `vendor/bin/package-toolkit-ai update` rewrites it,
+and touches nothing that is not already wired up.
+
 The MCP server needs Node 18+ and has no dependencies. It exposes five tools: `list_docs`,
 `get_doc`, `search_docs`, `list_api` and `describe_api` — the last two parse signatures and
 docblocks straight out of `src/`, so they answer from the installed release rather than from

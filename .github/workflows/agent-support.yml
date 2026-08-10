@@ -143,3 +143,30 @@ jobs:
           ' "$project"
           test ! -e "$project/.claude/skills/laravel-package-toolkit"
           echo "round trip clean"
+
+      # `update` is meant to be hung off `post-update-cmd` and forgotten, so the
+      # thing to prove is what it declines to do: not install a piece this
+      # project does not have, and not fail the Composer event when it has none
+      # at all. Refreshing the stale skill is the easy half.
+      - name: Update refreshes the copy without adding what was skipped
+        run: |
+          project="$(mktemp -d)"
+          mkdir -p "$project/vendor/nyoncode"
+          echo '{"name":"acme/scratch"}' > "$project/composer.json"
+          ln -s "$PWD" "$project/vendor/nyoncode/laravel-package-toolkit"
+
+          # Nothing installed: says so, writes nothing, exits 0.
+          php bin/package-toolkit-ai update --project="$project" | tee /tmp/update-empty
+          grep -q 'Nothing is wired up' /tmp/update-empty
+          test ! -e "$project/AGENTS.md"
+
+          php bin/package-toolkit-ai install --no-mcp --project="$project"
+          printf 'a skill from an older release\n' > "$project/.claude/skills/laravel-package-toolkit/SKILL.md"
+
+          php bin/package-toolkit-ai update --project="$project"
+          diff ai/skills/laravel-package-toolkit/SKILL.md "$project/.claude/skills/laravel-package-toolkit/SKILL.md"
+          test ! -e "$project/.mcp.json"
+
+          php bin/package-toolkit-ai update --project="$project" | tee /tmp/update-again
+          grep -q 'Already up to date' /tmp/update-again
+          echo "update stayed in its lane"

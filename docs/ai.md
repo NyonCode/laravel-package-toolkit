@@ -24,14 +24,51 @@ Wiring agent support into /home/you/packages/blog-engine
   ✓ registered the server in .mcp.json
 ```
 
-It is idempotent — run it again after upgrading the toolkit and it refreshes what changed and
-reports the rest as unchanged. `status` shows what is wired up, `remove` takes it back out, and
-`--dry-run` prints the changes without writing them.
+It is idempotent — run it again and it rewrites what changed and reports the rest as unchanged.
+`status` shows what is wired up, `remove` takes it back out, and `--dry-run` prints the changes
+without writing them.
 
 :::tip Nothing is required
-Each of the three works on its own. Skip any of them with `--no-skill` / `--no-mcp`, or write your
-own `AGENTS.md` pointing at the guide by hand — the file is just sitting in `vendor/`.
+Each of the three works on its own. Skip any of them with `--no-guide` / `--no-skill` / `--no-mcp`,
+or write your own `AGENTS.md` pointing at the guide by hand — the file is just sitting in `vendor/`.
 :::
+
+## Keeping it current
+
+Most of it keeps itself current. The `AGENTS.md` block and the `.mcp.json` entry hold *paths* into
+`vendor/`, not copies of anything — so `composer update` replaces the guide and the MCP server where
+they stand, and the next agent to read either one reads the new release. That is the whole reason
+the guide ships inside the package instead of being copied into your repository.
+
+Two things are real copies and do go stale: the skill file, and the prose of the managed block.
+`update` rewrites them:
+
+```bash
+vendor/bin/package-toolkit-ai update
+```
+
+It differs from `install` in one way that matters: it refreshes **what is already wired up and
+nothing else**. A project that installed with `--no-mcp`, or that deleted the skill on purpose, does
+not silently get either one back at the next upgrade — and one that never installed anything gets
+nothing, with a note and a zero exit code rather than an error.
+
+That is what makes it safe to run unattended, which is where it belongs — in the package's own
+`composer.json`:
+
+```json
+{
+    "scripts": {
+        "post-update-cmd": [
+            "@php vendor/bin/package-toolkit-ai update"
+        ]
+    }
+}
+```
+
+Composer runs `post-update-cmd` after `composer update`, so the skill is rewritten in the same
+command that brought in the release it describes. It prints two lines and writes nothing when there
+is nothing to write. Drop the line if you ever drop the toolkit — Composer fails the event when the
+binary it names is gone.
 
 ## What gets installed
 
