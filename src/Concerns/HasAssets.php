@@ -2,6 +2,7 @@
 
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
+use Closure;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\File;
 use InvalidArgumentException;
@@ -66,6 +67,11 @@ trait HasAssets
     private ?string $viteBase = null;
 
     /**
+     * @var Closure|null Where to serve a shipped file from when nothing is published
+     */
+    private ?Closure $assetFallback = null;
+
+    /**
      * Whether the package has assets.
      */
     public function isAssetable(): bool
@@ -111,6 +117,56 @@ trait HasAssets
     public function viteBase(): ?string
     {
         return $this->viteBase;
+    }
+
+    /**
+     * The declared last resort for a shipped file that nothing published, or `null`.
+     */
+    public function assetFallback(): ?Closure
+    {
+        return $this->assetFallback;
+    }
+
+    /**
+     * Where to serve a shipped file from when nothing is published.
+     *
+     * `@packageAssets` renders the mirrored copy, and where `public/` cannot be written
+     * there is none to render — so the tag is dropped, and a page quietly loses its
+     * stylesheet or its behaviour. That is fine for an entry the application declined to
+     * build and wrong for the entry that is the package's only copy, and the deployments
+     * it happens on (a read-only container, Vapor, shared hosting) are the ones least
+     * likely to notice. A package that also serves its assets from a route of its own
+     * points at it here and keeps the tag, with everything the declaration said about it
+     * — `classic()`, attributes, `data-navigate-track`, the application's CSP nonce —
+     * still on it.
+     *
+     * The resolver is handed the entry's file path relative to the asset directory and
+     * the package's short name, and owns the whole URL it returns, cache-busting query
+     * string included: the mtime the renderer appends belongs to the published copy, and
+     * the point of being here is that there is not one. Returning `null` means the
+     * package has nothing either, and the tag is dropped as before.
+     *
+     * ```php
+     * $packager
+     *     ->hasAssets(entries: ['js/blog.js'])
+     *     ->hasAssetFallback(fn (string $file): string => route('blog.asset', ['file' => $file]));
+     * ```
+     *
+     * @param  Closure  $resolver  `fn (string $file, string $package): ?string`
+     *
+     * @throws PackageConfigurationException if declared before `hasAssets()`
+     */
+    public function hasAssetFallback(Closure $resolver): static
+    {
+        if (! $this->isAssetable) {
+            throw new PackageConfigurationException(
+                'An asset fallback needs an asset directory. Call hasAssets() before declaring it.'
+            );
+        }
+
+        $this->assetFallback = $resolver;
+
+        return $this;
     }
 
     /**

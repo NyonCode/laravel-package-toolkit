@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NyonCode\LaravelPackageToolkit\Support;
 
+use Closure;
 use Illuminate\Foundation\Vite;
 use Illuminate\Foundation\ViteException;
 use Illuminate\Support\HtmlString;
@@ -44,7 +45,7 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\DeclaresPackageAssets;
 class PackageAssets
 {
     /**
-     * @var array<string, array{directory: string, entries: list<Asset>, base: string|null, mirrored: bool}>
+     * @var array<string, array{directory: string, entries: list<Asset>, base: string|null, mirrored: bool, fallback: Closure|null}>
      */
     private array $packages = [];
 
@@ -56,48 +57,57 @@ class PackageAssets
      * @param  list<Asset>  $entries
      * @param  string|null  $base  the package's path under the application, prefixed onto every Vite source
      * @param  bool  $mirrored  whether {@see PublishedAssets} keeps `public/` in step with the shipped files
+     * @param  Closure|null  $fallback  where to serve a shipped file from when nothing is published, `fn (string $file, string $package): ?string`
      */
-    public function declare(string $package, string $directory, array $entries, ?string $base, bool $mirrored): void
+    public function declare(string $package, string $directory, array $entries, ?string $base, bool $mirrored, ?Closure $fallback = null): void
     {
         $this->packages[$package] = [
             'directory' => $directory,
             'entries' => $entries,
             'base' => $base,
             'mirrored' => $mirrored,
+            'fallback' => $fallback,
         ];
     }
 
     /**
      * Every declared tag for a package, or only the named entries.
      *
-     * @param  string  $package  short package name, e.g. `blog`
+     * Naming no package renders every package that declared entries, in the order their
+     * providers handed them over. That is the form an application's layout wants: one
+     * line that still says everything after the application installs another package of
+     * the same family, where a required short name means editing every layout that has
+     * one. `package:discover` does not help — it discovers *providers*, and the template
+     * still names packages by hand.
+     *
+     * @param  string|null  $package  short package name, e.g. `blog`; `null` for every package that declared entries
      * @param  string  ...$only  entry keys — the shipped file, or the Vite source when there is none
      */
-    public function tags(string $package, string ...$only): HtmlString
+    public function tags(?string $package = null, string ...$only): HtmlString
     {
-        return $this->render($package, $this->entries($package, $only));
+        return $this->render($this->selection($package, $only));
     }
 
     /**
      * Only the stylesheet tags — for a layout that puts them in `<head>` and the scripts
      * at the end of `<body>`.
      */
-    public function styles(string $package, string ...$only): HtmlString
+    public function styles(?string $package = null, string ...$only): HtmlString
     {
-        return $this->render($package, array_filter(
-            $this->entries($package, $only),
-            fn (Asset $asset): bool => $asset->isStylesheet(),
+        return $this->render(array_filter(
+            $this->selection($package, $only),
+            fn (array $selected): bool => $selected[1]->isStylesheet(),
         ));
     }
 
     /**
      * Only the script tags.
      */
-    public function scripts(string $package, string ...$only): HtmlString
+    public function scripts(?string $package = null, string ...$only): HtmlString
     {
-        return $this->render($package, array_filter(
-            $this->entries($package, $only),
-            fn (Asset $asset): bool => ! $asset->isStylesheet(),
+        return $this->render(array_filter(
+            $this->selection($package, $only),
+            fn (array $selected): bool => ! $selected[1]->isStylesheet(),
         ));
     }
 
@@ -145,7 +155,7 @@ class PackageAssets
 
     /**
      * How each entry resolves right now, as `entry key => 'dev server' | 'application
-     * build' | 'shipped' | 'not published' | 'unresolved'`.
+     * build' | 'shipped' | 'fallback' | 'not published' | 'unresolved'`.
      *
      * The counterpart to {@see PublishedAssets::isStale()}, and it exists for the same
      * reason. Falling back is silent by design — a package's layout cannot fix the
@@ -155,8 +165,15 @@ class PackageAssets
      * the developer set up. Something has to be able to say so, and this is it. The
      * package's `about` section says it for you when it has one.
      *
-     * Nothing is written: an entry the mirror would publish on demand reports `shipped`
-     * on the strength of the file existing, rather than publishing it to find out.
+     * Nothing is written: the mirror publishes on demand, and an entry it has not reached
+     * yet reports `shipped` on the strength of the copy being one it could still make,
+     * rather than making it to find out.
+     *
+     * Which is why "could still make" is asked rather than assumed. An unwritable
+     * `public/` is the one shape where the mirror never produces that copy, the entry is
+     * served by {@see self::fallbackUrl()} or not at all, and a flat `shipped` would be
+     * this method's own version of the silence it exists to break — on the deployments
+     * least equipped to notice.
      *
      * @return array<string, string>
      */
@@ -174,13 +191,65 @@ class PackageAssets
                 $key !== null && ($this->vite()?->isRunningHot() ?? false) => 'dev server',
                 $key !== null && $this->builtByApplication($key) => 'application build',
                 $file === null || $directory === '' => 'unresolved',
-                $mirrored => 'shipped',
                 is_file(public_path('vendor/'.$package.'/'.$file)) => 'shipped',
+                $mirrored && $this->publishable($package) => 'shipped',
+                $this->fallbackUrl($package, $file) !== null => 'fallback',
                 default => 'not published',
             };
         }
 
         return $resolution;
+    }
+
+    /**
+     * Whether the mirror could still write this package's copy under `public/`.
+     *
+     * The target directory usually does not exist yet — the mirror creates it on the
+     * first request that resolves a URL — so what is tested is the nearest ancestor that
+     * does, which is the one {@see PublishedAssets} would have to create it in. Walking
+     * up rather than testing `public/` alone matters for the deployment this is here to
+     * catch: a `public/vendor` shipped read-only inside an image sits under a writable
+     * `public/`, and asking only the top would call it publishable.
+     */
+    private function publishable(string $package): bool
+    {
+        $directory = public_path('vendor/'.$package);
+
+        while (! is_dir($directory)) {
+            $parent = dirname($directory);
+
+            if ($parent === $directory) {
+                return false;
+            }
+
+            $directory = $parent;
+        }
+
+        return is_writable($directory);
+    }
+
+    /**
+     * The entries a call names, each paired with the package that declared it — one
+     * package's, or every package's when none was named.
+     *
+     * The pairing is what the aggregate form needs and a per-package render did not: a
+     * Vite manifest key is only meaningful against the `base` of the package the entry
+     * belongs to, so the package cannot be a parameter of the render any more.
+     *
+     * @param  array<int, string>  $only
+     * @return list<array{0: string, 1: Asset}>
+     */
+    private function selection(?string $package, array $only): array
+    {
+        $selected = [];
+
+        foreach ($package === null ? array_keys($this->packages) : [$package] as $name) {
+            foreach ($this->entries($name, $only) as $asset) {
+                $selected[] = [$name, $asset];
+            }
+        }
+
+        return $selected;
     }
 
     /**
@@ -215,15 +284,27 @@ class PackageAssets
      * scripts, since a script tag the browser reaches first should not be the thing that
      * delays the styles.
      *
-     * @param  iterable<Asset>  $assets
+     * Stylesheets lead across the whole set rather than within each package: an aggregate
+     * call renders one document's `<head>`, and a package whose provider booted third is
+     * no reason for its stylesheet to land behind the second package's scripts.
+     *
+     * They lead within each of the two halves, though, not across the seam. Vite orders
+     * its own block — preloads, then stylesheets, then scripts — and that block is
+     * emitted whole, so a script the application built precedes a stylesheet that fell
+     * back to the shipped copy. Interleaving the two would mean calling Vite per entry
+     * and giving up the single set of preloads, to reorder a deferred module against a
+     * `<link>` the browser fetches without waiting for it either way. The seam is left
+     * where it is.
+     *
+     * @param  iterable<array{0: string, 1: Asset}>  $selected
      */
-    private function render(string $package, iterable $assets): HtmlString
+    private function render(iterable $selected): HtmlString
     {
         $viteKeys = [];
         $styles = [];
         $scripts = [];
 
-        foreach ($assets as $asset) {
+        foreach ($selected as [$package, $asset]) {
             $key = $this->viteKey($package, $asset);
 
             if ($key !== null && $this->builtByApplication($key)) {
@@ -337,7 +418,8 @@ class PackageAssets
     /**
      * The URL of the shipped file — through the mirror, which publishes it first if it is
      * missing or out of date, or straight off `public/` for a package that opted the
-     * mirror out with `hasAssets(mirror: false)`.
+     * mirror out with `hasAssets(mirror: false)`, or from wherever the package said to
+     * serve it when neither produced anything.
      */
     private function publishedUrl(string $package, Asset $asset): ?string
     {
@@ -348,6 +430,15 @@ class PackageAssets
             return null;
         }
 
+        return $this->mirroredUrl($package, $directory, $file)
+            ?? $this->fallbackUrl($package, $file);
+    }
+
+    /**
+     * The published copy's URL, or `null` when there is none under `public/` to serve.
+     */
+    private function mirroredUrl(string $package, string $directory, string $file): ?string
+    {
         if ($this->packages[$package]['mirrored'] ?? false) {
             return app(PublishedAssets::class)->url($package, $directory.DIRECTORY_SEPARATOR.$file);
         }
@@ -356,6 +447,37 @@ class PackageAssets
         $published = @filemtime(public_path($relative));
 
         return $published === false ? null : asset($relative).'?id='.$published;
+    }
+
+    /**
+     * Where the package said to serve a shipped file from when nothing is published.
+     *
+     * Without one, {@see self::render()} drops the tag. That is the right call for an
+     * entry the application chose not to build, and the wrong one for the entry that is
+     * the package's only copy: the page loses its stylesheet or its behaviour with
+     * nothing in the markup, the log or the console to say why. An unwritable `public/`
+     * is a deployment shape — a hardened container, Vapor, shared hosting — not a
+     * mistake anyone is about to go looking for.
+     *
+     * A package that also serves its assets from a route of its own declares it with
+     * `hasAssetFallback()` and keeps the tag. The resolver owns the whole URL, including
+     * any cache-busting query string: the mtime this class appends elsewhere is the
+     * published copy's, and the whole point here is that there is no published copy.
+     *
+     * Returning `null` means the package has nothing either, and the tag is dropped as
+     * before.
+     */
+    private function fallbackUrl(string $package, string $file): ?string
+    {
+        $fallback = $this->packages[$package]['fallback'] ?? null;
+
+        if ($fallback === null) {
+            return null;
+        }
+
+        $url = $fallback($file, $package);
+
+        return is_string($url) && $url !== '' ? $url : null;
     }
 
     /**

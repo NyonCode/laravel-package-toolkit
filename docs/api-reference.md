@@ -104,16 +104,19 @@ The `$namespace` argument of `hasViews()` is [not currently applied](/views#the-
 |---|---|
 | `hasAssets(string $directory = 'dist', bool $mirror = true, array $entries = [])` | `static` |
 | `hasViteAssets(array $entries, ?string $base = null)` | `static` |
+| `hasAssetFallback(Closure $resolver)` | `static` |
 | `isAssetable()` | `bool` |
 | `assetDirectory()` | `string` |
 | `mirrorsAssets()` | `bool` |
 | `hasAssetEntries()` | `bool` |
 | `assetEntries()` | `Asset[]` |
 | `viteBase()` | `?string` |
+| `assetFallback()` | `?Closure` |
 
 Blade directives, registered once when any package declares entries:
-`@packageAssets($package, ...$only)` · `@packageStyles(…)` · `@packageScripts(…)` ·
-`@packageAssetUrl($package, $entry)` (URL only).
+`@packageAssets(?$package, ...$only)` · `@packageStyles(…)` · `@packageScripts(…)` — naming no
+package renders every package that declared entries — and `@packageAssetUrl($package, $entry)`
+(URL only, both arguments required).
 
 ### Middleware
 
@@ -335,12 +338,12 @@ The renderer behind the directives; a container singleton shared by every packag
 
 | Method | Returns | Notes |
 |---|---|---|
-| `declare(string $package, string $directory, array $entries, ?string $base, bool $mirrored)` | `void` | called by the provider |
-| `tags(string $package, string ...$only)` | `HtmlString` | application build first, then stylesheets, then scripts |
+| `declare(string $package, string $directory, array $entries, ?string $base, bool $mirrored, ?Closure $fallback = null)` | `void` | called by the provider |
+| `tags(?string $package = null, string ...$only)` | `HtmlString` | application build first, then stylesheets, then scripts; every package when none is named |
 | `styles(…)` / `scripts(…)` | `HtmlString` | same, filtered |
 | `url(string $package, string $entry)` | `?string` | one URL, `null` when nothing resolves |
 | `declared(string $package)` | `bool` | |
-| `resolution(string $package)` | `array` | entry => `dev server` / `application build` / `shipped` / `not published` / `unresolved`; writes nothing |
+| `resolution(string $package)` | `array` | entry => `dev server` / `application build` / `shipped` / `fallback` / `not published` / `unresolved`; writes nothing |
 
 ## `Support\PublishedAssets`
 

@@ -56,7 +56,8 @@ public function register(): void
    `mergeConfigFrom()`. A file that does not return an array throws `InvalidReturnTypeException`.
 9. **`registerAssetMirror()`** declares the package's asset directory with the shared
    [`PublishedAssets`](/assets#the-asset-mirror) singleton. Bookkeeping only — nothing is copied here.
-10. **`registerPackageAssets()`** declares the entries a template renders with the shared
+10. **`registerPackageAssets()`** declares the entries a template renders — with the Vite base and
+    any [`hasAssetFallback()`](/assets#keeping-the-tag-hasassetfallback) resolver — to the shared
     [`PackageAssets`](/assets#rendering-them-in-a-template) singleton. Also bookkeeping — no manifest
     is read and no file is touched until a tag is actually rendered.
 11. **`registerInstallCommand()`** registers the install command, but only when the package is

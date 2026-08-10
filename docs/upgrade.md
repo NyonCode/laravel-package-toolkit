@@ -25,6 +25,30 @@ introduced — the asset mirror and the `laravel-assets` publish tag — is in 2
 `composer update nyoncode/laravel-package-toolkit` is the whole migration.
 :::
 
+## To 2.4.2
+
+Nothing to do. Two additions and one correction, none of which changes what a package already
+renders.
+
+[**The three tag directives take no package name.**](/assets#naming-no-package-renders-every-one)
+`@packageAssets`, `@packageStyles` and `@packageScripts` with no argument render every package that
+declared entries. `@packageAssets('blog')` renders byte for byte what it did, so this is only worth
+adopting where the layout is the application's own — that is the line that otherwise has to be
+edited every time a package is installed or removed. `@packageAssetUrl` still takes both arguments.
+
+[**`hasAssetFallback()`**](/assets#keeping-the-tag-hasassetfallback) says where to serve a shipped
+file from when nothing is published. Worth declaring if your package already serves its assets from
+a route of its own and you support deployments where `public/` cannot be written — a read-only
+container, Vapor, shared hosting. There, an entry used to render no tag at all, and a page lost its
+stylesheet or its behaviour with nothing to say why. Every other package is unaffected: the
+resolver is reached only after both the mirror and `public/vendor/{short-name}` came back empty.
+
+**`resolution()` stops reporting `shipped` for a copy that can never be written.** A mirrored
+package — the default — claimed `shipped` for every entry outright, so an unwritable `public/`
+looked healthy in `php artisan about` while the page rendered nothing. It now says `fallback`, or
+`not published` where there is no fallback either. Nothing else moves: an entry the lazy mirror
+simply has not reached yet, which is every entry on a fresh install, still reports `shipped`.
+
 ## To 2.4.1
 
 Nothing to do. One thing starts working that previously did nothing:

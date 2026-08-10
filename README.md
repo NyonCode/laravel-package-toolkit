@@ -905,6 +905,49 @@ are checked at registration, so a typo throws where it was declared. `.js` rende
 `type="module"`; a shipped IIFE bundle says so with
 `Asset::make('js/index.js')->classic()`.
 
+#### Naming no package renders every one
+
+Since 2.4.2 the short name is optional on the three tag directives — the form an application's own
+layout wants, since a layout that names its packages is one that has to be edited every time a
+package is installed or removed:
+
+```blade
+<head>
+    @packageStyles
+</head>
+<body>
+    @packageScripts
+</body>
+```
+
+Every package that declared entries renders, in the order their providers handed them over.
+Stylesheets lead across the whole set rather than within each package — within each of the two
+halves, that is: what the application's Vite build covers is emitted as one block so its preloads
+stay a single set, and that block leads. Everything else stays per entry: each package's
+`classic()`, its attributes, its own Vite resolution. `@packageAssetUrl` still takes both
+arguments — it answers with one URL, and there is no URL of every package.
+
+#### Keeping the tag when nothing is published
+
+An entry that resolves to nothing renders no tag. That is right for an entry the application chose
+not to build, and wrong for the entry that is your package's only copy: where `public/` cannot be
+written — a read-only container, Vapor, shared hosting — the page loses its stylesheet or its
+behaviour with nothing to say why. If your package also serves its assets from a route of its own,
+say so and the tag survives:
+
+```php
+$packager
+    ->hasAssets(entries: ['js/index.js'])
+    ->hasAssetFallback(fn (string $file): string => route('my-package.asset', ['file' => $file]));
+```
+
+The resolver is reached only after both the mirror and `public/vendor/my-package` came back empty,
+so a normal deployment never calls it, and it owns the whole URL including any cache-busting query
+string — the `?id=` elsewhere is the published copy's mtime, and the point of being here is that
+there is none. Returning `null` drops the tag as before. What declaring it buys is the tag itself:
+`type="module"` or the `defer` that `classic()` implies, your attributes,
+`data-navigate-track="reload"` and the application's CSP nonce.
+
 #### Naming nothing discovers them
 
 Name no entries and the asset directory answers for itself, the way `hasRoutes()` and `hasViews()`
@@ -958,7 +1001,8 @@ fine, which is what keeps it in codebases — here is what it leaves out, almost
 - **`url()` returns `?string`.** Where `public/` cannot be written and nothing was published before,
   this renders `src=""` — which a browser resolves against the current page and fetches the HTML as
   a script. Nothing throws, nothing 404s, and the page is broken. The directives emit no tag at all
-  in that situation.
+  in that situation, or the one
+  [`hasAssetFallback()`](#keeping-the-tag-when-nothing-is-published) points at.
 - **No `type="module"`**, so a Vite bundle's top-level `import` is a syntax error.
 - **No `data-navigate-track="reload"`**, which makes `?id=<mtime>` a query string nobody reads:
   Livewire has no reason to full-page-reload a `wire:navigate` visit, so an upgrade lands as new

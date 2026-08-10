@@ -221,9 +221,10 @@ use them in tests, or in your own `boot()` override.
 The matching getters return the resolved values: `configFiles()`, `routeFiles()`,
 `migrationFiles()`, `seederFiles()`, `factoryFiles()`, `stubFiles()`,
 `broadcastChannelFiles()` (all arrays of `Support\SplFileInfo`), plus `views()`,
-`translationPath()`, `assetDirectory()`, `viewComponents()`, `viewComponentPaths()`,
-`viewComponentNamespaces()`, `viewComposers()`, `viewSharedData()`, `events()`, `subscribers()`,
-`optimizeCommands()`, `providers()` and `commands`.
+`translationPath()`, `assetDirectory()`, `assetEntries()`, `viteBase()`, `assetFallback()`,
+`viewComponents()`, `viewComponentPaths()`, `viewComponentNamespaces()`, `viewComposers()`,
+`viewSharedData()`, `events()`, `subscribers()`, `optimizeCommands()`, `providers()` and
+`commands`.
 
 ## `Support\SplFileInfo`
 
