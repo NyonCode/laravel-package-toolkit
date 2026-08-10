@@ -66,10 +66,19 @@ trait DeclaresPackageAssets
      * the container's lifetime: a test that rebuilds the application gets a fresh
      * compiler and registers again, and a second package booting into the same one does
      * not re-register.
+     *
+     * Not guarded on anything being declared, though. Blade leaves a directive it does not
+     * know as text, so a layout carrying `@packageStyles('blog')` while nothing declares an
+     * entry used to print that line into the page — the raw directive, visible in the
+     * browser. It is the shape a package reaches by ordinary means: an asset directory of
+     * fonts and images has nothing to tag, a `hasAssets()` behind a conditional is not
+     * reached in production, and an application writes the line in its layout before
+     * installing the package that answers it. Registering regardless costs one closure and
+     * renders nothing, which is what all three of those wanted.
      */
     public function bootAssets(): static
     {
-        if (! ($this->packager?->hasAssetEntries() ?? false) || ! $this->app->bound('blade.compiler')) {
+        if (! $this->app->bound('blade.compiler')) {
             return $this;
         }
 
@@ -118,6 +127,10 @@ trait DeclaresPackageAssets
      */
     private function reportAssetResolution(): void
     {
+        if (! ($this->packager?->hasAssetEntries() ?? false)) {
+            return;
+        }
+
         if (! $this->packager->isAboutable() || ! $this->app->runningInConsole()) {
             return;
         }

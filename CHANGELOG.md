@@ -27,6 +27,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `refresh` is accepted as a synonym. `install` gained `--no-guide` alongside `--no-skill` and
   `--no-mcp`, since `update` has to be able to say "leave `AGENTS.md` alone" and there was no way to.
 
+### Fixed
+
+- **A layout printed the raw directive into the page when nothing declared an entry.** The Blade
+  directives were registered only by a package that had something to render, and Blade leaves a
+  directive it does not know as text — so `@packageStyles('blog')` reached the browser verbatim
+  rather than rendering nothing. Three ordinary shapes arrive there: an asset directory of fonts and
+  images has nothing to tag, a `hasAssets()` behind a conditional is not reached in production, and
+  an application writes the line in its layout before installing the package that answers it. The
+  directives are now registered wherever a toolkit provider boots with a Blade compiler bound, which
+  costs one closure and renders the empty string all three wanted. The `about` row is unchanged: it
+  still appears only for a package that declared Vite sources and asked for a section.
+
+- **Two packages serving the same shipped file resolved to one URL.** `PublishedAssets` memoised a
+  resolved URL by the shipped path alone, and a shipped file resolves to `vendor/{short-name}/…` —
+  so one directory reached under two short names collapsed onto whichever package asked first. The
+  second package's tags pointed into the first one's directory, and since the memo is consulted
+  before `sync()`, its own `public/vendor/{short-name}` was never written at all. The memo now
+  carries the package name. `isStale()` was never affected, and neither was a package with a
+  directory of its own — which is every package installed the normal way.
+
+- **`hasViteAssets()` dropped the key of a `source => Asset` pair.** The shorthand's key is the Vite
+  source, and an `Asset` value is how a package says the one thing the shorthand cannot —
+  `classic()`, an attribute — so `'resources/js/blog.js' => Asset::make('js/blog.js')->classic()`
+  reads as both. The `Asset` used to take the whole pair: the source went nowhere and the entry
+  resolved to the shipped file whatever the application built, which looks exactly like an
+  application that chose not to build the package. The key is now attached as the source, carrying
+  the asset's presentation the way a replacement carries it. An `Asset` naming a source of its own
+  under a key naming another is two answers to one question, and throws rather than letting one win
+  silently.
+
+### Removed
+
+- **The unreachable "an asset must declare a shipped file, a Vite source, or both" guard.** Both
+  factories set one half and nothing unsets it, so no `Asset` could reach it. The invariant is
+  stated where it holds — in `Asset` itself — rather than re-checked where it cannot fail.
+
 ## [2.4.2] - 2026-08-10
 
 ### Added

@@ -76,6 +76,20 @@ test('stylesheets lead across the whole set, not within each package', function 
         ->and(strrpos($html, '<link'))->toBeLessThan(strpos($html, '<script'));
 });
 
+test('two packages serving the same file each render their own copy', function () {
+    declareSecondPackage();
+
+    $html = Blade::render('@packageStyles');
+
+    // Both declare `css/index.css`, out of the one directory the fixture ships. The
+    // mirror memoised its answer by the shipped path alone, so the second package
+    // rendered the first one's URL — from before its own sync had run, which left
+    // `public/vendor/other-package` without the file the tag pointed away from.
+    expect($html)->toContain('vendor/test-package/css/index.css')
+        ->and($html)->toContain('vendor/other-package/css/index.css')
+        ->and(public_path('vendor/other-package/css/index.css'))->toBeFile();
+});
+
 test('the narrowed directives aggregate too', function () {
     declareSecondPackage();
 

@@ -131,6 +131,33 @@ test('an Asset instance passes through hasViteAssets untouched', function () {
         ->and($entry->source())->toBe('resources/js/index.js');
 });
 
+test('an Asset keyed by a vite source declares both halves, presentation and all', function () {
+    $this->packager->hasAssets();
+    $this->packager->hasViteAssets([
+        'resources/js/index.js' => Asset::make('js/legacy.js')
+            ->classic()
+            ->attributes(['data-legacy' => true]),
+    ]);
+
+    $entry = collect($this->packager->assetEntries())
+        ->firstWhere(fn (Asset $asset) => $asset->key() === 'js/legacy.js');
+
+    // The key used to be dropped on the floor for an `Asset` value, leaving an entry that
+    // resolved to the shipped file whatever the application built.
+    expect($entry->source())->toBe('resources/js/index.js')
+        ->and($entry->file())->toBe('js/legacy.js')
+        ->and($entry->isModule())->toBeFalse()
+        ->and($entry->tagAttributes())->toHaveKey('data-legacy', true);
+});
+
+test('an Asset naming its own source cannot also be keyed by one', function () {
+    $this->packager->hasAssets();
+
+    expect(fn () => $this->packager->hasViteAssets([
+        'resources/js/index.js' => Asset::vite('resources/css/index.css')->fallback('js/index.js'),
+    ]))->toThrow(InvalidArgumentException::class, 'Name it once');
+});
+
 test('a vite source that does not exist is rejected', function () {
     expect(fn () => $this->packager->hasViteAssets(['resources/js/missing.js']))
         ->toThrow(FileNotFoundException::class, 'Vite source [resources/js/missing.js] does not exist');
@@ -222,8 +249,9 @@ test('a fallback declared before the asset directory is rejected', function () {
         );
 });
 
-// Asset-level validation reached through the packager
-test('an asset must declare a file or a source', function () {
+// Asset-level validation reached through the packager. There is no case for "neither
+// half declared": both factories set one, and nothing unsets it.
+test('an empty path is rejected on either half', function () {
     expect(fn () => Asset::make(''))
         ->toThrow(InvalidArgumentException::class, 'Asset file cannot be empty')
         ->and(fn () => Asset::vite(''))
