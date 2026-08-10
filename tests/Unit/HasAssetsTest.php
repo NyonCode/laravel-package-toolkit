@@ -201,6 +201,27 @@ test('the vite base stays null when it is not declared', function () {
     expect($this->packager->viteBase())->toBeNull();
 });
 
+// hasAssetFallback
+test('no fallback is declared until one is', function () {
+    expect($this->packager->assetFallback())->toBeNull();
+});
+
+test('a declared fallback is handed back as given', function () {
+    $resolver = fn (string $file): string => "/served/$file";
+
+    $this->packager->hasAssets()->hasAssetFallback($resolver);
+
+    expect($this->packager->assetFallback())->toBe($resolver);
+});
+
+test('a fallback declared before the asset directory is rejected', function () {
+    expect(fn () => $this->packager->hasAssetFallback(fn (): string => '/served'))
+        ->toThrow(
+            PackageConfigurationException::class,
+            'An asset fallback needs an asset directory. Call hasAssets() before declaring it.'
+        );
+});
+
 // Asset-level validation reached through the packager
 test('an asset must declare a file or a source', function () {
     expect(fn () => Asset::make(''))

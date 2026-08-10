@@ -175,6 +175,45 @@ An older published copy is still preferred over nothing, and `isStale()` names t
 can warn about it — a stale copy being served is a production condition worth surfacing, not a
 silent one.
 
+### Keeping the tag: `hasAssetFallback()`
+
+Added in **2.4.2**. The code above is for markup you compose yourself. For a *declared entry* the
+renderer has the same problem and one more constraint: there is nothing to point the tag at, so
+`@packageAssets` drops it. That is right for an entry the application chose not to build, and wrong
+for the entry that is your package's only copy — the page loses its stylesheet or its behaviour with
+nothing in the markup, the log or the console to say why, on exactly the deployments least likely to
+go looking.
+
+If your package also serves its assets from a route of its own, say so and the tag survives:
+
+```php
+$packager
+    ->hasAssets(entries: ['js/blog.js'])
+    ->hasAssetFallback(fn (string $file): string => route('blog.asset', ['file' => $file]));
+```
+
+The resolver is handed the entry's path inside the asset directory and the package's short name, and
+is reached only after both the mirror and `public/vendor/{short-name}` came back with nothing — in a
+normal deployment it is never called at all. Return `null` and the tag is dropped as before.
+
+It owns the whole URL it returns, **cache-busting query string included**. The `?id=` the renderer
+appends elsewhere is the published copy's mtime, and the point of being here is that there is no
+published copy; only you know what your route varies on.
+
+What you get back for declaring it is the tag itself — `type="module"` or the `defer` that
+`classic()` implies, your declared attributes, `data-navigate-track="reload"` and the application's
+CSP nonce. That is the whole reason to declare a fallback rather than hand-write a `<script>` beside
+the directive, which is the mistake `@packageAssets` exists to remove.
+
+`resolution()` reports such an entry as `fallback`, so a deployment serving from the route is
+distinguishable from one serving nothing.
+
+:::note A fallback is not a substitute for publishing
+It is the same file, served the slow way — through PHP, past the middleware stack, with no
+`try_files` shortcut. Where `public/` *can* be written, the mirror or `vendor:publish` is still what
+should be serving it.
+:::
+
 ### Opting out
 
 ```php
@@ -243,6 +282,43 @@ $packager->hasAssets(entries: ['css/blog.css', 'js/blog.js']);
 Every path is relative to the asset directory and is checked at registration — a typo throws
 where it was declared, not as a 404 in the browser six screens later. A path that does not exist
 throws `FileNotFoundException`, naming both the entry and the directory it was looked for in.
+
+### Naming no package renders every one
+
+Added in **2.4.2**. Drop the short name and the directive renders every package that declared
+entries, in the order their providers handed them over:
+
+```blade
+@packageAssets      {{-- every package, stylesheets first --}}
+@packageStyles
+@packageScripts
+```
+
+This is the form an application's layout wants. A layout that names its packages is a layout
+that has to be edited every time one is installed or removed, in every file that has the line —
+and `package:discover` does not help, because it discovers *providers* while the template still
+names packages by hand. One line says everything, and keeps saying it.
+
+Stylesheets lead across the whole set, not within each package: the aggregate renders one
+document's `<head>`, so a package whose provider booted third is no reason for its stylesheet to
+land behind the second package's scripts. Everything else is per entry as before — each package's
+`classic()`, its attributes, and its own Vite resolution.
+
+They lead within each of the two halves, not across the seam between them. What the application
+built is emitted as one Vite block — preloads, stylesheets, scripts, in Vite's own order — and that
+block comes first, so a script the application built precedes a stylesheet that fell back to the
+shipped copy. Interleaving the two would mean one Vite call per entry and giving up the single set
+of preloads, to reorder a deferred module against a `<link>` the browser fetches without waiting for
+it anyway.
+
+`@packageAssetUrl` keeps both arguments. It answers with one URL, and there is no such thing as
+the URL of every package.
+
+:::tip Name them when the placement differs
+An application that wants only some of its packages in a particular place still names them —
+`@packageStyles('blog')` in `<head>` and `@packageScripts('blog')` before `</body>`. The aggregate
+is the default, not the only form.
+:::
 
 ### Naming nothing discovers them
 
@@ -541,7 +617,8 @@ and only for a package that declared Vite sources — there is nothing to disamb
   Assets .......... css/blog.css: application build, js/blog.js: shipped
 ```
 
-Or ask directly — `dev server`, `application build`, `shipped`, `not published`, `unresolved`:
+Or ask directly — `dev server`, `application build`, `shipped`,
+[`fallback`](#keeping-the-tag-hasassetfallback), `not published`, `unresolved`:
 
 ```php
 use NyonCode\LaravelPackageToolkit\Support\PackageAssets;
@@ -550,8 +627,12 @@ app(PackageAssets::class)->resolution('blog');
 // ['css/blog.css' => 'application build', 'js/blog.js' => 'shipped']
 ```
 
-Nothing is written to find out: an entry the mirror would publish on demand reports `shipped` on
-the strength of the file existing rather than publishing it.
+Nothing is written to find out. The mirror publishes on demand, so an entry it has not reached yet
+reports `shipped` on the strength of the copy being one it could still make — which is asked, not
+assumed. Where `public/` cannot be written that copy never appears, the entry is served by the
+[fallback](#keeping-the-tag-hasassetfallback) or by nothing at all, and a flat `shipped` would be
+this report's own version of the silence it exists to break — on the deployments least equipped to
+notice.
 
 ### Content Security Policy
 
@@ -634,6 +715,7 @@ $packager->mirrorsAssets();     // bool — false after hasAssets(mirror: false)
 $packager->hasAssetEntries();   // bool — anything declared for a template to render
 $packager->assetEntries();      // Support\Asset[] in declaration order
 $packager->viteBase();          // ?string — only when given to hasViteAssets()
+$packager->assetFallback();     // ?Closure — as given to hasAssetFallback()
 ```
 
 ## Testing

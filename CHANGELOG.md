@@ -5,6 +5,60 @@ All notable changes to `laravel-package-toolkit` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.4.2] - 2026-08-10
+
+### Added
+
+- **The three tag directives take no package name.** `@packageAssets`, `@packageStyles` and
+  `@packageScripts` now render every package that declared entries, in the order their providers
+  handed them over, and the short name is optional rather than required. A layout that names its
+  packages is a layout that has to be edited every time one is installed or removed, in every file
+  carrying the line — and `package:discover` does not close that gap, because it discovers
+  *providers* while the template still names packages by hand. The aggregate is the form an
+  application's layout wants: one line that keeps saying everything.
+  Stylesheets lead across the whole set rather than within each package, since the aggregate renders
+  one document's `<head>` and a package whose provider booted third is no reason for its stylesheet
+  to land behind the second package's scripts — within each of the two halves, that is, since the
+  Vite keys are still collected into a single call so the preloads remain one set, and that block is
+  emitted whole and first. Everything else stays per entry — each package's `classic()`, its
+  attributes, its own Vite resolution. `@packageAssetUrl` keeps both arguments; it answers
+  with one URL, and there is no URL of every package.
+
+- **`hasAssetFallback()` — where to serve a shipped file from when nothing is published.** An entry
+  that resolved to nothing rendered no tag at all. That is right for an entry the application chose
+  not to build, and wrong for the entry that is the package's only copy: where `public/` cannot be
+  written — a read-only container, Vapor, shared hosting — the page lost its stylesheet or its
+  behaviour with nothing in the markup, the log or the console to say why, on exactly the
+  deployments least likely to go looking. The documented answer was to call `PublishedAssets::url()`
+  and compose a tag by hand, which is the pre-2.4.0 pattern the renderer exists to remove.
+  A package that also serves its assets from a route of its own now points at it and keeps the tag,
+  with `type="module"` or the `defer` that `classic()` implies, its declared attributes,
+  `data-navigate-track` and the application's CSP nonce still on it. The resolver
+  (`fn (string $file, string $package): ?string`) is reached only after both the mirror and
+  `public/vendor/{short-name}` came back empty, so a normal deployment never calls it, and it owns
+  the whole URL it returns, cache-busting query string included — the `?id=` the renderer appends
+  elsewhere is the published copy's mtime, and the point of being there is that there is none.
+  Returning `null` drops the tag as before, and `resolution()` gained a `fallback` state so a
+  deployment serving from the route is distinguishable from one serving nothing.
+
+Both are additive: `@packageAssets('blog')` renders byte for byte what it did, `PackageAssets::declare()`
+took a new parameter with a default, and a package that declares no fallback behaves exactly as before.
+
+### Fixed
+
+- **`resolution()` no longer reports `shipped` for a mirrored package whose copy can never be
+  written.** The mirrored arm asserted it outright, ahead of every arm that checks anything, so an
+  unwritable `public/` — a read-only container, Vapor, shared hosting — reported every entry as
+  served from `public/` while the page rendered nothing at all, or, once `hasAssetFallback()`
+  existed, rendered the fallback. That left `fallback` unreachable for any mirrored package, which
+  is to say for the default, and it left the report wrong in precisely the production condition it
+  was added to expose. A copy already published now earns `shipped` first; a mirrored entry without
+  one earns it only where the mirror could still create it, asked of the nearest existing ancestor
+  of `public/vendor/{short-name}` so a read-only `public/vendor` under a writable `public/` is not
+  taken for a writable one. The lazy mirror is unaffected — a fresh install, where `about` runs
+  before any request has published anything, still reports `shipped` — and nothing is published to
+  find out, as before.
+
 ## [2.4.1] - 2026-08-10
 
 ### Added

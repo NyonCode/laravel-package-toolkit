@@ -148,6 +148,11 @@ const BUILDERS = [
     ['hasAssets()', 'assets', '->hasAssets()'],
     ['hasViteAssets()', 'assets', "->hasViteAssets(['resources/js/blog.js'])"],
     [
+        'hasAssetFallback()',
+        'assets',
+        "->hasAssetFallback(fn ($file) => route('blog.asset', $file))",
+    ],
+    [
         'hasMiddlewareAliases()',
         'middleware',
         "->hasMiddlewareAliases(['author' => EnsureAuthor::class])",

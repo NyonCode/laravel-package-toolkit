@@ -55,6 +55,7 @@ trait DeclaresPackageAssets
             entries: $this->packager->assetEntries(),
             base: $this->packager->viteBase() ?? $this->derivePackageBase(),
             mirrored: $this->packager->isAssetable() && $this->packager->mirrorsAssets(),
+            fallback: $this->packager->assetFallback(),
         );
     }
 
