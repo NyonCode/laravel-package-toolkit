@@ -53,7 +53,7 @@ use RecursiveIteratorIterator;
  */
 class PublishedAssets
 {
-    /** @var array<string, string|null> shipped path => published URL, or null when nothing is published */
+    /** @var array<string, string|null> short package name and shipped path => published URL, or null when nothing is published */
     private array $urls = [];
 
     /** @var array<string, string> short package name => absolute asset directory, declared by its provider */
@@ -91,8 +91,16 @@ class PublishedAssets
     {
         $path = $this->normalize($path);
 
-        if (array_key_exists($path, $this->urls)) {
-            return $this->urls[$path];
+        // Memoized per package *and* path, not per path alone. A shipped file resolves to
+        // `vendor/{short-name}/…`, so the same file reached under two short names has two
+        // answers — and a memo keyed only by the path would hand the second package the
+        // first one's URL, from before its own `sync()` ever ran. That leaves
+        // `public/vendor/{second}` empty and every one of its tags pointing at the other
+        // package's directory.
+        $memo = $package."\0".$path;
+
+        if (array_key_exists($memo, $this->urls)) {
+            return $this->urls[$memo];
         }
 
         $this->sync($package, $path);
@@ -101,10 +109,10 @@ class PublishedAssets
         $published = @filemtime(public_path($relative));
 
         if ($published === false) {
-            return $this->urls[$path] = null;
+            return $this->urls[$memo] = null;
         }
 
-        return $this->urls[$path] = asset($relative).'?id='.$published;
+        return $this->urls[$memo] = asset($relative).'?id='.$published;
     }
 
     /**

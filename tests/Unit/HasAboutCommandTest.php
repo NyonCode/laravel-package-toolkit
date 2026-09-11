@@ -53,6 +53,18 @@ test('the version comes from the installed package named in composer.json', func
     expect($this->packager->getVersion())->toBeString()->not->toBeEmpty();
 });
 
+test('a malformed composer.json reports no version instead of throwing', function () {
+    // The file is read with `json_decode` now rather than Composer's `JsonFile`,
+    // which is what let this package drop `composer/composer` from the
+    // production dependencies of everything built on it. The behaviour that
+    // changed is here: a broken file used to raise `ParsingException`, and this
+    // feeds `php artisan about` — a diagnostic command is the last place that
+    // should become the fatal one.
+    File::put($this->composerPath, '{ this is not json');
+
+    expect($this->packager->getVersion())->toBeNull();
+});
+
 test('about data is stored as declared', function () {
     $this->packager->setAboutData(['Docs' => 'https://example.test']);
 

@@ -22,6 +22,7 @@ beforeEach(function () {
 afterEach(function () {
     File::deleteDirectory($this->shipped);
     File::deleteDirectory(public_path('vendor/'.$this->package));
+    File::deleteDirectory(public_path('vendor/'.$this->package.'-other'));
 });
 
 test('a declared directory is mirrored whole, not just the file asked about', function () {
@@ -41,6 +42,22 @@ test('the resolved url is memoized per asset', function () {
     File::deleteDirectory(public_path('vendor/'.$this->package));
 
     expect($this->assets->url($this->package, $this->shipped.'/dist/js/app.js'))->toBe($first);
+});
+
+test('two packages serving the same file get one url each, and one mirror each', function () {
+    $other = $this->package.'-other';
+
+    $this->assets->mirrors($this->package, $this->shipped.'/dist');
+    $this->assets->mirrors($other, $this->shipped.'/dist');
+
+    $first = $this->assets->url($this->package, $this->shipped.'/dist/js/app.js');
+    $second = $this->assets->url($other, $this->shipped.'/dist/js/app.js');
+
+    // The memo was keyed by the shipped path alone, so the second package was handed the
+    // first one's URL — and handed it *before* `sync()`, so its own copy never appeared.
+    expect($first)->toContain('vendor/'.$this->package.'/js/app.js?id=')
+        ->and($second)->toContain('vendor/'.$other.'/js/app.js?id=')
+        ->and(public_path('vendor/'.$other.'/js/app.js'))->toBeFile();
 });
 
 test('an undeclared package has its root read back off a dist path', function () {

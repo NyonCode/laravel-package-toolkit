@@ -273,10 +273,16 @@ trait HasAssets
      * Accepts `Asset::vite(...)->fallback(...)`, or the shorthand `source => fallback`
      * map, or a plain list of sources when the package ships no built copy of them.
      *
+     * The shorthand's value may be an `Asset` rather than a path — `'resources/js/blog.js'
+     * => Asset::make('js/blog.js')->classic()` — for the presentation a bare path cannot
+     * carry. The key is still the Vite source; an asset naming one of its own under a key
+     * naming another is rejected rather than resolved by guessing.
+     *
      * @param  array<int|string, Asset|string>  $entries
      * @param  string|null  $base  The package's path under the application, when it cannot be derived
      *
      * @throws FileNotFoundException if a declared source or fallback does not exist
+     * @throws InvalidArgumentException if a key and its asset both name a Vite source
      * @throws PackageConfigurationException if a fallback is declared before `hasAssets()`
      */
     public function hasViteAssets(array $entries, ?string $base = null): static
@@ -287,6 +293,7 @@ trait HasAssets
 
         foreach ($entries as $source => $entry) {
             $this->declareAsset(match (true) {
+                $entry instanceof Asset && is_string($source) => $this->keyedSource($source, $entry),
                 $entry instanceof Asset => $entry,
                 is_string($source) => Asset::vite($source)->fallback($entry),
                 default => Asset::vite($entry),
@@ -294,6 +301,37 @@ trait HasAssets
         }
 
         return $this;
+    }
+
+    /**
+     * The entry a `source => Asset` pair declares.
+     *
+     * The shorthand's key is the Vite source, and an `Asset` value is how a package says
+     * the one thing the shorthand cannot — `classic()`, an attribute. Both halves are
+     * meant: `'resources/js/blog.js' => Asset::make('js/blog.js')->classic()` reads as the
+     * shorthand with presentation attached, and it used to be taken as the `Asset` alone,
+     * silently dropping the source. The entry then resolved to the shipped file forever,
+     * whatever the application built — which looks exactly like an application that chose
+     * not to build the package, the one failure `hasViteAssets()` exists to make sayable.
+     *
+     * An `Asset` naming its own source under a key naming another is not that shorthand.
+     * It is two answers to one question, and preferring either is a guess.
+     *
+     * @throws InvalidArgumentException if the key and the asset both name a Vite source
+     */
+    private function keyedSource(string $source, Asset $asset): Asset
+    {
+        $file = $asset->file();
+
+        // `$file` is null only where a source was declared — an asset always has one half
+        // or the other — so the message holds for both, and the type narrows for the call.
+        if ($asset->source() !== null || $file === null) {
+            throw new InvalidArgumentException(
+                "Asset keyed by the Vite source [$source] already declares one [{$asset->source()}]. Name it once."
+            );
+        }
+
+        return Asset::vite($source)->fallback($file)->inheritPresentationFrom($asset);
     }
 
     /**
@@ -313,12 +351,6 @@ trait HasAssets
     {
         $file = $asset->file();
         $source = $asset->source();
-
-        if ($file === null && $source === null) {
-            throw new InvalidArgumentException(
-                'An asset must declare a shipped file, a Vite source, or both'
-            );
-        }
 
         if ($file !== null) {
             if (! $this->isAssetable) {

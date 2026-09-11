@@ -502,20 +502,32 @@ $packager
 
 Nothing else in the package changes. The template still says `@packageAssets('blog')`.
 
-### Three ways to say it
+### Four ways to say it
 
-The map above is the shorthand. All three forms below declare the same thing, and mixed forms in
-one call are fine — reach past the shorthand only when an entry also needs `classic()`,
-`attributes()` or an explicit kind:
+The map above is the shorthand. All four forms below declare the same thing, and mixed forms in one
+call are fine:
 
 ```php
 $packager->hasViteAssets([
     'resources/css/blog.css' => 'css/blog.css',                          // source => shipped fallback
     'resources/js/blog-legacy.js',                                       // source only, no fallback
-    Asset::vite('resources/js/blog.js')->fallback('js/blog.js')          // [tl! focus:start]
+    'resources/js/blog-umd.js' => Asset::make('js/blog-umd.js')          // [tl! focus:start]
+        ->classic(),                                                     // the shorthand, plus presentation
+    Asset::vite('resources/js/blog.js')->fallback('js/blog.js')
         ->attributes(['data-turbo-track' => 'reload']),                  // [tl! focus:end]
 ]);
 ```
+
+An `Asset` on the right of the arrow is the shorthand with the one thing a bare path cannot carry
+attached — `classic()`, `attributes()`, an explicit kind. The key is still the Vite source, so the
+asset must not name one of its own: that is two answers to one question, and it throws rather than
+picking one.
+
+:::note Fixed in 2.4.3
+Before 2.4.3 an `Asset` value took the whole pair and the key was dropped, leaving an entry with no
+Vite source at all. It then resolved to the shipped file whatever the application built — which
+looks exactly like an application that chose not to build the package.
+:::
 
 Declaring the same shipped file in both calls is not a mistake and not a duplicate. A later entry
 for a file already declared **replaces** the earlier one, and renders once, in the position it was
@@ -587,6 +599,19 @@ A miss falls back rather than throwing. `@vite` throws on an unknown entry, whic
 application's own layout and wrong inside a package's: the package author cannot fix the
 application's Vite config, and a 500 on every page is a poor way to say "this could have been
 faster".
+
+:::note The dev-server client appears once per directive
+While `npm run dev` runs, Laravel prepends `@vite/client` to every block of Vite markup it renders,
+and a layout with `@packageStyles` in `<head>` and `@packageScripts` at the end of `<body>` renders
+two — so the tag appears twice in the response.
+
+It is a duplicate tag, not a second client. Both carry `type="module"` and the same URL, and a
+module URL is fetched and evaluated once per document however many script tags name it, so exactly
+one HMR client connects. Suppressing the second would mean remembering across a request that the
+first was emitted, and getting that reset wrong under a long-lived worker costs the client
+altogether — no HMR, on the one setup where HMR is the point. `@packageAssets` renders a single
+block and does not raise the question at all.
+:::
 
 ### When the prefix cannot be derived
 

@@ -4,9 +4,7 @@ namespace NyonCode\LaravelPackageToolkit\Concerns;
 
 use Closure;
 use Composer\InstalledVersions;
-use Composer\Json\JsonFile;
 use Illuminate\Foundation\Console\AboutCommand;
-use Seld\JsonLint\ParsingException;
 use Throwable;
 
 trait HasAboutCommand
@@ -34,15 +32,32 @@ trait HasAboutCommand
     /**
      * Retrieves a specific value from the composer.json file by key name.
      *
-     * @param  string  $keyName  The key to retrieve from composer.json.
+     * Read with `json_decode` rather than Composer's own `JsonFile`, and that
+     * is the whole reason this package no longer requires `composer/composer`.
+     * One class, used once, to read one file — and requiring it put the entire
+     * Composer application into the production dependencies of every package
+     * built on this toolkit, along with a `laravel/pint` nothing used and an
+     * `ext-readline` that failed the install outright wherever the extension is
+     * absent.
      *
-     * @throws ParsingException If the composer.json file cannot be parsed.
+     * `InstalledVersions` and `Autoload\ClassLoader` stay: they ship with the
+     * generated autoloader that every Composer install has, which is what
+     * `composer-runtime-api` declares. They never needed the package either.
+     *
+     * A malformed file yields null here rather than an exception. This feeds
+     * `php artisan about`, and a broken `composer.json` is not worth turning a
+     * diagnostic command into a fatal one.
+     *
+     * @param  string  $keyName  The key to retrieve from composer.json.
      */
     private function getComposerValue(string $keyName): ?string
     {
-        $jsonFile = new JsonFile($this->path('/../composer.json'));
-        if ($jsonFile->exists()) {
-            $data = $jsonFile->read();
+        $path = $this->path('/../composer.json');
+
+        if (is_file($path) && is_readable($path)) {
+            $contents = file_get_contents($path);
+            $data = $contents === false ? null : json_decode($contents, true);
+
             $this->composerData = is_array($data) ? $data : [];
         }
 
@@ -51,11 +66,7 @@ trait HasAboutCommand
         return is_string($value) ? $value : null;
     }
 
-    /**
-     * Retrieves the version of the package.
-     *
-     * @throws ParsingException If the composer.json file cannot be parsed.
-     */
+    /** Retrieves the version of the package. */
     public function getVersion(): ?string
     {
         if (! empty($this->version)) {
@@ -113,8 +124,6 @@ trait HasAboutCommand
      * Merges version data and additional information for AboutCommand.
      *
      * @return array<string|Closure>
-     *
-     * @throws ParsingException
      */
     private function data(): array
     {
@@ -127,8 +136,6 @@ trait HasAboutCommand
 
     /**
      * Adds data to the AboutCommand.
-     *
-     * @throws ParsingException
      */
     public function bootAboutCommand(): void
     {

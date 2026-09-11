@@ -7,7 +7,6 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
-use Seld\JsonLint\ParsingException;
 
 trait BootsPackageResources
 {
@@ -30,8 +29,6 @@ trait BootsPackageResources
      * `bootOptimizes`, `bootSharedViewData`, `bootTranslations`,
      * `bootViewComposers`, `bootViewComponentNamespaces`,
      * `bootViewComponents`, and `bootViews`.
-     *
-     * @throws ParsingException
      */
     public function bootPackageResources(): void
     {
@@ -56,8 +53,6 @@ trait BootsPackageResources
      *
      * This method checks if the package has an about command and, if so,
      * registers it by calling the `bootAboutCommand` method on the packager.
-     *
-     * @throws ParsingException
      */
     public function bootAboutCommand(): static
     {
