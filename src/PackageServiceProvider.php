@@ -19,7 +19,6 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\MirrorsPackageAssets;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\PublishesPackageResources;
 use NyonCode\LaravelPackageToolkit\Support\Enums\LifecycleHook;
 use ReflectionClass;
-use Seld\JsonLint\ParsingException;
 use Symfony\Component\Console\Output\NullOutput;
 use Throwable;
 
@@ -138,7 +137,6 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
     /**
      * Boot the service provider.
      *
-     * @throws ParsingException When parsing fails
      * @throws Exception When booting fails
      */
     public function boot(): void
