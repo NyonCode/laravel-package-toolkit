@@ -5,6 +5,20 @@ All notable changes to `laravel-package-toolkit` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.5.1]
+
+### Fixed
+
+- **`composer lint` is green for the first time in a while.** It was failing on a clean checkout —
+  13 errors before 2.5.0 dropped `composer/composer`, three after — and all of them were PHPStan 1.12
+  failing to resolve `SUCCESS` and `setName()` off `Illuminate\Console\Command` under Laravel 13.
+  PHPStan's own output had been asking to be upgraded; `phpstan/phpstan` is `^2.2` now and the three
+  are gone. A dev dependency, so nothing an installed package ships changes.
+- **One real finding the upgrade surfaced.** `validatePackageConfiguration()` read
+  `$this->packager?->name`, and by the time it runs `register()` has already called
+  `validatePackager()` — which throws on null — and dereferenced `$this->packager->` three times
+  without a guard. The nullsafe was dead, and inconsistent with the eight lines above it.
+
 ## [2.5.0]
 
 ### Added

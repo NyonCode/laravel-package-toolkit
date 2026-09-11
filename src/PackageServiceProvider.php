@@ -251,7 +251,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function validatePackageConfiguration(): void
     {
-        if (empty($this->packager?->name)) {
+        if (empty($this->packager->name)) {
             throw new MissingNameException(
                 'This package does not have a name. You can set one with $package->name("package-name")'
             );
