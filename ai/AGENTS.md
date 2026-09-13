@@ -67,6 +67,8 @@ Register it in `composer.json` (`extra.laravel.providers`) as usual for a Larave
 
 - `hasMigrations(?array $migrationFiles = null, string $directory = '../database/migrations'): static`
 - Supports both timestamped (`2025_01_01_000000_create_x.php`) and **timeless** (`create_x.php`) migrations. Timeless ones get a sequential timestamp prefix automatically **when published** (`getMigrationPublishMapping()`).
+- Publishing the same timeless migration again targets the copy already in `database/migrations` — matched on the name under the prefix, whatever stamp it carries — and rewrites it. The generated prefix comes from the publishing process's own clock, so matching on the full name instead wrote a second copy every run and `migrate` then failed on the duplicate table.
+- **So name a timeless migration after your package** (`create_blog_posts_table.php`, not `create_posts_table.php`): the name under the prefix is the only identity available, and one shared with a migration already in the application resolves to that file. The constraint predates this — two migrations sharing that name both run, and the second fails — but it is now what publishing keys on. `vendor:publish` still skips a destination that exists, so only `--force` rewrites anything.
 - `canLoadMigrations(bool $value = true): static` — when true, migrations are *loaded from the package* at boot (run without publishing). Default is off; call this to enable run-in-place.
 
 ## Seeders
@@ -236,6 +238,7 @@ Inside the install-command callback (`InstallCommand` methods), select what to p
 - Bulk: `publishEverything()` / `publishAll()`, `publishEssentials()`.
 - Conditional: `publishIf(bool, ...$tags)`, `publishUnless(bool, ...$tags)`, `publishForEnvironment(string|array, ...$tags)`, `publishForProduction(...$tags)`, `publishForLocal(...$tags)`, `publishCustom(...$tags)`.
 - Hooks/UX: `beforeInstallation(Closure)`, `afterInstallation(Closure)`, `silent()`, `copyAndRegisterServiceProviderInApp(?string $providerClass = null)`, `askToStarRepoOnGitHub(?string $repoUrl = null)`.
+- **Exit code.** Every publish step is attempted, including those after one that failed; the command then exits `1` and names the tags that did not publish. That summary prints under `--no-interaction` too, unlike the success banner — so a deploy script can check the exit code and get an account of why.
 
 ```php
 $packager->hasInstallCommand(function (InstallCommand $command) {

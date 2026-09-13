@@ -5,6 +5,34 @@ All notable changes to `laravel-package-toolkit` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Publishing a timeless migration twice no longer writes a second copy of it.** A migration shipped
+  without a date prefix gets one generated at publish time, from the clock of the process building
+  the publish mapping — so the destination path was different in every run. `vendor:publish` looked
+  there, found nothing, and copied the file again under the new stamp. Two
+  `create_blog_posts_table` migrations in `database/migrations`, and `php artisan migrate` failing on
+  the second with the table already there. It needed nothing unusual to hit: running the package's
+  installer a second time, which is what every "install another package, then re-run the installer"
+  instruction asks for. Publishing now matches on the name *underneath* the prefix and rewrites the
+  file it wrote last time, which is what publishing the same resource twice is supposed to mean. An
+  application already holding duplicates keeps them, and the earliest is the one publishing targets
+  from then on — that is the one `migrate` has run. The name under the prefix is the identity this
+  matches on, so a timeless migration wants naming after its package — a constraint that predates
+  this (two migrations sharing that name both run, and the second fails) and is now what publishing
+  keys on. `vendor:publish` still skips a destination that exists, so nothing is rewritten without
+  `--force`.
+- **A failed publish now fails the install command.** `InstallCommand` asked `vendor:publish` for an
+  exit code, compared it against zero, printed `Failed to publish …`, and then returned `SUCCESS`
+  anyway — under a banner reading "installed successfully". Nothing checking the exit code of an
+  installer could learn that part of the package was not there. Every step is still attempted, since
+  stopping at the first failure leaves a package half set up with nothing saying which half; what
+  did not publish now decides the exit code, and is named in a summary that prints under
+  `--no-interaction` too. The success banner still does not — an unattended run is exactly where the
+  only account of what went wrong must not be the thing that gets suppressed.
+
 ## [2.5.1]
 
 ### Fixed

@@ -35,6 +35,11 @@ class InstallCommand extends Command
     private string $tagSeparator = '::';
 
     /**
+     * @var string[] The tag groups that did not publish, in the order they were tried
+     */
+    private array $failed = [];
+
+    /**
      * Create a new command instance.
      *
      * @param  Packager  $packager  The packager instance
@@ -55,6 +60,11 @@ class InstallCommand extends Command
 
     /**
      * Execute the console command.
+     *
+     * Publishing carries on past a step that failed rather than stopping at it:
+     * an installer that abandons the run halfway leaves a package half set up,
+     * with nothing saying which half. So every step is attempted, and what did
+     * not publish decides the exit code.
      */
     public function handle(): int
     {
@@ -70,6 +80,12 @@ class InstallCommand extends Command
 
         // Execute after hooks
         $this->executeHooks($this->afterHooks, 'After Installation');
+
+        if ($this->failed !== []) {
+            $this->showFailureMessage();
+
+            return self::FAILURE;
+        }
 
         $this->showCompletionMessage();
 
@@ -215,11 +231,13 @@ class InstallCommand extends Command
                 ]);
 
                 if ($exitCode !== 0) {
+                    $this->failed[] = $tag;
                     $this->error("Failed to publish $tag");
                 } elseif (! $this->option('no-interaction')) {
                     $this->line("  ✅ Published $tag");
                 }
             } catch (Exception $e) {
+                $this->failed[] = $tag;
                 $this->error("Error publishing $tag: ".$e->getMessage());
             }
         }
@@ -255,6 +273,24 @@ class InstallCommand extends Command
         }
 
         return true;
+    }
+
+    /**
+     * Say what did not publish, and leave the exit code to say it again.
+     *
+     * Printed whatever `--no-interaction` says, which the success banner is
+     * not. The banner is a courtesy to somebody reading along; this is the only
+     * account of what went wrong, and an unattended run is exactly where it
+     * cannot afford to be the thing that gets suppressed.
+     */
+    private function showFailureMessage(): void
+    {
+        $this->line('');
+        $this->error(
+            "{$this->packager->name} was not fully installed — these did not publish: "
+            .implode(', ', $this->failed)
+        );
+        $this->line('');
     }
 
     /**

@@ -133,8 +133,18 @@ trait HasMigrations
      * Generate a publish mapping for migration files.
      *
      * For timestamped migrations, maps source → destination directly.
-     * For timeless migrations, prepends a sequential timestamp to ensure
-     * correct execution order.
+     * For timeless migrations, maps to wherever the file was published before,
+     * and only invents a timestamp when it was not.
+     *
+     * That second half is the whole point. A timeless migration's destination
+     * name is composed here, at the moment the publish mapping is built, so it
+     * carries *this* process's clock — a path no earlier run can have written.
+     * Mapping to it unconditionally meant `vendor:publish` looked for a file
+     * that could not be there, found nothing, and wrote a second copy of a
+     * migration the application already had. Two `create_posts_table` files,
+     * and `php artisan migrate` fails on the second with the table already
+     * there. Republishing now overwrites the file it published last time, which
+     * is what publishing the same resource twice is supposed to mean.
      *
      * @return array<string, string> Source path => destination path mapping
      */
@@ -148,14 +158,55 @@ trait HasMigrations
 
             if ($this->hasDatePrefix($basename)) {
                 $mapping[$file->getPathname()] = database_path('migrations/'.$basename);
-            } else {
-                $datePrefix = $timestamp->copy()->addSeconds($index)->format('Y_m_d_His');
-                $mapping[$file->getPathname()] = database_path(
-                    'migrations/'.$datePrefix.'_'.$basename
-                );
+
+                continue;
             }
+
+            $mapping[$file->getPathname()] = $this->publishedMigration($basename)
+                ?? database_path(
+                    'migrations/'.$timestamp->copy()->addSeconds($index)->format('Y_m_d_His').'_'.$basename
+                );
         }
 
         return $mapping;
+    }
+
+    /**
+     * Where a timeless migration of this name was published, if it ever was.
+     *
+     * A directory scan rather than a glob: a migration name belongs to the
+     * package author, `glob()` reads `[`, `*` and `?` as pattern syntax, and a
+     * name carrying one would quietly match nothing and republish — the exact
+     * bug this is here to close. Reached only while registering publishable
+     * resources, which the provider does in the console alone.
+     *
+     * The earliest stamp wins if somehow there are two, because that is the one
+     * `migrate` has already run.
+     *
+     * @param  string  $basename  The migration file name, carrying no date prefix
+     */
+    private function publishedMigration(string $basename): ?string
+    {
+        $directory = database_path('migrations');
+
+        if (! is_dir($directory)) {
+            return null;
+        }
+
+        $published = [];
+
+        foreach (scandir($directory) ?: [] as $entry) {
+            if ($this->hasDatePrefix($entry) && str_ends_with($entry, '_'.$basename)) {
+                $published[] = $entry;
+            }
+        }
+
+        if ($published === []) {
+            return null;
+        }
+
+        sort($published);
+
+        return $directory.'/'.$published[0];
     }
 }

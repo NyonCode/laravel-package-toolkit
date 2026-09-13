@@ -74,6 +74,40 @@ php artisan vendor:publish --tag=blog::migrations
 The consumer's own migrations all pre-date these, so a foreign key to their `users` table resolves.
 And your ordering is preserved: `create_` before `add_slug_`, exactly as declared.
 
+### Publishing twice
+
+A generated prefix is composed from the clock of the process that builds the publish mapping, so the
+same migration would get a different name in every run. Publishing is therefore matched on the name
+*underneath* the prefix: if `database/migrations` already holds a file ending in
+`_create_blog_posts_table.php`, that file is the destination, whatever stamp it carries.
+
+```bash
+php artisan vendor:publish --tag=blog::migrations
+# → database/migrations/2026_08_08_142530_create_blog_posts_table.php
+
+php artisan vendor:publish --tag=blog::migrations --force
+# → database/migrations/2026_08_08_142530_create_blog_posts_table.php   (the same file, rewritten)
+```
+
+Without that, the second run wrote a *second* copy under a new stamp — two
+`create_blog_posts_table` migrations, and `php artisan migrate` failing on the second with the table
+already there. An application that already collected duplicates keeps them; the earliest is the one
+publishing targets from then on, because that is the one `migrate` has run.
+
+:::warning A timeless migration's name has to be unique in the application
+The name under the prefix is the only identity there is, so a package shipping
+`create_settings_table.php` will target a `create_settings_table` already published by something
+else — including one from the application's own skeleton.
+
+This is not a new constraint, only a newly load-bearing one: two migrations sharing a name under
+their prefixes are two separate migrations to Laravel, both run, and the second fails on a table
+that already exists. Either way the name has to be yours. Prefix it with the package —
+`create_blog_posts_table`, not `create_posts_table`.
+
+Nothing is destroyed by getting this wrong: `vendor:publish` skips a destination that already
+exists, so only `--force` rewrites the file — which is what `--force` is for.
+:::
+
 A prefix is recognised by this pattern, which is Laravel's own convention:
 
 ```php

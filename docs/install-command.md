@@ -314,6 +314,24 @@ Run in production interactively and the command asks first:
 Declining exits successfully with `Installation cancelled.` — nothing is published. `--force` skips
 the prompt and is also passed through to each `vendor:publish` call, overwriting existing files.
 
+## When a publish fails
+
+Every publish step is attempted, including the ones after a step that failed — an installer that
+abandons the run halfway leaves a package half set up with nothing saying which half. What did not
+publish then decides the exit code:
+
+```bash
+php artisan blog:install
+# Failed to publish migrations
+#
+# Blog was not fully installed — these did not publish: migrations
+echo $?   # 1
+```
+
+That summary is printed whatever `--no-interaction` says, unlike the success banner. An unattended
+run is exactly where the only account of what went wrong cannot be the thing that gets suppressed,
+and a deploy script that checks the exit code needs the command to have one worth checking.
+
 ## Next steps output
 
 After a successful interactive run the command prints follow-ups derived from what it published:
