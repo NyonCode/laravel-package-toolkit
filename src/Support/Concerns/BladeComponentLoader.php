@@ -12,7 +12,7 @@ trait BladeComponentLoader
      * This method uses the components registered in the packager and registers them
      * with Blade.
      *
-     * @param  array<int|string, array<string, int|string|null>|string|null>  $components
+     * @param  list<array{component: class-string, alias: string|null, prefix: string}>  $components
      */
     protected function loadViewComponents(array $components): void
     {
@@ -22,8 +22,8 @@ trait BladeComponentLoader
             foreach ($components as $config) {
                 $blade->component(
                     $config['component'],
-                    $config['alias'] ?? null,
-                    $config['prefix'] ?? null
+                    $config['alias'],
+                    $config['prefix']
                 );
             }
         });

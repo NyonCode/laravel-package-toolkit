@@ -198,17 +198,17 @@ enum Language: string
     /**
      * Returns a collection of all language codes
      *
-     * @return Collection<int, string> A collection of language codes
+     * @return Collection<int, non-empty-lowercase-string> A collection of language codes
      */
     public static function codes(): Collection
     {
-        return collect(self::cases())->map(fn ($language) => Str::lower($language->name));
+        return collect(self::cases())->map(fn (self $language): string => Str::lower($language->name));
     }
 
     /**
      * Returns a collection of all language names and codes
      *
-     * @return Collection<int, Language> A collection of language names and codes
+     * @return Collection<int, covariant Language> A collection of language names and codes
      */
     public static function collection(): Collection
     {

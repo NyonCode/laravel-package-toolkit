@@ -84,7 +84,7 @@ trait HasInstallation
     /**
      * Install only in specific environments.
      *
-     * @param  string|array  $environments  Environment(s) to install
+     * @param  string|array<string>  $environments  Environment(s) to install
      */
     public function installOnRunInEnvironment(string|array $environments): static
     {

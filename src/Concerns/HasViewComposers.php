@@ -12,7 +12,7 @@ trait HasViewComposers
     private bool $isViewComposable = false;
 
     /**
-     * @var array The view composers for the package
+     * @var array<string, string|Closure> The view composers for the package
      */
     protected array $viewComposers = [];
 
@@ -33,7 +33,7 @@ trait HasViewComposers
      * in the package. View composers can be used to bind data to views when
      * they are rendered.
      *
-     * @return array The array of registered view composers.
+     * @return array<string, string|Closure> The array of registered view composers.
      */
     public function viewComposers(): array
     {
@@ -46,7 +46,7 @@ trait HasViewComposers
      * This method accepts a view composer, which can be a string or a Closure,
      * and registers it by calling the `hasViewComposers` method.
      *
-     * @param  string|array  $views  The views to register the composer for.
+     * @param  string|array<string>  $views  The views to register the composer for.
      * @param  string|Closure  $composer  The view composer to register.
      */
     public function hasViewComposer(string|array $views, string|Closure $composer): static

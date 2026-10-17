@@ -13,7 +13,7 @@ trait HasViewSharedData
     private bool $isSharedWithViews = false;
 
     /**
-     * @var array The shared data for the views
+     * @var array<string, mixed> The shared data for the views
      */
     private array $viewSharedData = [];
 
@@ -35,7 +35,7 @@ trait HasViewSharedData
      *
      * This method returns the array of shared data for the views.
      *
-     * @return array The shared data for the views.
+     * @return array<string, mixed> The shared data for the views.
      */
     public function viewSharedData(): array
     {
@@ -49,7 +49,7 @@ trait HasViewSharedData
      * sets the `isSharedWithViews` flag to true if the
      * array is not empty.
      *
-     * @param  array  $viewSharedData  The shared data for the views
+     * @param  array<array-key, mixed>  $viewSharedData  The shared data for the views
      * @return static The current instance
      */
     public function hasSharedDataForAllViews(array $viewSharedData): static

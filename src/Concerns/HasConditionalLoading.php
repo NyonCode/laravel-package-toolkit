@@ -89,7 +89,7 @@ trait HasConditionalLoading
     /**
      * Conditionally execute callback based on environment.
      *
-     * @param  string|array  $environments  Environment(s) to check
+     * @param  string|array<string>  $environments  Environment(s) to check
      * @param  Closure  $callback  The callback to execute
      */
     public function whenEnvironment(string|array $environments, Closure $callback): static

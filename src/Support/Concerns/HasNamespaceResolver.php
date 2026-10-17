@@ -57,7 +57,7 @@ trait HasNamespaceResolver
         $relativeNamespace = substr($componentNamespace, strlen($matchingPrefix));
         $relativePath = str_replace('\\', DIRECTORY_SEPARATOR, $relativeNamespace);
 
-        return realpath($basePath.DIRECTORY_SEPARATOR.$relativePath);
+        return realpath($basePath.DIRECTORY_SEPARATOR.$relativePath) ?: null;
     }
 
     /**

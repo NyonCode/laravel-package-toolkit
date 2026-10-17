@@ -33,7 +33,7 @@ The documentation site generates the machine-readable half from the same Markdow
 Composer scripts wrap the underlying tools — prefer them:
 
 - `composer test` — run the full Pest suite (`vendor/bin/pest`)
-- `composer lint` — run PHPStan (level 5, `src` only)
+- `composer lint` — run PHPStan with Larastan (level 7, `src` only)
 - `composer pint` — apply Laravel Pint formatting
 
 Running a subset of tests (Pest filters):
@@ -55,6 +55,6 @@ So each feature spans both sides. Which of the two a new resource actually needs
 ## Conventions
 
 - Every `hasX()` builder returns `static` for chaining and validates eagerly (e.g. `name()` rejects empty, `hasShortName()` enforces kebab-case).
-- PHPStan runs at level 5 over `src` only — keep new code passing; tests are not analyzed.
+- PHPStan (with Larastan) runs at level 7 over `src` only — keep new code passing; tests are not analyzed.
 - Formatting is enforced by Pint (`pint.json`); run `composer pint` before finishing.
 - Do not attribute commits to any AI tool/vendor in commit messages.
