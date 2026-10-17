@@ -10,7 +10,7 @@ trait HasMiddleware
     private bool $isSetMiddlewareAliases = false;
 
     /**
-     * @var array The middleware aliases
+     * @var array<string, string> The middleware aliases
      */
     protected array $middlewareAliases = [];
 
@@ -20,7 +20,7 @@ trait HasMiddleware
     private bool $isSetMiddlewareGroups = false;
 
     /**
-     * @var array The middleware groups
+     * @var array<string, array<string>> The middleware groups
      */
     protected array $middlewareGroups = [];
 
@@ -30,13 +30,14 @@ trait HasMiddleware
     private bool $isSetMiddlewareGlobals = false;
 
     /**
-     * @var array The global middlewares
+     * @var array<string> The global middlewares
      */
     protected array $middlewareGlobals = [];
 
     /**
      * Add middleware aliases to the package
      *
+     * @param  array<string, string>  $aliases  Middleware classes keyed by alias
      * @return $this
      */
     public function hasMiddlewareAliases(array $aliases): static
@@ -53,6 +54,7 @@ trait HasMiddleware
     /**
      * Add middleware groups to the package
      *
+     * @param  array<string, string|array<string>>  $groups  Middleware keyed by group name
      * @return $this
      */
     public function hasMiddlewareGroups(array $groups): static
@@ -73,6 +75,7 @@ trait HasMiddleware
     /**
      * Add global middlewares to the package
      *
+     * @param  array<string>  $middlewares
      * @return $this
      */
     public function hasMiddlewareGlobals(array $middlewares): static
@@ -88,6 +91,8 @@ trait HasMiddleware
 
     /**
      * Get middleware aliases from the package
+     *
+     * @return array<string, string>
      */
     public function getMiddlewareAliases(): array
     {
@@ -96,6 +101,8 @@ trait HasMiddleware
 
     /**
      * Get middleware groups
+     *
+     * @return array<string, array<string>>
      */
     public function getMiddlewareGroups(): array
     {
@@ -104,6 +111,8 @@ trait HasMiddleware
 
     /**
      * Get global middlewares
+     *
+     * @return array<string>
      */
     public function getMiddlewareGlobals(): array
     {

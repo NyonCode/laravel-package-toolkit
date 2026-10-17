@@ -236,7 +236,7 @@ class PackageAssets
      * Vite manifest key is only meaningful against the `base` of the package the entry
      * belongs to, so the package cannot be a parameter of the render any more.
      *
-     * @param  array<int, string>  $only
+     * @param  array<array-key, string>  $only  as `string ...$only` collects it — named arguments keep their names
      * @return list<array{0: string, 1: Asset}>
      */
     private function selection(?string $package, array $only): array
@@ -255,7 +255,7 @@ class PackageAssets
     /**
      * The declared entries, narrowed to the requested keys when any were named.
      *
-     * @param  array<int, string>  $only
+     * @param  array<array-key, string>  $only
      * @return list<Asset>
      */
     private function entries(string $package, array $only): array

@@ -143,7 +143,7 @@ class InstallCommand extends Command
     /**
      * Execute installation hooks.
      *
-     * @param  array  $hooks  The hooks to execute
+     * @param  Closure[]  $hooks  The hooks to execute
      * @param  string  $phase  The phase of the installation
      */
     private function executeHooks(array $hooks, string $phase): void
@@ -187,6 +187,8 @@ class InstallCommand extends Command
 
     /**
      * Get organized installation steps.
+     *
+     * @return array<string, array<int, string>>
      */
     private function getInstallationSteps(): array
     {
@@ -217,7 +219,7 @@ class InstallCommand extends Command
     /**
      * Publish specific tags.
      *
-     * @param  array  $tags  The tags to publish
+     * @param  array<int, string>  $tags  The tags to publish
      */
     private function publishTags(array $tags): void
     {
@@ -319,6 +321,8 @@ class InstallCommand extends Command
 
     /**
      * Get suggested next steps after installation.
+     *
+     * @return list<string>
      */
     private function getNextSteps(): array
     {

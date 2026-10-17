@@ -13,12 +13,12 @@ trait HasViewComponents
     private bool $isViewComponentized = false;
 
     /**
-     * @var array The view components for the package.
+     * @var list<array{component: class-string, alias: string|null, prefix: string}> The view components for the package.
      */
     protected array $viewComponents = [];
 
     /**
-     * @var array The view component paths for the package.
+     * @var list<string> The view component paths for the package.
      */
     private array $viewComponentPaths = [];
 
@@ -33,7 +33,7 @@ trait HasViewComponents
     /**
      * Get the view components registered in the package.
      *
-     * @return array Array of view components.
+     * @return list<array{component: class-string, alias: string|null, prefix: string}> Array of view components.
      */
     public function viewComponents(): array
     {
@@ -46,7 +46,7 @@ trait HasViewComponents
      * This method returns an array of paths where the view components
      * are located within the package.
      *
-     * @return array Array of view component paths.
+     * @return list<string> Array of view component paths.
      */
     public function viewComponentPaths(): array
     {
@@ -59,7 +59,7 @@ trait HasViewComponents
      * Validates and registers the given view component in the package.
      *
      * @param  string  $prefix  The namespace prefix for the component.
-     * @param  string  $componentClass  The component class to register.
+     * @param  class-string  $componentClass  The component class to register.
      * @param  string  $alias  The alias for the component.
      *
      * @throws ReflectionException
@@ -78,7 +78,7 @@ trait HasViewComponents
      *
      * Validates and registers the given view components.
      *
-     * @param  string|string[]  $components  Array of view components with names as keys and component objects as
+     * @param  class-string|array<class-string>  $components  Array of view components with names as keys and component objects as
      *
      * @throws ReflectionException
      */
@@ -106,10 +106,10 @@ trait HasViewComponents
                 ];
             }
 
-            $componentsReflected = new ReflectionClass($component);
-            $componentsDirname = dirname($componentsReflected->getFileName());
-            if (! in_array($componentsDirname, $this->viewComponentPaths)) {
-                $this->viewComponentPaths[] = $componentsDirname;
+            // Internal classes have no file, so there is no directory to register
+            $componentsFile = (new ReflectionClass($component))->getFileName();
+            if ($componentsFile !== false && ! in_array(dirname($componentsFile), $this->viewComponentPaths)) {
+                $this->viewComponentPaths[] = dirname($componentsFile);
             }
         }
 

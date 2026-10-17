@@ -43,6 +43,7 @@ trait HasCommands
     public function hasCommands(string|array|null $commandsClass = null, string $directory = 'Commands'): static
     {
         if (empty($commandsClass)) {
+            $commandsClass = [];
             $files = $this->discoverFiles($directory);
 
             foreach ($files as $file) {

@@ -4,6 +4,9 @@ namespace NyonCode\LaravelPackageToolkit\Commands\Concerns;
 
 trait PublishableResources
 {
+    /**
+     * @var list<string>
+     */
     protected array $installCommandTags = [];
 
     /**
@@ -13,7 +16,7 @@ trait PublishableResources
      */
     private function publish(string ...$tag): static
     {
-        $this->installCommandTags = array_merge($this->installCommandTags, $tag);
+        $this->installCommandTags = array_merge($this->installCommandTags, array_values($tag));
 
         return $this;
     }
@@ -233,6 +236,8 @@ trait PublishableResources
 
     /**
      * Get all tags that will be published.
+     *
+     * @return list<string>
      */
     public function getPublishTags(): array
     {
@@ -287,7 +292,7 @@ trait PublishableResources
     /**
      * Publish for specific environments.
      *
-     * @param  string|array  $environments  The environments to publish
+     * @param  string|array<string>  $environments  The environments to publish
      * @param  string  ...$tags  The tags to publish
      */
     public function publishForEnvironment(string|array $environments, string ...$tags): static

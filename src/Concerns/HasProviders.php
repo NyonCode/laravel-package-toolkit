@@ -3,6 +3,7 @@
 namespace NyonCode\LaravelPackageToolkit\Concerns;
 
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
+use NyonCode\LaravelPackageToolkit\Support\SplFileInfo;
 
 trait HasProviders
 {
@@ -10,6 +11,9 @@ trait HasProviders
 
     private bool $isProvidable = false;
 
+    /**
+     * @var SplFileInfo[]
+     */
     protected array $providers = [];
 
     /**
@@ -20,6 +24,9 @@ trait HasProviders
         return $this->isProvidable;
     }
 
+    /**
+     * @return SplFileInfo[]
+     */
     public function providers(): array
     {
         return $this->providers;
