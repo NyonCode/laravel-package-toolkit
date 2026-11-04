@@ -25,9 +25,10 @@ trait HasAboutCommand
     private bool $isAboutable = false;
 
     /**
-     * @var array<string, string|Closure> Additional data for the AboutCommand
+     * @var array<string, string|Closure>|Closure(): array<string, string|Closure> Additional data for the AboutCommand,
+     *                                                                             or what resolves it when `about` runs
      */
-    private array $aboutData = [];
+    private array|Closure $aboutData = [];
 
     /**
      * Retrieves a specific value from the composer.json file by key name.
@@ -105,15 +106,20 @@ trait HasAboutCommand
      */
     public function aboutData(): array
     {
+        if ($this->aboutData instanceof Closure) {
+            $this->aboutData = ($this->aboutData)();
+        }
+
         return $this->aboutData;
     }
 
     /**
-     * Sets the additional data to be displayed in the AboutCommand.
+     * Sets the additional data to be displayed in the AboutCommand, or a
+     * closure returning it — resolved only when `about` asks for it.
      *
-     * @param  array<string, string|Closure>  $data  The additional about data.
+     * @param  array<string, string|Closure>|Closure(): array<string, string|Closure>  $data  The additional about data.
      */
-    public function setAboutData(array $data): static
+    public function setAboutData(array|Closure $data): static
     {
         $this->aboutData = $data;
 
@@ -139,8 +145,10 @@ trait HasAboutCommand
      */
     public function bootAboutCommand(): void
     {
+        // A callable section: the version (composer.json) and the provider's data
+        // are read when `about` runs, not while the application boots.
         if (! empty($this->name)) {
-            AboutCommand::add(section: $this->name, data: $this->data());
+            AboutCommand::add(section: $this->name, data: fn (): array => $this->data());
         }
     }
 

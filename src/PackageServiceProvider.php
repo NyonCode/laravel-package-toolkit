@@ -4,6 +4,7 @@ namespace NyonCode\LaravelPackageToolkit;
 
 use Composer\InstalledVersions;
 use Exception;
+use Illuminate\Contracts\Foundation\CachesConfiguration;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
@@ -266,21 +267,27 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function registerConfig(): void
     {
-        if (! empty($this->packager->configFiles())) {
-            foreach ($this->packager->configFiles() as $configFile) {
-                if (! is_array(require $configFile->getPathname())) {
-                    throw new InvalidReturnTypeException(
-                        'Configuration file ['.
-                            $configFile->getBaseFileName().
-                            '] must return an array.'
-                    );
-                }
+        // A cached configuration already holds every merged file: requiring them
+        // again on each request would only be thrown away (mergeConfigFrom skips too).
+        if ($this->app instanceof CachesConfiguration && $this->app->configurationIsCached()) {
+            return;
+        }
 
-                $this->mergeConfigFrom(
-                    path: $configFile->getPathname(),
-                    key: $configFile->getBaseFileName()
+        foreach ($this->packager->configFiles() as $configFile) {
+            // Required once: the array checked is the array merged.
+            $values = require $configFile->getPathname();
+
+            if (! is_array($values)) {
+                throw new InvalidReturnTypeException(
+                    'Configuration file ['.
+                        $configFile->getBaseFileName().
+                        '] must return an array.'
                 );
             }
+
+            $key = $configFile->getBaseFileName();
+            $config = $this->app->make('config');
+            $config->set($key, array_merge($values, (array) $config->get($key, [])));
         }
     }
 
@@ -341,7 +348,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     protected function registerAboutCommand(): void
     {
-        if (self::$isPackageAboutRegistered) {
+        if (self::$isPackageAboutRegistered || ! $this->app->runningInConsole()) {
             return;
         }
 
