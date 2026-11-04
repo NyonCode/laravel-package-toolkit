@@ -53,14 +53,19 @@ trait BootsPackageResources
      *
      * This method checks if the package has an about command and, if so,
      * registers it by calling the `bootAboutCommand` method on the packager.
+     * Only in the console, and with the provider's data resolved when `about`
+     * runs rather than on every boot.
      */
     public function bootAboutCommand(): static
     {
-        if (! $this->packager->isAboutable()) {
+        // `about` is a console command: a web request never shows this data, and
+        // a provider's aboutData() is free to be expensive (schema checks,
+        // reading composer.json) because it was meant to run once, on demand.
+        if (! $this->packager->isAboutable() || ! $this->app->runningInConsole()) {
             return $this;
         }
 
-        $this->packager->setAboutData($this->aboutData());
+        $this->packager->setAboutData(fn (): array => $this->aboutData());
         $this->packager->bootAboutCommand();
 
         return $this;

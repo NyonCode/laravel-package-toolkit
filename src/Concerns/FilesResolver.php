@@ -162,12 +162,20 @@ trait FilesResolver
             throw new DirectoryNotFoundException("Directory [$fullPath] does not exist or is not readable");
         }
 
-        $loadedFiles = File::files($fullPath);
+        // scandir, not Symfony Finder (File::files): discovery runs while every
+        // request registers its providers. Same result: the files directly in the
+        // directory, hidden ones left out, sorted by name.
+        $names = scandir($fullPath) ?: [];
+        sort($names, SORT_STRING);
         $files = [];
 
-        foreach ($loadedFiles as $loadedFile) {
+        foreach ($names as $name) {
+            if ($name === '' || $name[0] === '.' || ! is_file($fullPath.DIRECTORY_SEPARATOR.$name)) {
+                continue;
+            }
+
             try {
-                $fileInfo = $this->getFileInfo($loadedFile->getPathname());
+                $fileInfo = $this->getFileInfo($fullPath.DIRECTORY_SEPARATOR.$name);
                 if ($fileInfo->isReadable()) {
                     $files[] = $fileInfo;
                 }

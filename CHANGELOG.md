@@ -5,6 +5,28 @@ All notable changes to `laravel-package-toolkit` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.5.4] - 2026-11-04
+
+### Fixed
+
+- **Booting a package costs a web request far less.** Measured in an application with eleven
+  toolkit packages, the bare `/up` route went from 84 ms to 45 ms. Four things ran on every request
+  that no request needed:
+  - **`about` data was resolved at boot.** Each provider's `aboutData()` — and the version read from
+    its `composer.json` — was evaluated while the application booted, only to be handed to a command
+    a web request never runs. A provider is entitled to make that method expensive (one in the wild
+    asked the database schema for a column), and it was paid on every page. The section is now
+    registered in the console only, as a callable, so nothing is read until `php artisan about` asks.
+    `setAboutData()` also accepts a closure.
+  - **File discovery walked directories with Symfony Finder.** `hasConfig()`, `hasRoutes()` and the
+    other discovering builders, and `hasTranslations()` with three separate walks of `lang/`, built
+    Finder iterators inside `register()`. They read the directory with `scandir` now — same files,
+    hidden ones still skipped, still sorted by name.
+  - **Config files were required twice**, once to check they return an array and again by
+    `mergeConfigFrom()`. Now once, and not at all when the configuration is cached, where the merge
+    was skipped anyway.
+  - **The toolkit's own `about` section** is registered in the console only.
+
 ## [2.5.2] - 2026-09-13
 
 ### Fixed
