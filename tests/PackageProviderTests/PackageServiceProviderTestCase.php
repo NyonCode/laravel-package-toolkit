@@ -27,6 +27,25 @@ abstract class PackageServiceProviderTestCase extends TestCase
 
     abstract protected function configure(Packager $packager): void;
 
+    /**
+     * Configuration the application has before any provider registers — what a real
+     * application has from its `config/` directory. `defineEnvironment()` is too late for
+     * that: Testbench calls it after the providers have registered.
+     *
+     * @return array<string, mixed>
+     */
+    protected function configurationBeforeProviders(): array
+    {
+        return [];
+    }
+
+    protected function resolveApplicationConfiguration($app)
+    {
+        parent::resolveApplicationConfiguration($app);
+
+        $app['config']->set($this->configurationBeforeProviders());
+    }
+
     protected function getPackageProviders($app): array
     {
         return [

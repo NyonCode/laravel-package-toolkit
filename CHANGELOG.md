@@ -5,6 +5,35 @@ All notable changes to `laravel-package-toolkit` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Octane and long-lived workers.** Packages written for PHP-FPM can be served by Octane (Swoole,
+  RoadRunner, FrankenPHP) without being changed. Under a worker — and only there; PHP-FPM is
+  untouched, so an application can split its routes between the two — the toolkit:
+  - points every toolkit provider's `$this->app` at the request's clone while it runs, and back
+    afterwards. `$this->app->make()` or `$this->app['config']` in a route, composer, hook or listener
+    closure used to resolve on the worker, so a singleton made that way was shared by every later
+    request and the config read was the worker's, not the request's;
+  - flushes the asset mirror's memo after every request, task and tick, so nobody has to listen for
+    `RequestTerminated` to call `PublishedAssets::flush()`;
+  - optionally points the event dispatcher at the clone (`package-toolkit.octane.sandbox_events`).
+    Octane does not, so a class listener's dependencies are built on the worker and shared. Off by
+    default because it applies to every listener in the application; singleton listeners are built
+    once up front, so they stay shared and the switch costs nothing measurable;
+  - isolates the packages an application names (`package-toolkit.octane.isolate`): after every
+    operation, instances the package left on the worker are forgotten and its classes' statics go
+    back to their post-boot values — PHP-FPM behaviour inside a worker, for a package not trusted
+    under one yet. The package's namespace is its provider's, one level up for a provider in a
+    `Providers` namespace (`Acme\Invoices\Providers\…` → `Acme\Invoices\`). A namespace as wide as `NyonCode\` leaves the toolkit's own classes alone, and one
+    covering `Illuminate\`, `Laravel\` or `Symfony\` is ignored. About 23 µs per request for four
+    isolated packages.
+- **`php artisan package-toolkit:octane`** reports, per toolkit package, what isolation cannot fix:
+  objects held from boot that took a request, container, config or session; class listeners with
+  shared dependencies; and static properties holding arrays or objects. `--strict` for CI.
+- `Support\Runtime` tells a classic process from an Octane or FrankenPHP worker.
+
 ## [2.5.4] - 2026-11-04
 
 ### Fixed

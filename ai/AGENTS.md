@@ -167,7 +167,25 @@ $packager->hasOptimizeCommands(
 - Declaring the same shipped file in both calls is intended, not a duplicate: the later entry replaces the earlier one and renders once, in the position first declared. Since 2.4.1 the replacement **inherits the earlier entry's presentation** — `classic()` is sticky, attributes merge with the newer winning a collision, and an explicit `asStylesheet()`/`asScript()` on the replacement stands. So `Asset::make('js/blog.js')->classic()` plus the `hasViteAssets()` shorthand for the same file keeps the shipped bundle classic on the fallback path; before 2.4.1 it silently became a module and the IIFE's globals stopped reaching `window`.
 - Diagnostics: falling back is silent by design, so `app(PackageAssets::class)->resolution($shortName)` names how each entry resolves right now (`dev server` / `application build` / `shipped` / `fallback` / `not published` / `unresolved`) without writing anything. A package that called `hasAbout()` and declared Vite sources also gets an `Assets` line in its `php artisan about` section. Use it when an application swears it added the input but the shipped file is still being served. `shipped` for a mirrored entry means the published copy exists *or* the mirror could still make it — since 2.4.2 that second half is checked (nearest existing ancestor of `public/vendor/{shortName}` is writable) rather than assumed, so an unwritable `public/` reports `fallback` or `not published` instead of a healthy-looking `shipped`. A fresh install, where nothing has been published yet because the mirror is lazy, still reports `shipped`.
 - CSP: `Vite::useCspNonce()` nonces are carried onto the tags the toolkit renders itself, so the shipped-file path is not blocked while the application-built path loads. An entry's own `nonce` attribute wins.
-- Under a long-lived worker the singleton outlives the request it was scoped to, so call `app(PublishedAssets::class)->flush()` from the framework's request-terminated hook — otherwise the memo survives a deploy: the mirror runs at most once per worker boot, and every URL keeps the `?id=` of the release the worker started on. `flush()` keeps the declared directories; it only forgets the resolved URLs and the sync marks.
+- Under a long-lived worker the singleton outlives the request it was scoped to. **Under Octane the toolkit calls `flush()` itself after every request, task and tick (2.6.0) — do not add a listener for it.** Only a worker that is not Octane's needs to call `app(PublishedAssets::class)->flush()` from its own end-of-request hook. `flush()` keeps the declared directories; it only forgets the resolved URLs and the sync marks.
+
+## Octane and long-lived workers (2.6.0)
+
+Nothing to call in a package. Under an Octane worker (detected from `LARAVEL_OCTANE`; FrankenPHP's own worker mode from `FRANKENPHP_WORKER`) the toolkit installs `Support\Worker\WorkerLifecycle` once per application and, around every Octane request/task/tick:
+
+- points **every toolkit provider's `$this->app`** at the operation's clone and back afterwards — so `$this->app->make()` and `$this->app['config']` inside a route, composer, hook or listener closure resolve per request instead of on the worker;
+- flushes the asset mirror's memo;
+- optionally points the **event dispatcher's container** at the clone (`package-toolkit.octane.sandbox_events`, off by default because it applies to every class listener in the application); listeners bound as singletons are built once on the worker first, so they stay shared;
+- restores **isolated packages** (`package-toolkit.octane.isolate => ['short-name', 'other' => 'Vendor\\Ns\\']`): instances the package left on the worker (its namespace — the provider's, one level up for a provider in `…\Providers` — plus whatever its provider bound) are forgotten, statics of its classes go back to their post-boot value or declared default. Instances present after boot are kept.
+
+Config lives in the application's `config/package-toolkit.php` (the toolkit ships none): `octane.enabled` (`null` = detect), `octane.sandbox_providers` (`true`), `octane.sandbox_events` (`false`), `octane.isolate` (`[]`). Nothing runs under PHP-FPM, so an application may serve some routes through Octane and the rest through FPM.
+
+Writing a package that is good under a worker anyway:
+
+- A singleton first resolved **during** a request is per request already under Octane (it lives on the clone). Only what a provider resolves in `register()`/`boot()` is shared by every request — keep per-request state (request, user, tenant, config values read once) out of those objects.
+- Prefer `app()`, `request()`, `config()` or a resolver closure over capturing `$app`, the request or the config repository in a constructor of something built at boot.
+- A static array that only grows is a leak until the worker is recycled; bound it, or reset it.
+- `php artisan package-toolkit:octane [--all] [--strict]` lists, per toolkit package, objects held from boot that took per-request types, class listeners with shared dependencies, and array/object statics. Run it before calling Octane support done.
 
 ## Stubs
 

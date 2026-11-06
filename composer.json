@@ -24,6 +24,7 @@
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
+        "laravel/octane": "^2.12",
         "laravel/pint": "^1.29",
         "mockery/mockery": "^1.5",
         "orchestra/testbench": "^10.0|^11.0",
@@ -42,7 +43,14 @@
     "autoload-dev": {
         "psr-4": {
             "NyonCode\\LaravelPackageToolkit\\Tests\\": "tests"
-        }
+        },
+        "files": [
+            "tests/TestPackageData/src/Worker/Fixtures.php"
+        ],
+        "classmap": [
+            "tests/TestPackageData/late",
+            "tests/TestPackageData/second"
+        ]
     },
     "config": {
         "sort-packages": true,

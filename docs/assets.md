@@ -225,36 +225,26 @@ explicitly and you would rather the first request did no filesystem work at all.
 
 ### `flush()` — for long-lived workers
 
-Added in **2.4.0**. The singleton is scoped to a request. Under a long-lived worker it outlives one,
-and two things go wrong:
+Added in **2.4.0**; called for you under Octane since **2.6.0**. The singleton is scoped to a
+request. Under a long-lived worker it outlives one, and two things go wrong:
 
 - the per-request sync marks limit the mirror to a **single attempt per worker lifetime**, so a
   published copy deleted underneath a running worker is never put back;
 - every resolved URL keeps emitting the `?id=<mtime>` of the release the worker booted on — the
   exact query string Livewire watches to notice a deploy.
 
-```php title="a consumer's AppServiceProvider"
-use NyonCode\LaravelPackageToolkit\Support\PublishedAssets;
+Under [Octane](/octane) the toolkit flushes it after every request, task and tick — there is
+nothing to add. A worker that is not Octane's calls it from whatever hook ends its request, or
+[hands the toolkit its lifecycle](/octane#a-worker-that-is-not-octane):
 
-public function boot(): void
-{
-    $this->app->terminating(function () {
-        if (app()->bound(PublishedAssets::class)) {
-            app(PublishedAssets::class)->flush();
-        }
-    });
-}
+```php
+app(PublishedAssets::class)->flush();
 ```
 
 `flush()` clears the resolved URLs and the sync marks. It deliberately **keeps** the declared asset
 directories: providers register those from `register()`, once per worker boot and not per request,
 and clearing them would drop the resolver back to inferring a directory from the asset path — which
 only works for a package whose asset directory happens to be named `dist`.
-
-:::note Octane is not a supported target
-The toolkit has never been developed against a long-lived worker. `flush()` exists because a
-consumer committed to one, not because the toolkit targets them.
-:::
 
 ## Rendering them in a template
 

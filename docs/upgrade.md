@@ -13,6 +13,7 @@ opening a new surface — 2.4.1's asset discovery gave `hasAssets()` the file di
 
 | Constraint | Gets you |
 |---|---|
+| `^2.6` | Octane and long-lived workers |
 | `^2.4` | the current line, including seeders, factories, stubs and broadcast channels |
 | `^2.0` | Laravel 12/13, PHP 8.2+ |
 | `~2.0.0` | the last line supporting Laravel 10 and 11 |
@@ -24,6 +25,19 @@ introduced — the asset mirror and the `laravel-assets` publish tag — is in 2
 **the minimum supported version is `^2.4`**. If a lock file still pins 2.3.0,
 `composer update nyoncode/laravel-package-toolkit` is the whole migration.
 :::
+
+## To 2.6
+
+Nothing to do. Under PHP-FPM nothing changes — the new code returns before doing anything.
+
+**[Octane](/octane)** is supported. Under an Octane worker every toolkit provider's `$this->app` is
+the request's clone while a request runs, and the asset mirror is flushed after each one. If your
+application listened for `RequestTerminated` to call
+[`PublishedAssets::flush()`](/assets#flush-for-long-lived-workers), that listener can go; leaving it
+is harmless.
+
+`laravel/octane` stays the application's choice: the toolkit refers to its events by name and
+requires nothing new.
 
 ## To 2.4.2
 

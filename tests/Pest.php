@@ -11,6 +11,16 @@
 |
 */
 
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\ServiceProvider;
+use Laravel\Octane\CurrentApplication;
+use Laravel\Octane\Events\RequestReceived;
+use Laravel\Octane\Events\RequestTerminated;
+use Laravel\Octane\Events\TaskReceived;
+use Laravel\Octane\Events\TaskTerminated;
+use Laravel\Octane\Events\TickReceived;
+use Laravel\Octane\Events\TickTerminated;
 use NyonCode\LaravelPackageToolkit\Tests\PackageProviderTests\PackageServiceProviderTestCase;
 
 uses(PackageServiceProviderTestCase::class)->in('PackageProviderTests');
@@ -58,4 +68,53 @@ function permissionsAreEnforced(): bool
     return function_exists('posix_geteuid')
         ? posix_geteuid() !== 0
         : ! is_readable('/etc/sudoers');
+}
+
+/**
+ * Run one operation the way an Octane worker does — the steps of
+ * `Laravel\Octane\Worker::handle()`, with Octane's own events and its own
+ * `CurrentApplication` switch, so the clone and what points at it are Octane's and not an
+ * imitation of them. Only the HTTP kernel is left out: `$during` stands in for it.
+ *
+ * `$during` runs inside the operation, on the clone, and its return value is returned.
+ * `$event` picks the operation: a request, a task or a tick.
+ */
+function octaneOperation(?Closure $during = null, string $event = 'request'): mixed
+{
+    $base = app();
+    $sandbox = clone $base;
+    $result = null;
+
+    CurrentApplication::set($sandbox);
+
+    try {
+        if ($event === 'request') {
+            $request = Request::create('/__octane-operation');
+            $sandbox['events']->dispatch(new RequestReceived($base, $sandbox, $request));
+            $result = $during ? $during($sandbox) : null;
+            $response = new Response();
+            $sandbox['events']->dispatch(new RequestTerminated($base, $sandbox, $request, $response));
+        } elseif ($event === 'task') {
+            $sandbox['events']->dispatch(new TaskReceived($base, $sandbox, null));
+            $result = $during ? $during($sandbox) : null;
+            $sandbox['events']->dispatch(new TaskTerminated($base, $sandbox, null, null));
+        } else {
+            $sandbox['events']->dispatch(new TickReceived($base, $sandbox));
+            $result = $during ? $during($sandbox) : null;
+            $sandbox['events']->dispatch(new TickTerminated($base, $sandbox));
+        }
+    } finally {
+        $sandbox->flush();
+        CurrentApplication::set($base);
+    }
+
+    return $result;
+}
+
+/**
+ * The application a service provider currently holds as `$this->app`.
+ */
+function providerApplication(ServiceProvider $provider): mixed
+{
+    return (new ReflectionProperty(ServiceProvider::class, 'app'))->getValue($provider);
 }
