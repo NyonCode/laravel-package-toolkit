@@ -23,6 +23,7 @@ lives in [`site/`](./site).
 - Optimize command registration (`php artisan optimize` / `optimize:clear`)
 - Broadcast channel registration
 - Publishable seeders, factories and generator stubs
+- Octane support (Swoole, RoadRunner, FrankenPHP) without changing the package, plus `php artisan package-toolkit:octane` to find what still leaks between requests
 
 ## Support Laravel
 

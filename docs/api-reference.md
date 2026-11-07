@@ -354,6 +354,30 @@ The renderer behind the directives; a container singleton shared by every packag
 | `isStale(string $package, string $path)` | `bool` | published copy older than the shipped one |
 | `flush()` | `void` | clears URLs and sync marks, **keeps** directories |
 
+## `Support\Worker\WorkerLifecycle`
+
+Installed once per application under a long-lived worker; see [Octane](/octane). Octane's events
+call the first two for you.
+
+| Method | Returns | Notes |
+|---|---|---|
+| `operationStarting(Application $base, Application $sandbox)` | `void` | point providers (and, opted in, the dispatcher) at `$sandbox`; pass the same application twice for a worker without clones |
+| `operationTerminated(Application $base)` | `void` | flush the asset mirror, restore isolated packages, point back at `$base` |
+| `install(Application $app)` | `?self` | static; `null` outside a worker |
+| `enabled(Application $app)` | `bool` | static; `package-toolkit.octane.enabled`, else the runtime |
+| `isolates(string $package)` / `isolations()` | `bool` / `array` | |
+| `sandboxesProviders()` / `sandboxesEvents()` | `bool` | |
+
+## `Support\Runtime`
+
+`Classic` · `Octane` · `FrankenPhpWorker` — `Runtime::detect()`, `->isLongLived()`,
+`Runtime::server()` (`'frankenphp'` / `'roadrunner'` / `'swoole'` / `null`, diagnostic only).
+
+## `package-toolkit:octane`
+
+Registered once per application in the console. `--all` lists scalar statics too, `--strict` exits
+non-zero when an object held from boot or a class listener needs attention.
+
 ## `Support\SplFileInfo`
 
 Extends PHP's `SplFileInfo`, adding `getBaseFileName(): string` (name without extension) and

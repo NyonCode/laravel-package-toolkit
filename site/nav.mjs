@@ -80,6 +80,7 @@ export const sections = [
     pages: [
       { file: 'api-reference.md', url: 'api-reference' },
       { file: 'testing.md', url: 'testing' },
+      { file: 'octane.md', url: 'octane' },
       { file: 'ai.md', url: 'ai' },
     ],
   },

@@ -2,12 +2,15 @@
 
 namespace NyonCode\LaravelPackageToolkit;
 
+use Closure;
 use Composer\InstalledVersions;
 use Exception;
 use Illuminate\Contracts\Foundation\CachesConfiguration;
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
+use NyonCode\LaravelPackageToolkit\Commands\OctaneDiagnoseCommand;
 use NyonCode\LaravelPackageToolkit\Contracts\ProvidesPackageServices;
 use NyonCode\LaravelPackageToolkit\Exceptions\InvalidReturnTypeException;
 use NyonCode\LaravelPackageToolkit\Exceptions\MissingNameException;
@@ -19,6 +22,7 @@ use NyonCode\LaravelPackageToolkit\Support\Concerns\HasPublishingTag;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\MirrorsPackageAssets;
 use NyonCode\LaravelPackageToolkit\Support\Concerns\PublishesPackageResources;
 use NyonCode\LaravelPackageToolkit\Support\Enums\LifecycleHook;
+use NyonCode\LaravelPackageToolkit\Support\Worker\WorkerLifecycle;
 use ReflectionClass;
 use Symfony\Component\Console\Output\NullOutput;
 use Throwable;
@@ -42,6 +46,11 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      * Instance of the Packager class.
      */
     protected ?Packager $packager = null;
+
+    /**
+     * The long-lived worker's lifecycle, when the application runs under one.
+     */
+    private ?WorkerLifecycle $workerLifecycle = null;
 
     /**
      * Configure the packager instance.
@@ -110,6 +119,12 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     public function register(): void
     {
+        $this->workerLifecycle = $this->app instanceof Application
+            ? WorkerLifecycle::install($this->app)
+            : null;
+
+        $bindings = $this->bindingNames();
+
         $this->packager = $this->bootPackager();
         $this->validatePackager();
         $this->packager->hasBasePath($this->getPackageBaseDir());
@@ -133,6 +148,8 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
 
         // Execute registered package hooks
         $this->registeredPackage();
+
+        $this->isolateForWorker($bindings);
     }
 
     /**
@@ -142,6 +159,8 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      */
     public function boot(): void
     {
+        $bindings = $this->bindingNames();
+
         $this->bootingPackage();
 
         $this->registerPublishing();
@@ -150,6 +169,46 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
         $this->bootPackageResources();
 
         $this->bootedPackage();
+
+        $this->isolateForWorker($bindings);
+    }
+
+    /**
+     * The container's binding names, but only under a long-lived worker — the one case
+     * that needs to know which of them this provider added.
+     *
+     * @return list<string>
+     */
+    private function bindingNames(): array
+    {
+        return $this->workerLifecycle !== null ? array_keys($this->app->getBindings()) : [];
+    }
+
+    /**
+     * Hand the package to the worker's isolation, when the application asked for it.
+     *
+     * What this provider bound is told apart by the bindings it added since `$before`,
+     * which catches a package binding under a name it does not own — a framework contract,
+     * a string key. Its own namespace covers the rest, `#[Singleton]` classes that are
+     * never bound included.
+     *
+     * @param  list<string>  $before
+     */
+    private function isolateForWorker(array $before): void
+    {
+        $package = $this->packager?->shortName();
+
+        if ($this->workerLifecycle === null || $package === null || ! $this->workerLifecycle->isolates($package)) {
+            return;
+        }
+
+        $namespace = WorkerLifecycle::packageNamespace($this);
+
+        $this->workerLifecycle->isolate(
+            package: $package,
+            namespaces: $namespace !== '' ? [$namespace.'\\'] : [],
+            abstracts: array_diff(array_keys($this->app->getBindings()), $before),
+        );
     }
 
     /**
@@ -200,6 +259,14 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
             $this->packager?->isCommandable() ? $this->packager->commands : []
         );
 
+        // The toolkit's own commands, once per application however many packages boot.
+        // A container marker rather than a static flag, so a rebuilt application (a test,
+        // a fresh worker) registers them again.
+        if (! $this->app->bound('package-toolkit.commands')) {
+            $this->app->instance('package-toolkit.commands', true);
+            $commands[] = OctaneDiagnoseCommand::class;
+        }
+
         if (! empty($commands)) {
             $this->commands($commands);
         }
@@ -224,7 +291,7 @@ abstract class PackageServiceProvider extends ServiceProvider implements Provide
      * Override this method to add custom key-value pairs to your package's
      * section in the `php artisan about` command output.
      *
-     * @return array<string, string|\Closure> Custom about data
+     * @return array<string, string|Closure> Custom about data
      */
     public function aboutData(): array
     {
